@@ -1,0 +1,270 @@
+# k8s/deployment.yaml
+# Manifesto Kubernetes para a API MemoVoy.
+# Aplicar com: kubectl apply -f k8s/ --namespace=memovoy
+#
+# Pré-condições:
+#   - Namespace 'memovoy' criado: kubectl create namespace memovoy
+#   - Secret 'memovoy-api-secrets' criado (ver secção de secrets abaixo)
+#   - ConfigMap 'memovoy-api-config' criado (ver abaixo)
+
+---
+# ─── Namespace ───────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: memovoy
+  labels:
+    app: memovoy
+
+---
+# ─── ConfigMap — variáveis não-sensíveis ─────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: memovoy-api-config
+  namespace: memovoy
+data:
+  NODE_ENV:            "production"
+  HOST:                "0.0.0.0"
+  PORT:                "3000"
+  DB_POOL_MIN:         "2"
+  DB_POOL_MAX:         "10"
+  JWT_ACCESS_TTL:      "15m"
+  JWT_REFRESH_TTL:     "30d"
+  RATE_LIMIT_GLOBAL:   "200"
+  RATE_LIMIT_AUTH:     "10"
+  # Origins da web app e apps móveis
+  CORS_ORIGINS:        "https://memovoy.com,https://www.memovoy.com"
+
+---
+# ─── Secret — variáveis sensíveis (preenchidas fora do repositório) ──────────
+# NÃO commitar este ficheiro com valores reais.
+# Criar via: kubectl create secret generic memovoy-api-secrets \
+#   --from-literal=DATABASE_URL='postgresql://...' \
+#   --from-literal=JWT_ACCESS_SECRET='...' \
+#   --namespace=memovoy
+apiVersion: v1
+kind: Secret
+metadata:
+  name: memovoy-api-secrets
+  namespace: memovoy
+type: Opaque
+stringData:
+  DATABASE_URL:         "postgresql://SUBSTITUIR"
+  JWT_ACCESS_SECRET:    "SUBSTITUIR"
+  JWT_REFRESH_SECRET:   "SUBSTITUIR"
+  EMAIL_ENCRYPTION_KEY: "SUBSTITUIR"
+  ANTHROPIC_API_KEY:    "SUBSTITUIR"
+
+---
+# ─── Deployment ──────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memovoy-api
+  namespace: memovoy
+  labels:
+    app:     memovoy-api
+    version: "1.0.0"
+spec:
+  # Réplicas iniciais — o HPA (abaixo) ajusta entre 2 e 10
+  replicas: 2
+  selector:
+    matchLabels:
+      app: memovoy-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge:       1   # máximo de pods acima do desejado durante update
+      maxUnavailable: 0   # zero downtime — nunca terminar antes de criar novos
+  template:
+    metadata:
+      labels:
+        app:     memovoy-api
+        version: "1.0.0"
+      annotations:
+        # Forçar rolling update quando o ConfigMap muda
+        checksum/config: "{{ include (print $.Template.BasePath '/configmap.yaml') . | sha256sum }}"
+    spec:
+      # Terminar gracefully — esperar requests em curso
+      terminationGracePeriodSeconds: 30
+
+      # Anti-afinidade: não colocar dois pods no mesmo nó
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [memovoy-api]
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: api
+          image: ghcr.io/memovoy/memovoy-api:latest  # substituído pelo CI
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+
+          # Variáveis de ambiente — ConfigMap + Secret
+          envFrom:
+            - configMapRef:
+                name: memovoy-api-config
+            - secretRef:
+                name: memovoy-api-secrets
+
+          # Liveness probe — reinicia o container se a API não responder
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds:       20
+            failureThreshold:    3
+            timeoutSeconds:      5
+
+          # Readiness probe — só envia tráfego quando a API estiver pronta
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds:       10
+            failureThreshold:    3
+            timeoutSeconds:      3
+
+          # Recursos — limites para evitar noisy neighbors
+          resources:
+            requests:
+              cpu:    "100m"    # 0.1 vCPU garantido
+              memory: "256Mi"
+            limits:
+              cpu:    "500m"    # máx. 0.5 vCPU por pod
+              memory: "512Mi"
+
+          # Desligar gracefully — aguardar requests em curso
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+
+          # Security context — sem privilégios
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem:   true
+            runAsNonRoot:             true
+            runAsUser:                1001
+            capabilities:
+              drop: [ALL]
+
+      # Evitar pull de imagem desnecessário em cada restart
+      imagePullSecrets:
+        - name: docker-registry-secret
+
+---
+# ─── Service — expor a API internamente ──────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: memovoy-api
+  namespace: memovoy
+  labels:
+    app: memovoy-api
+spec:
+  type:     ClusterIP  # só acessível internamente — o Ingress expõe para o exterior
+  selector:
+    app: memovoy-api
+  ports:
+    - port:       80
+      targetPort: 3000
+      protocol:   TCP
+      name:       http
+
+---
+# ─── Ingress — HTTPS com cert-manager ────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: memovoy-api
+  namespace: memovoy
+  annotations:
+    # cert-manager emite e renova certificado TLS automaticamente
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Rate limiting no Ingress (camada extra antes de chegar ao Fastify)
+    nginx.ingress.kubernetes.io/limit-rps:          "50"
+    nginx.ingress.kubernetes.io/limit-connections:  "20"
+    # Headers de segurança
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Content-Type-Options nosniff always;
+      add_header X-Frame-Options DENY always;
+      add_header Referrer-Policy strict-origin always;
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:       [api.memovoy.com]
+      secretName:  memovoy-api-tls
+  rules:
+    - host: api.memovoy.com
+      http:
+        paths:
+          - path:     /
+            pathType: Prefix
+            backend:
+              service:
+                name: memovoy-api
+                port:
+                  name: http
+
+---
+# ─── HorizontalPodAutoscaler — escalar com carga ─────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: memovoy-api
+  namespace: memovoy
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind:       Deployment
+    name:       memovoy-api
+  minReplicas: 2   # nunca abaixo de 2 (alta disponibilidade)
+  maxReplicas: 10  # máximo em pico
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type:               Utilization
+          averageUtilization: 70   # escalar quando CPU > 70%
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type:               Utilization
+          averageUtilization: 80   # escalar quando memória > 80%
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60    # esperar 60s antes de escalar acima
+      policies:
+        - type: Pods; value: 2; periodSeconds: 60  # máx. 2 pods/min a subir
+    scaleDown:
+      stabilizationWindowSeconds: 300   # esperar 5min antes de escalar abaixo
+      policies:
+        - type: Pods; value: 1; periodSeconds: 120 # máx. 1 pod/2min a descer
+
+---
+# ─── PodDisruptionBudget — proteger de manutenções disruptivas ───────────────
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: memovoy-api
+  namespace: memovoy
+spec:
+  minAvailable: 1  # pelo menos 1 pod disponível durante upgrades do nó
+  selector:
+    matchLabels:
+      app: memovoy-api

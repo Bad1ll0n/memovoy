@@ -1,0 +1,28 @@
+# Dependências
+node_modules/
+.gradle/
+build/
+.build/
+DerivedData/
+
+# Next.js
+.next/
+out/
+
+# Ambiente — NUNCA commitar secrets
+memovoy-api/.env
+memovoy-web/.env.local
+*.env.local
+
+# Logs
+*.log
+/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
+*.xcworkspace/xcuserdata/

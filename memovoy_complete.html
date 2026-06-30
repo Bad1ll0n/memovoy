@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoVoy — Implementação completa</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f7f5; color: #1a1a1a; line-height: 1.6; }
+  .nav { background: #fff; border-bottom: 1px solid #e8e8e4; padding: 0 24px; display: flex; align-items: center; gap: 0; position: sticky; top: 0; z-index: 100; overflow-x: auto; }
+  .nav-item { padding: 14px 18px; font-size: 13px; font-weight: 500; cursor: pointer; color: #888; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .15s; }
+  .nav-item:hover { color: #1a1a1a; }
+  .nav-item.active { color: #185FA5; border-bottom-color: #185FA5; }
+  .page { display: none; max-width: 860px; margin: 0 auto; padding: 32px 24px 60px; }
+  .page.active { display: block; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 28px 0 10px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 18px 0 6px; color: #333; }
+  p { font-size: 14px; color: #444; margin-bottom: 10px; line-height: 1.6; }
+  .subtitle { font-size: 14px; color: #888; margin-bottom: 28px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 20px; font-weight: 500; }
+  .badge-blue { background: #E6F1FB; color: #0C447C; }
+  .badge-green { background: #E1F5EE; color: #085041; }
+  .badge-amber { background: #FAEEDA; color: #633806; }
+  .badge-red { background: #FCEBEB; color: #791F1F; }
+  .badge-purple { background: #EEEDFE; color: #3C3489; }
+  .card { background: #fff; border: 1px solid #e8e8e4; border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; }
+  .card-sm { background: #fff; border: 1px solid #e8e8e4; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .stat-card { background: #f7f7f5; border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .stat-n { font-size: 24px; font-weight: 600; }
+  .stat-l { font-size: 12px; color: #888; margin-top: 3px; }
+  .timeline { position: relative; padding-left: 0; }
+  .tl-row { display: grid; grid-template-columns: 90px 16px 1fr; gap: 0 12px; margin-bottom: 0; }
+  .tl-time { font-size: 12px; color: #999; text-align: right; padding-top: 3px; }
+  .tl-line { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .tl-vline { width: 1.5px; flex: 1; min-height: 10px; }
+  .tl-content { padding-bottom: 14px; }
+  .tl-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .tl-sub { font-size: 12px; color: #666; line-height: 1.4; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; padding: 8px 12px; background: #f7f7f5; border-bottom: 1px solid #e8e8e4; font-size: 12px; color: #666; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0f0ec; color: #333; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #f0f0ec; color: #555; }
+  .tag-active { background: #E6F1FB; color: #185FA5; }
+  .section-label { font-size: 11px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: .06em; margin: 24px 0 10px; }
+  .code-block { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 14px 16px; font-family: 'Menlo', 'Monaco', monospace; font-size: 12px; line-height: 1.7; margin: 10px 0; overflow-x: auto; }
+  .code-comment { color: #6c7086; }
+  .code-key { color: #89b4fa; }
+  .code-val { color: #a6e3a1; }
+  .code-str { color: #f9e2af; }
+  .alert { border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
+  .alert-blue { background: #E6F1FB; color: #0C447C; }
+  .alert-green { background: #E1F5EE; color: #085041; }
+  .alert-amber { background: #FAEEDA; color: #633806; }
+  .alert i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .divider { height: 1px; background: #e8e8e4; margin: 20px 0; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle { width: 36px; height: 20px; border-radius: 10px; background: #ccc; position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0; }
+  .toggle.on { background: #185FA5; }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .toggle.on::after { transform: translateX(16px); }
+  .progress-wrap { margin: 6px 0; }
+  .progress-track { height: 6px; background: #f0f0ec; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .flag-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff; border: 1px solid #e8e8e4; border-radius: 8px; margin-bottom: 7px; }
+  .flag-name { font-size: 12px; font-weight: 600; font-family: monospace; color: #1a1a1a; }
+  .flag-desc { font-size: 11px; color: #888; margin-top: 2px; }
+  .report-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #e8e8e4; cursor: pointer; background: #fff; color: #888; transition: all .15s; }
+  .report-btn:hover { border-color: #E24B4A; color: #A32D2D; background: #FCEBEB; }
+  .empty-card { border: 1.5px dashed #e0e0dc; border-radius: 12px; padding: 32px 24px; text-align: center; }
+  .empty-icon { font-size: 32px; color: #ccc; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; color: #888; margin-bottom: 16px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid #e0e0dc; background: #fff; color: #1a1a1a; transition: all .15s; }
+  .btn:hover { background: #f7f7f5; }
+  .btn-primary { background: #185FA5; color: #fff; border-color: #185FA5; }
+  .btn-primary:hover { background: #0C447C; }
+  .channel-card { background: #fff; border: 1px solid #e8e8e4; border-radius: 10px; padding: 14px 16px; }
+  .channel-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
+  .channel-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .channel-desc { font-size: 12px; color: #666; line-height: 1.4; }
+  .phase-header { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e4; }
+  .phase-title { font-size: 13px; font-weight: 600; }
+  .kpi-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .kpi { background: #f7f7f5; border-radius: 8px; padding: 10px 14px; flex: 1; min-width: 100px; }
+  .kpi-n { font-size: 18px; font-weight: 600; }
+  .kpi-l { font-size: 11px; color: #888; }
+  pre { font-family: 'Menlo', 'Monaco', monospace; font-size: 12px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .fallback-card { border: 1px solid #e8e8e4; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+  .fallback-header { padding: 10px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+  .fallback-body { padding: 10px 14px; border-top: 1px solid #e8e8e4; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-item active" onclick="showPage('gtm', this)">1. Go-to-Market</div>
+  <div class="nav-item" onclick="showPage('report', this)">2. Denúncias</div>
+  <div class="nav-item" onclick="showPage('empty', this)">3. Empty States</div>
+  <div class="nav-item" onclick="showPage('security', this)">4. Security Page</div>
+  <div class="nav-item" onclick="showPage('aifallback', this)">5. AI Fallback</div>
+</nav>
+
+<!-- PAGE 1: GO TO MARKET -->
+<div id="page-gtm" class="page active">
+  <h1>Go-to-Market Strategy</h1>
+  <p class="subtitle">Plano de lançamento do MemoVoy — mercados, canais, KPIs e fases de crescimento</p>
+
+  <div class="section-label">Mercados de lançamento</div>
+  <div class="grid-2">
+    <div class="card" style="border-color:#185FA5">
+      <div class="row-between" style="margin-bottom:8px">
+        <div style="font-size:14px;font-weight:600">🇵🇹 Portugal</div>
+        <span class="badge badge-blue">Mercado primário</span>
+      </div>
+      <p>Base de utilizadores inicial para validar o produto. Comunidade de viajantes ativa, alto uso de apps de lifestyle. Facilidade de acesso a feedback direto.</p>
+      <div class="tag-row">
+        <span class="tag tag-active">MVP v1.0</span>
+        <span class="tag tag-active">Beta fechado</span>
+        <span class="tag">~200k viajantes frequentes</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#185FA5">
+      <div class="row-between" style="margin-bottom:8px">
+        <div style="font-size:14px;font-weight:600">🇧🇷 Brasil</div>
+        <span class="badge badge-blue">Mercado primário</span>
+      </div>
+      <p>Lançamento simultâneo com Portugal. Mercado enorme, viajantes muito ativos nas redes sociais, cultura de partilha de viagens no Instagram e TikTok.</p>
+      <div class="tag-row">
+        <span class="tag tag-active">v1.1</span>
+        <span class="tag">+20M viajantes internacionais/ano</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row-between" style="margin-bottom:8px">
+        <div style="font-size:14px;font-weight:600">🇪🇸 Espanha</div>
+        <span class="badge badge-amber">Fase 2</span>
+      </div>
+      <p>Expansão v1.5. Língua próxima, cultura de viagem semelhante, grande mercado emissor de turismo.</p>
+      <div class="tag-row">
+        <span class="tag">v1.5 — Mês 6</span>
+        <span class="tag">Tradução ES</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row-between" style="margin-bottom:8px">
+        <div style="font-size:14px;font-weight:600">🌍 Europa + EN</div>
+        <span class="badge badge-amber">Fase 3</span>
+      </div>
+      <p>Expansão v2.0 com versão em inglês. Foco em FR, DE, IT. Mercado mais competitivo — exige produto mais maduro.</p>
+      <div class="tag-row">
+        <span class="tag">v2.0 — Mês 9+</span>
+        <span class="tag">Inglês obrigatório</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Canais de aquisição</div>
+  <div class="grid-3">
+    <div class="channel-card">
+      <div class="channel-icon" style="background:#E6F1FB">📱</div>
+      <div class="channel-name">ASO</div>
+      <div class="channel-desc">App Store Optimization: palavras-chave "roteiro de viagem", "planeador de viagens", "viagens com IA". Screenshots e preview video em PT e PT-BR.</div>
+    </div>
+    <div class="channel-card">
+      <div class="channel-icon" style="background:#FBEAF0">🎥</div>
+      <div class="channel-name">TikTok Travel Creators</div>
+      <div class="channel-desc">Parceria com 10–15 criadores PT/BR com 50k–500k seguidores. Conteúdo: "Criei este roteiro com IA em 2 minutos". Custo baixo, alcance alto.</div>
+    </div>
+    <div class="channel-card">
+      <div class="channel-icon" style="background:#E1F5EE">✍️</div>
+      <div class="channel-name">Travel bloggers</div>
+      <div class="channel-desc">Reviews em blogs de viagem PT/BR com DA alto. SEO de longo prazo. 5–10 bloggers com acesso beta antecipado e roteiro gratuito gerado pela IA.</div>
+    </div>
+    <div class="channel-card">
+      <div class="channel-icon" style="background:#EEEDFE">📸</div>
+      <div class="channel-name">Instagram Reels</div>
+      <div class="channel-desc">Conteúdo orgânico da marca: "O roteiro da semana", "Destino mais viajado este mês". Foco em Reels curtos com roteiros visuais.</div>
+    </div>
+    <div class="channel-card">
+      <div class="channel-icon" style="background:#FAEEDA">🤝</div>
+      <div class="channel-name">Parcerias B2B</div>
+      <div class="channel-desc">Agências de viagem pequenas que usam MemoVoy para criar roteiros para clientes. Free tier generoso para agências, revenue share nas reservas.</div>
+    </div>
+    <div class="channel-card">
+      <div class="channel-icon" style="background:#FCEBEB">🔗</div>
+      <div class="channel-name">Referral</div>
+      <div class="channel-desc">"Convida um amigo e ambos ganham 1 mês premium." Viral loop nativo: roteiros partilhados como link público trazem tráfego orgânico.</div>
+    </div>
+  </div>
+
+  <div class="section-label">KPIs por fase</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Fase</th><th>Período</th><th>Utilizadores registados</th><th>DAU</th><th>Roteiros criados</th><th>Meta</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">Beta</span></td><td>Mês 1–3</td><td>500–2.000</td><td>20%</td><td>1.000+</td><td>Validar wizard IA</td></tr>
+        <tr><td><span class="badge badge-green">v1.0</span></td><td>Mês 4–6</td><td>10.000–50.000</td><td>25%</td><td>25.000+</td><td>Product-market fit</td></tr>
+        <tr><td><span class="badge badge-amber">v1.1</span></td><td>Mês 7–9</td><td>100.000+</td><td>30%</td><td>200.000+</td><td>Crescimento viral</td></tr>
+        <tr><td><span class="badge badge-purple">v2.0</span></td><td>Mês 10–12</td><td>500.000+</td><td>35%</td><td>1M+</td><td>Monetização</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">Métricas de saúde do produto</div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-n">D1 &gt;40%</div><div class="kpi-l">Retenção dia 1</div></div>
+    <div class="kpi"><div class="kpi-n">D7 &gt;20%</div><div class="kpi-l">Retenção dia 7</div></div>
+    <div class="kpi"><div class="kpi-n">D30 &gt;10%</div><div class="kpi-l">Retenção dia 30</div></div>
+    <div class="kpi"><div class="kpi-n">&gt;60%</div><div class="kpi-l">Roteiros IA usados</div></div>
+    <div class="kpi"><div class="kpi-n">&lt;3min</div><div class="kpi-l">Tempo até 1.º roteiro</div></div>
+    <div class="kpi"><div class="kpi-n">NPS &gt;50</div><div class="kpi-l">Net Promoter Score</div></div>
+  </div>
+</div>
+
+<!-- PAGE 2: SISTEMA DE DENÚNCIAS -->
+<div id="page-report" class="page">
+  <h1>Sistema de Denúncia de Posts</h1>
+  <p class="subtitle">Moderação humana em segunda linha — complementa a moderação automática por visão computacional já existente</p>
+
+  <div class="section-label">Fluxo de denúncia — perspetiva do utilizador</div>
+  <div class="timeline">
+    <div class="tl-row">
+      <div class="tl-time">Passo 1</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Utilizador clica "..." no post → "Denunciar"</div>
+        <div class="tl-sub">Botão presente em todos os posts, comentários e perfis. Nunca na rota principal — está no menu de opções secundário.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">Passo 2</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Seleciona categoria</div>
+        <div class="tl-sub">Conteúdo inapropriado · Spam ou publicidade · Informação falsa · Violação de privacidade · Incitação ao ódio · Outro</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">Passo 3</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Confirmação instantânea</div>
+        <div class="tl-sub">"Obrigado — a tua denúncia foi registada. Analisamos normalmente em menos de 24h."</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">Auto</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#E24B4A"></div><div class="tl-vline" style="background:#F09595"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Limiar automático de ocultação</div>
+        <div class="tl-sub">Se o mesmo post recebe 5+ denúncias independentes em menos de 1h, fica automaticamente oculto até revisão humana — sem remover permanentemente.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">Revisão</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#0F6E56"></div><div class="tl-vline" style="background:transparent"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Moderador humano decide em &lt;24h</div>
+        <div class="tl-sub">Remover permanentemente · Restaurar e ignorar denúncia · Avisar o autor · Suspender conta. Denunciante recebe notificação do resultado.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Dashboard de moderação (backoffice)</div>
+  <div class="card">
+    <div class="phase-header" style="margin:-18px -20px 14px;background:#f7f7f5;border-radius:12px 12px 0 0">
+      <div class="phase-title">Fila de moderação — 12 itens pendentes</div>
+      <div style="display:flex;gap:6px">
+        <span class="badge badge-red">3 urgentes</span>
+        <span class="badge badge-amber">9 normais</span>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Tipo</th><th>Categoria</th><th>Denúncias</th><th>Oculto?</th><th>Ação</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-red">Post</span></td>
+          <td>Conteúdo inapropriado</td>
+          <td><strong>8</strong></td>
+          <td><span class="badge badge-red">Sim</span></td>
+          <td><div style="display:flex;gap:5px"><span class="btn" style="font-size:11px;padding:3px 8px">Restaurar</span><span class="btn btn-primary" style="font-size:11px;padding:3px 8px;background:#A32D2D;border-color:#A32D2D">Remover</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">Comentário</span></td>
+          <td>Spam</td>
+          <td>2</td>
+          <td><span class="badge badge-green">Não</span></td>
+          <td><div style="display:flex;gap:5px"><span class="btn" style="font-size:11px;padding:3px 8px">Ignorar</span><span class="btn" style="font-size:11px;padding:3px 8px">Remover</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">Perfil</span></td>
+          <td>Privacidade</td>
+          <td>1</td>
+          <td><span class="badge badge-green">Não</span></td>
+          <td><div style="display:flex;gap:5px"><span class="btn" style="font-size:11px;padding:3px 8px">Ignorar</span><span class="btn" style="font-size:11px;padding:3px 8px">Avisar</span></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">Schema da tabela no PostgreSQL</div>
+  <div class="code-block"><pre><span class="code-comment">-- Tabela de denúncias</span>
+<span class="code-key">CREATE TABLE</span> reports (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  reporter_id UUID NOT NULL REFERENCES users(id),
+  target_type VARCHAR(20) NOT NULL,  <span class="code-comment">-- 'post' | 'comment' | 'profile'</span>
+  target_id   UUID NOT NULL,
+  category    VARCHAR(40) NOT NULL,  <span class="code-comment">-- 'inappropriate' | 'spam' | 'misinformation' | ...</span>
+  note        TEXT,
+  status      VARCHAR(20) DEFAULT <span class="code-str">'pending'</span>,  <span class="code-comment">-- 'pending' | 'resolved' | 'dismissed'</span>
+  moderator_id UUID REFERENCES admins(id),
+  resolution  VARCHAR(20),           <span class="code-comment">-- 'removed' | 'restored' | 'warned' | 'banned'</span>
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ,
+  UNIQUE(reporter_id, target_id)     <span class="code-comment">-- um user só pode denunciar o mesmo conteúdo uma vez</span>
+);
+
+<span class="code-comment">-- Index para fila de moderação ordenada por urgência</span>
+<span class="code-key">CREATE INDEX</span> idx_reports_pending ON reports(status, created_at)
+  WHERE status = <span class="code-str">'pending'</span>;
+
+<span class="code-comment">-- View para contar denúncias por conteúdo (trigger de ocultação automática)</span>
+<span class="code-key">CREATE VIEW</span> report_counts AS
+  SELECT target_id, target_type, COUNT(*) as total
+  FROM reports WHERE status = <span class="code-str">'pending'</span>
+  AND created_at > NOW() - INTERVAL <span class="code-str">'1 hour'</span>
+  GROUP BY target_id, target_type
+  HAVING COUNT(*) >= <span class="code-val">5</span>;</pre></div>
+
+  <div class="section-label">Regras anti-abuso do sistema de denúncias</div>
+  <div class="grid-2">
+    <div class="card-sm">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Rate limiting por utilizador</div>
+      <div style="font-size:12px;color:#666">Máx. 10 denúncias por hora por utilizador. Contas novas (&lt;7 dias) limitadas a 3/hora.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Deteção de denúncias coordenadas</div>
+      <div style="font-size:12px;color:#666">Se 5+ denúncias vierem de contas criadas no mesmo dia, são sinalizadas como suspeitas e não acionam ocultação automática.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Proteção contra denúncias falsas</div>
+      <div style="font-size:12px;color:#666">Utilizadores que denunciam repetidamente conteúdo que é depois restaurado recebem redução do peso das suas denúncias futuras.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Recurso pelo autor</div>
+      <div style="font-size:12px;color:#666">Autor cujo conteúdo foi removido pode submeter recurso uma única vez, com nota explicativa. Revisão por moderador diferente.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: EMPTY STATES -->
+<div id="page-empty" class="page">
+  <h1>Empty States & Estados de Erro</h1>
+  <p class="subtitle">O que o utilizador vê nos 5 momentos críticos — nunca um ecrã em branco</p>
+
+  <div class="section-label">1. Feed vazio — novo utilizador sem seguidores</div>
+  <div class="empty-card">
+    <div class="empty-icon">✈️</div>
+    <div class="empty-title">O teu feed está à espera de aventuras</div>
+    <div class="empty-sub">Segue outros viajantes para veres os roteiros deles aqui.<br>Ou começa já pelo teu primeiro roteiro.</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary">Criar o meu primeiro roteiro</button>
+      <button class="btn">Descobrir viajantes</button>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e8e4">
+      <div style="font-size:12px;color:#aaa;margin-bottom:10px">Roteiros populares esta semana</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <span class="tag">🇯🇵 Tóquio 7 dias</span>
+        <span class="tag">🇮🇹 Roma em 4 dias</span>
+        <span class="tag">🇵🇹 Lisboa local</span>
+        <span class="tag">🇹🇭 Bali em família</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">2. Pesquisa sem resultados</div>
+  <div class="empty-card">
+    <div class="empty-icon">🔍</div>
+    <div class="empty-title">Sem resultados para "Faraó"</div>
+    <div class="empty-sub">Não encontrámos roteiros com esse nome.<br>Experimenta um destino diferente ou cria tu o primeiro.</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn">Limpar pesquisa</button>
+      <button class="btn btn-primary">Criar roteiro para este destino</button>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:#aaa">Talvez quisesses dizer: <span style="color:#185FA5;cursor:pointer">Cairo</span> · <span style="color:#185FA5;cursor:pointer">Luxor</span> · <span style="color:#185FA5;cursor:pointer">Alexandria</span></div>
+  </div>
+
+  <div class="section-label">3. Modo offline — sem dados em cache</div>
+  <div class="empty-card" style="border-color:#EF9F27">
+    <div class="empty-icon">📡</div>
+    <div class="empty-title" style="color:#633806">Sem ligação à internet</div>
+    <div class="empty-sub">Não encontrámos dados guardados para este ecrã.<br>Os teus roteiros guardados estão disponíveis offline.</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn">Ver roteiros guardados</button>
+      <button class="btn">Tentar de novo</button>
+    </div>
+    <div class="alert alert-amber" style="margin-top:14px;text-align:left">
+      <span>💡</span>
+      <span>Para ter mais conteúdo disponível offline, ativa a opção "Guardar para offline" nos teus roteiros favoritos quando tiveres ligação.</span>
+    </div>
+  </div>
+
+  <div class="section-label">4. Falha de rede num pedido</div>
+  <div class="card" style="border-color:#E24B4A">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:36px;height:36px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">⚠️</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Não foi possível carregar</div>
+        <div style="font-size:12px;color:#888">Verifica a tua ligação e tenta de novo</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" style="flex:1">Tentar de novo</button>
+      <button class="btn" style="flex:1">Reportar problema</button>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-top:8px">Erro: Network timeout após 10s · Código: NET_001</div>
+  </div>
+
+  <div class="section-label">5. Roteiro importado com erro de formato</div>
+  <div class="card" style="border-color:#EF9F27">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="width:36px;height:36px;border-radius:50%;background:#FAEEDA;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📋</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Roteiro importado com avisos</div>
+        <div style="font-size:12px;color:#888">Importámos o que conseguimos — alguns campos precisam de atenção</div>
+      </div>
+    </div>
+    <div class="card-sm" style="border-color:#EF9F27;margin-bottom:8px">
+      <div style="font-size:12px;color:#633806">⚠ Dia 3 — sem hora definida para "Museu do Louvre"</div>
+    </div>
+    <div class="card-sm" style="border-color:#EF9F27">
+      <div style="font-size:12px;color:#633806">⚠ Dia 5 — localização "perto do hotel" não reconhecida</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" style="flex:1">Corrigir agora</button>
+      <button class="btn" style="flex:1">Ignorar e continuar</button>
+    </div>
+  </div>
+
+  <div class="section-label">Princípios dos empty states do MemoVoy</div>
+  <div class="grid-2">
+    <div class="card-sm"><strong style="font-size:13px">Nunca um ecrã em branco.</strong><p style="margin-top:4px">Cada estado vazio tem ícone, título, descrição curta e pelo menos uma ação.</p></div>
+    <div class="card-sm"><strong style="font-size:13px">A ação principal é sempre construtiva.</strong><p style="margin-top:4px">Em vez de "sem resultados", oferece "cria o primeiro". Transforma frustração em engagement.</p></div>
+    <div class="card-sm"><strong style="font-size:13px">Tom consistente com a marca.</strong><p style="margin-top:4px">Viagem, descoberta, aventura — mesmo nos erros. Nunca mensagens técnicas expostas ao utilizador.</p></div>
+    <div class="card-sm"><strong style="font-size:13px">Erros técnicos sempre com código.</strong><p style="margin-top:4px">O código de erro (NET_001, AI_002) é invisível para utilizadores normais mas ajuda no suporte técnico.</p></div>
+  </div>
+</div>
+
+<!-- PAGE 4: SECURITY PAGE -->
+<div id="page-security" class="page">
+  <h1>security.memovoy.com</h1>
+  <p class="subtitle">Página pública de responsible disclosure — standard da indústria a partir de escala</p>
+
+  <div class="alert alert-blue" style="margin-bottom:20px">
+    <span>ℹ️</span>
+    <span>Esta é a especificação do conteúdo e estrutura da página pública security.memovoy.com. Deve ser uma página web independente, sempre acessível, mesmo durante incidentes.</span>
+  </div>
+
+  <div class="card" style="border-left:3px solid #185FA5;border-radius:0 12px 12px 0">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">MemoVoy Security</div>
+    <div style="font-size:13px;color:#666;margin-bottom:16px">Levamos a segurança dos dados dos nossos utilizadores muito a sério. Se descobriste uma vulnerabilidade, queremos saber.</div>
+    <div class="grid-3" style="margin-bottom:0">
+      <div class="stat-card"><div class="stat-n" style="color:#0F6E56">48h</div><div class="stat-l">Tempo de resposta garantido</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#185FA5">90 dias</div><div class="stat-l">Prazo para correção</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#534AB7">CVE</div><div class="stat-l">Publicamos após fix</div></div>
+    </div>
+  </div>
+
+  <h2>Como reportar uma vulnerabilidade</h2>
+  <div class="timeline">
+    <div class="tl-row">
+      <div class="tl-time">Passo 1</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Envia um email para security@memovoy.com</div>
+        <div class="tl-sub">Ou usa o formulário cifrado abaixo. Inclui: descrição detalhada, passos para reproduzir, impacto potencial, e se possível, prova de conceito (sem explorar dados reais).</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">48h</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Confirmamos a receção e classificamos a severidade</div>
+        <div class="tl-sub">Usamos o sistema CVSS 3.1. Crítico → Respondemos em 24h. Alto → 48h. Médio/Baixo → 5 dias úteis.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">90 dias</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Corrigimos e notificamos</div>
+        <div class="tl-sub">Após a correção estar em produção, enviamos notificação e pedimos confirmação. Podemos coordinar divulgação pública coordenada.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-time">Após fix</div>
+      <div class="tl-line"><div class="tl-dot" style="background:#0F6E56"></div><div class="tl-vline" style="background:transparent"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Reconhecimento público no Hall of Fame</div>
+        <div class="tl-sub">O teu nome (ou alias) aparece na nossa página de agradecimentos, com a data e o tipo de vulnerabilidade (sem detalhes exploráveis).</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>O que está em âmbito</h2>
+  <div class="grid-2">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px">✓ Em âmbito</div>
+      <div class="card-sm" style="margin-bottom:6px"><div style="font-size:12px">Autenticação e gestão de sessões</div></div>
+      <div class="card-sm" style="margin-bottom:6px"><div style="font-size:12px">Acesso não autorizado a dados de utilizadores</div></div>
+      <div class="card-sm" style="margin-bottom:6px"><div style="font-size:12px">Injeção SQL, XSS, CSRF</div></div>
+      <div class="card-sm" style="margin-bottom:6px"><div style="font-size:12px">APIs da app (iOS, Android, Web)</div></div>
+      <div class="card-sm"><div style="font-size:12px">Exposição indevida de dados pessoais</div></div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#A32D2D;margin-bottom:8px">✗ Fora de âmbito</div>
+      <div class="card-sm" style="margin-bottom:6px;border-color:#f0f0ec"><div style="font-size:12px;color:#888">Ataques de engenharia social a funcionários</div></div>
+      <div class="card-sm" style="margin-bottom:6px;border-color:#f0f0ec"><div style="font-size:12px;color:#888">DDoS e testes de carga</div></div>
+      <div class="card-sm" style="margin-bottom:6px;border-color:#f0f0ec"><div style="font-size:12px;color:#888">Vulnerabilidades em serviços de terceiros</div></div>
+      <div class="card-sm" style="margin-bottom:6px;border-color:#f0f0ec"><div style="font-size:12px;color:#888">Exploração de dados reais de utilizadores</div></div>
+      <div class="card-sm" style="border-color:#f0f0ec"><div style="font-size:12px;color:#888">Ataques físicos às nossas instalações</div></div>
+    </div>
+  </div>
+
+  <h2>Compromissos da MemoVoy</h2>
+  <div class="alert alert-green">
+    <span>🛡️</span>
+    <div>Não tomamos ações legais contra investigadores que reportam de boa fé, seguem estas guidelines e não comprometem dados de utilizadores reais. Mantemos o anonimato se pedido.</div>
+  </div>
+
+  <h2>Hall of Fame</h2>
+  <div class="card-sm" style="text-align:center;color:#888;font-style:italic;font-size:13px">
+    Ainda não há entradas — sê o primeiro a encontrar e reportar uma vulnerabilidade.
+  </div>
+</div>
+
+<!-- PAGE 5: AI FALLBACK -->
+<div id="page-aifallback" class="page">
+  <h1>AI Fallback Graceful</h1>
+  <p class="subtitle">Quando a Anthropic API falha, o MemoVoy nunca mostra um ecrã de erro — serve sempre um roteiro de qualidade</p>
+
+  <div class="section-label">Arquitetura do sistema de fallback</div>
+
+  <div class="fallback-card">
+    <div class="fallback-header" style="background:#E6F1FB">
+      <div style="color:#0C447C;font-size:13px;font-weight:600">Nível 1 — Geração em tempo real (caminho normal)</div>
+      <span class="badge badge-blue">API disponível</span>
+    </div>
+    <div class="fallback-body">
+      <p>Wizard completo → Prompt compiler → Anthropic API → Validação → Roteiro personalizado.</p>
+      <p>Tempo médio: 8–15 segundos. Qualidade: máxima (totalmente personalizado).</p>
+    </div>
+  </div>
+
+  <div class="fallback-card">
+    <div class="fallback-header" style="background:#FAEEDA">
+      <div style="color:#633806;font-size:13px;font-weight:600">Nível 2 — Fallback por destino (API em baixo)</div>
+      <span class="badge badge-amber">API indisponível</span>
+    </div>
+    <div class="fallback-body">
+      <p>Serve roteiro pré-gerado de alta qualidade para o destino solicitado, adaptado ao grupo e duração. Armazenado no Redis com TTL de 30 dias e regenerado semanalmente.</p>
+      <p>Tempo de resposta: &lt;1 segundo. Qualidade: alta (não personalizado por preferências específicas).</p>
+      <div class="alert alert-amber" style="margin-top:10px">
+        <span>⚠️</span>
+        <span>Mensagem ao utilizador: "Gerámos um roteiro base para Tóquio — quando os nossos servidores estiverem mais tranquilos, personalizamos automaticamente para ti."</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fallback-card">
+    <div class="fallback-header" style="background:#FCEBEB">
+      <div style="color:#791F1F;font-size:13px;font-weight:600">Nível 3 — Fallback manual (destino sem cache)</div>
+      <span class="badge badge-red">API + cache indisponíveis</span>
+    </div>
+    <div class="fallback-body">
+      <p>Para destinos fora do top 50, serve o modo de criação manual com sugestões de POIs (base de dados própria, sem IA). O utilizador constrói o roteiro com assistência estática.</p>
+      <p>Tempo de resposta: imediato. Qualidade: média (requer esforço do utilizador).</p>
+      <div class="alert" style="background:#FCEBEB;color:#791F1F;margin-top:10px">
+        <span>ℹ️</span>
+        <span>Mensagem: "A geração automática está temporariamente indisponível. Aqui está o modo manual com sugestões para o teu destino."</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Top 50 destinos pré-gerados (seed inicial)</div>
+  <div class="card">
+    <div class="tag-row">
+      <span class="tag tag-active">🇯🇵 Tóquio</span><span class="tag tag-active">🇫🇷 Paris</span><span class="tag tag-active">🇮🇹 Roma</span>
+      <span class="tag tag-active">🇮🇹 Milão</span><span class="tag tag-active">🇪🇸 Barcelona</span><span class="tag tag-active">🇬🇧 Londres</span>
+      <span class="tag tag-active">🇳🇱 Amesterdão</span><span class="tag tag-active">🇵🇹 Lisboa</span><span class="tag tag-active">🇵🇹 Porto</span>
+      <span class="tag tag-active">🇧🇷 Rio de Janeiro</span><span class="tag tag-active">🇧🇷 São Paulo</span><span class="tag tag-active">🇹🇭 Bangkok</span>
+      <span class="tag tag-active">🇮🇩 Bali</span><span class="tag tag-active">🇸🇬 Singapura</span><span class="tag tag-active">🇦🇪 Dubai</span>
+      <span class="tag tag-active">🇺🇸 Nova Iorque</span><span class="tag tag-active">🇺🇸 Los Angeles</span><span class="tag tag-active">🇲🇽 Cidade do México</span>
+      <span class="tag tag-active">🇨🇿 Praga</span><span class="tag tag-active">🇦🇹 Viena</span><span class="tag tag-active">🇭🇺 Budapeste</span>
+      <span class="tag tag-active">🇬🇷 Atenas</span><span class="tag tag-active">🇬🇷 Santorini</span><span class="tag tag-active">🇭🇷 Dubrovnik</span>
+      <span class="tag">+ 26 mais gerados após primeiros dados</span>
+    </div>
+    <div style="font-size:12px;color:#888;margin-top:10px">Cada destino tem 4 variantes pré-geradas: solo · casal · amigos · família — todas com duração de 3, 5 e 7 dias = 12 roteiros por destino.</div>
+  </div>
+
+  <div class="section-label">Pipeline de regeneração automática semanal</div>
+  <div class="code-block"><pre><span class="code-comment"># cron job — todos os domingos às 3h UTC</span>
+<span class="code-comment"># regenerate_fallback_itineraries.py</span>
+
+<span class="code-key">async def</span> regenerate_fallbacks():
+    destinations = <span class="code-key">await</span> get_top_destinations(limit=<span class="code-val">50</span>)
+
+    <span class="code-key">for</span> dest <span class="code-key">in</span> destinations:
+        <span class="code-key">for</span> group_type <span class="code-key">in</span> [<span class="code-str">'solo'</span>, <span class="code-str">'couple'</span>, <span class="code-str">'friends'</span>, <span class="code-str">'family'</span>]:
+            <span class="code-key">for</span> duration <span class="code-key">in</span> [<span class="code-val">3</span>, <span class="code-val">5</span>, <span class="code-val">7</span>]:
+                itinerary = <span class="code-key">await</span> generate_with_ai(
+                    destination=dest,
+                    group=group_type,
+                    days=duration,
+                    transport=<span class="code-str">'public'</span>,   <span class="code-comment"># default para fallback</span>
+                    budget=<span class="code-str">'medium'</span>
+                )
+                <span class="code-key">await</span> redis.setex(
+                    key=<span class="code-str">f"fallback:{dest}:{group_type}:{duration}d"</span>,
+                    value=itinerary,
+                    ttl=<span class="code-val">30</span> * <span class="code-val">24</span> * <span class="code-val">3600</span>  <span class="code-comment"># 30 dias</span>
+                )</pre></div>
+
+  <div class="section-label">Background regeneration após fallback servido</div>
+  <div class="code-block"><pre><span class="code-comment"># Quando API volta a estar disponível e o user ainda tem sessão ativa:</span>
+
+<span class="code-key">async def</span> upgrade_fallback_to_personalized(session_id, wizard_answers):
+    <span class="code-comment"># Corre em background (Kafka consumer)</span>
+    personalized = <span class="code-key">await</span> generate_with_ai(
+        **wizard_answers,     <span class="code-comment"># preferências reais do utilizador</span>
+        feedback_loop=<span class="code-key">True</span>    <span class="code-comment"># inclui dados do feedback loop</span>
+    )
+    <span class="code-key">await</span> save_itinerary(session_id, personalized)
+    <span class="code-key">await</span> notify_user(
+        session_id,
+        message=<span class="code-str">"O teu roteiro personalizado ficou pronto! Vê as melhorias."</span>,
+        type=<span class="code-str">"itinerary_upgraded"</span>
+    )</pre></div>
+
+  <div class="section-label">Monitorização do sistema de fallback</div>
+  <div class="grid-3">
+    <div class="stat-card"><div class="stat-n" style="color:#0F6E56">99.9%</div><div class="stat-l">Uptime garantido com fallback</div></div>
+    <div class="stat-card"><div class="stat-n" style="color:#185FA5">&lt;1s</div><div class="stat-l">Tempo de resposta fallback L2</div></div>
+    <div class="stat-card"><div class="stat-n" style="color:#854F0B">600</div><div class="stat-l">Roteiros pré-gerados em cache (50×12)</div></div>
+  </div>
+</div>
+
+<script>
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

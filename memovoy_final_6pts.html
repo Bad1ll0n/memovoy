@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoVoy — Implementação 10/10</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;line-height:1.6;font-size:14px}
+.nav{background:#fff;border-bottom:1px solid #e8e8e4;padding:0 20px;display:flex;align-items:center;position:sticky;top:0;z-index:100;overflow-x:auto}
+.nav-brand{font-size:13px;font-weight:700;color:#185FA5;margin-right:14px;white-space:nowrap;padding:14px 0}
+.nav-item{padding:14px 11px;font-size:12px;font-weight:500;cursor:pointer;color:#888;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.nav-item:hover{color:#1a1a1a}
+.nav-item.active{color:#185FA5;border-bottom-color:#185FA5}
+.page{display:none;max-width:960px;margin:0 auto;padding:24px 20px 80px}
+.page.active{display:block}
+h1{font-size:20px;font-weight:700;margin-bottom:4px}
+h2{font-size:15px;font-weight:700;margin:22px 0 8px}
+h3{font-size:13px;font-weight:700;margin:14px 0 5px;color:#333}
+.subtitle{font-size:13px;color:#888;margin-bottom:20px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;vertical-align:middle;margin:1px}
+.b-pk{background:#E6F1FB;color:#0C447C}
+.b-fk{background:#EEEDFE;color:#3C3489}
+.b-uq{background:#FAEEDA;color:#633806}
+.b-nn{background:#F1EFE8;color:#444}
+.b-ck{background:#FBEAF0;color:#72243E}
+.b-new{background:#E1F5EE;color:#085041;border:1px solid #5DCAA5}
+.card{background:#fff;border:1px solid #e8e8e4;border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.card-sm{background:#fff;border:1px solid #e8e8e4;border-radius:8px;padding:10px 13px;margin-bottom:7px}
+.alert{border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:10px;display:flex;gap:8px;line-height:1.5}
+.al-blue{background:#E6F1FB;color:#0C447C}
+.al-green{background:#E1F5EE;color:#085041}
+.al-amber{background:#FAEEDA;color:#633806}
+.al-red{background:#FCEBEB;color:#791F1F}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.stat{background:#f7f7f5;border-radius:8px;padding:10px;text-align:center;flex:1}
+.sn{font-size:20px;font-weight:700}.sl{font-size:11px;color:#888;margin-top:2px}
+.sr{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.code{background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:12px 16px;font-family:monospace;font-size:11px;line-height:1.7;margin:8px 0;overflow-x:auto}
+.code pre{white-space:pre-wrap;word-break:break-word}
+.cm{color:#6c7086}.ck{color:#89b4fa}.cv{color:#a6e3a1}.cs{color:#f9e2af}.ct{color:#cba6f7}
+.tw{background:#fff;border:1px solid #e8e8e4;border-radius:10px;overflow:hidden;margin-bottom:12px}
+.th-row{padding:9px 14px;background:#f7f7f5;border-bottom:1px solid #e8e8e4;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.th-name{font-size:13px;font-weight:700;font-family:monospace;color:#185FA5}
+.th-desc{font-size:11px;color:#888}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:6px 12px;background:#fafaf8;border-bottom:1px solid #e8e8e4;font-size:10px;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+td{padding:6px 12px;border-bottom:1px solid #f4f4f0;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.cn{font-family:monospace;font-size:11px;font-weight:700}
+.ct2{font-family:monospace;font-size:11px;color:#534AB7}
+.cd{font-size:11px;color:#666;line-height:1.4}
+.sl2{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin:18px 0 7px}
+.tag{font-size:11px;padding:3px 9px;border-radius:20px;background:#f0f0ec;color:#555;display:inline-block;margin:2px}
+.tag-ok{background:#E1F5EE;color:#085041}
+.tag-warn{background:#FAEEDA;color:#633806}
+.row-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:5px;font-size:12px;line-height:1.4}
+.row-item.ok{background:#E1F5EE}
+.row-item.ok .ri{color:#085041}
+.ri{font-size:14px;flex-shrink:0;margin-top:1px}
+.tl-row{display:grid;grid-template-columns:70px 12px 1fr;gap:0 10px}
+.tl-time{font-size:11px;color:#999;text-align:right;padding-top:3px}
+.tl-line{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-vline{width:1.5px;flex:1;min-height:8px}
+.tl-content{padding-bottom:12px}
+.tl-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.tl-sub{font-size:12px;color:#666;line-height:1.4}
+
+/* Dark mode preview */
+.dm-preview{border-radius:10px;overflow:hidden;border:1px solid #e8e8e4}
+.dm-light{background:#fff;padding:14px 16px}
+.dm-dark{background:#0f0f13;padding:14px 16px;color:#e8e6f0}
+.dm-title{font-size:12px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.dm-card-l{background:#f7f7f5;border-radius:8px;padding:10px 12px;margin-bottom:7px;border:1px solid #e8e8e4}
+.dm-card-d{background:#1c1c24;border-radius:8px;padding:10px 12px;margin-bottom:7px;border:1px solid #2a2a38}
+.dm-text-l{font-size:12px;color:#333}
+.dm-text-d{font-size:12px;color:#c8c4e0}
+.dm-sub-l{font-size:11px;color:#888}
+.dm-sub-d{font-size:11px;color:#6b6880}
+.dm-accent-l{color:#185FA5;font-weight:600;font-size:12px}
+.dm-accent-d{color:#7BA8D9;font-weight:600;font-size:12px}
+.dm-toggle{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0f0ec;border-radius:8px;margin-bottom:8px}
+.dm-toggle-d{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1c1c24;border-radius:8px;margin-bottom:8px;border:1px solid #2a2a38}
+.pill{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+.pill-green{background:#E1F5EE;color:#085041}
+.pill-amber{background:#FAEEDA;color:#633806}
+.pill-blue{background:#E6F1FB;color:#0C447C}
+.pill-red{background:#FCEBEB;color:#791F1F}
+
+/* Session card */
+.sess-card{border:1px solid #e8e8e4;border-radius:8px;padding:10px 13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff}
+.sess-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sess-name{font-size:13px;font-weight:600}
+.sess-sub{font-size:11px;color:#888}
+.sess-revoke{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #F09595;color:#A32D2D;cursor:pointer;background:#FCEBEB}
+.sess-current{font-size:10px;padding:2px 7px;border-radius:20px;background:#E1F5EE;color:#085041;font-weight:600}
+
+/* Carbon */
+.carbon-bar{height:8px;border-radius:4px;overflow:hidden;background:#f0f0ec;margin:4px 0}
+.carbon-fill{height:100%;border-radius:4px}
+.carbon-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.carbon-label{flex:1;color:#555}
+.carbon-val{font-weight:600;color:#1a1a1a;white-space:nowrap}
+.carbon-pct{font-size:11px;color:#888;white-space:nowrap;min-width:36px;text-align:right}
+
+/* Expense */
+.exp-cat{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #f4f4f0;font-size:12px}
+.exp-cat:last-child{border-bottom:none}
+.exp-icon{font-size:16px;flex-shrink:0}
+.exp-name{flex:1;color:#333}
+.exp-bar-wrap{width:80px;flex-shrink:0}
+.exp-bar-track{height:4px;background:#f0f0ec;border-radius:2px;overflow:hidden}
+.exp-bar-fill{height:100%;border-radius:2px}
+.exp-val{font-weight:600;color:#1a1a1a;white-space:nowrap;min-width:60px;text-align:right}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">MemoVoy 10/10</div>
+  <div class="nav-item active" onclick="s('carbon',this)">1. Carbono</div>
+  <div class="nav-item" onclick="s('expense',this)">2. Expenses</div>
+  <div class="nav-item" onclick="s('packing',this)">3. Packing IA</div>
+  <div class="nav-item" onclick="s('darkmode',this)">4. Dark Mode</div>
+  <div class="nav-item" onclick="s('pinning',this)">5. Cert Pinning</div>
+  <div class="nav-item" onclick="s('sessions',this)">6. Sessões</div>
+  <div class="nav-item" onclick="s('crowding',this)">7. Affluência IA</div>
+  <div class="nav-item" onclick="s('schema',this)">Schema</div>
+</nav>
+
+<!-- 1. CARBONO -->
+<div id="page-carbon" class="page active">
+  <h1>1. Calculador de Pegada de Carbono</h1>
+  <p class="subtitle">Primeiro diferenciador ambiental numa rede social de viagens. Calcula automaticamente com base no roteiro.</p>
+
+  <div class="alert al-blue">
+    <span>ℹ</span>
+    <div>A pegada de carbono é calculada automaticamente a partir dos dados já existentes no roteiro: transportes entre atividades, distâncias geo calculadas pelo PostGIS, duração e tipo de alojamento. Não requer input manual do utilizador.</div>
+  </div>
+
+  <h2>Como funciona o cálculo</h2>
+  <div class="grid2">
+    <div>
+      <div class="card-sm">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">✈ Voo</div>
+        <div style="font-size:12px;color:#666">Base: 255g CO₂/km por passageiro em classe económica. Short-haul (&lt;1500km): ×1.2. Long-haul: ×1.0. Fonte: ICAO Carbon Emissions Calculator.</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">🚗 Carro</div>
+        <div style="font-size:12px;color:#666">120g CO₂/km (gasolina média). Elétrico: 20g/km. Partilhado: divide por número de pessoas.</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">🚆 Comboio</div>
+        <div style="font-size:12px;color:#666">14g CO₂/km (média europeia). Eurostar: 6g/km. Varia por país e rede elétrica.</div>
+      </div>
+    </div>
+    <div>
+      <div class="card-sm">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">🏨 Alojamento</div>
+        <div style="font-size:12px;color:#666">Hotel: 23kg CO₂/noite. Airbnb/apartamento: 11kg/noite. Hostel: 7kg/noite. Boutique: 18kg/noite.</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">🚶 A pé / Bicicleta</div>
+        <div style="font-size:12px;color:#666">0g CO₂. A IA usa isto para destacar roteiros de baixo impacto e sugerir dias a pé.</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">⚡ Compensação</div>
+        <div style="font-size:12px;color:#666">Link para parceiros de offsetting certificados (Gold Standard). Opcional — nunca obrigatório.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Mockup — ecrã de carbon footprint no roteiro</h2>
+  <div class="card" style="max-width:380px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <span>🌱 Pegada de carbono</span>
+      <span style="font-size:18px;font-weight:700;color:#0F6E56">347 kg CO₂</span>
+    </div>
+    <div class="carbon-row">
+      <span class="carbon-label">✈ Voo Lisboa → Tóquio (ida e volta)</span>
+      <span class="carbon-val">290 kg</span>
+      <span class="carbon-pct">84%</span>
+    </div>
+    <div class="carbon-bar"><div class="carbon-fill" style="width:84%;background:#E24B4A"></div></div>
+    <div class="carbon-row">
+      <span class="carbon-label">🏨 Hotel · 7 noites</span>
+      <span class="carbon-val">42 kg</span>
+      <span class="carbon-pct">12%</span>
+    </div>
+    <div class="carbon-bar"><div class="carbon-fill" style="width:12%;background:#EF9F27"></div></div>
+    <div class="carbon-row">
+      <span class="carbon-label">🚆 Metro + comboio locais</span>
+      <span class="carbon-val">15 kg</span>
+      <span class="carbon-pct">4%</span>
+    </div>
+    <div class="carbon-bar"><div class="carbon-fill" style="width:4%;background:#185FA5"></div></div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e8e8e4;font-size:12px;color:#666">
+      Equivalente a conduzir <strong>1.850 km</strong> de carro.
+      <span style="color:#0F6E56;font-weight:600;display:block;margin-top:4px">25% abaixo da média para este destino ✓</span>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button style="flex:1;padding:7px;border-radius:7px;border:1px solid #e8e8e4;font-size:12px;cursor:pointer;background:#f7f7f5">Partilhar</button>
+      <button style="flex:1;padding:7px;border-radius:7px;border:1px solid #5DCAA5;font-size:12px;cursor:pointer;background:#E1F5EE;color:#085041;font-weight:600">Compensar →</button>
+    </div>
+  </div>
+
+  <h2>Integração no produto</h2>
+  <div class="row-item ok"><span class="ri">✓</span><div>Carbon badge no roteiro publicado — "347 kg CO₂" aparece no card do feed, tornando sustentabilidade visível socialmente</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Comparação com a média da comunidade para o mesmo destino — "25% abaixo da média para Tóquio"</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Sugestão de alternativas mais sustentáveis geradas pela IA — "Substituir hotel por Airbnb poupa 28 kg CO₂"</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Desafio de gamificação "Viagem Verde" — completar uma viagem abaixo de X kg CO₂ ganha badge</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Top países filtrado por "destinos mais sustentáveis do mês" — nova dimensão do leaderboard</div></div>
+
+  <div class="code"><pre><span class="cm">-- Função PostgreSQL para calcular CO₂ de um roteiro</span>
+<span class="ck">CREATE OR REPLACE FUNCTION</span> calculate_itinerary_carbon(p_itinerary_id UUID)
+<span class="ck">RETURNS</span> JSONB <span class="ck">AS</span> $$
+<span class="ck">DECLARE</span>
+  result JSONB;
+<span class="ck">BEGIN</span>
+  <span class="ck">WITH</span> transport_emissions <span class="ck">AS</span> (
+    <span class="ck">SELECT</span>
+      transport_mode,
+      <span class="cm">-- distância calculada via PostGIS já existente</span>
+      ST_Distance(from_geo, to_geo) / <span class="cv">1000.0</span> <span class="ck">AS</span> distance_km,
+      <span class="ck">CASE</span> transport_mode
+        <span class="ck">WHEN</span> <span class="cs">'flight'</span>   <span class="ck">THEN</span> <span class="cv">255</span>   <span class="cm">-- g CO₂/km</span>
+        <span class="ck">WHEN</span> <span class="cs">'car'</span>     <span class="ck">THEN</span> <span class="cv">120</span>
+        <span class="ck">WHEN</span> <span class="cs">'train'</span>   <span class="ck">THEN</span> <span class="cv">14</span>
+        <span class="ck">WHEN</span> <span class="cs">'bus'</span>     <span class="ck">THEN</span> <span class="cv">68</span>
+        <span class="ck">WHEN</span> <span class="cs">'taxi'</span>    <span class="ck">THEN</span> <span class="cv">150</span>
+        <span class="ck">WHEN</span> <span class="cs">'walking'</span> <span class="ck">THEN</span> <span class="cv">0</span>
+        <span class="ck">WHEN</span> <span class="cs">'bicycle'</span> <span class="ck">THEN</span> <span class="cv">0</span>
+        <span class="ck">ELSE</span> <span class="cv">100</span>
+      <span class="ck">END</span> <span class="ck">AS</span> emission_factor
+    <span class="ck">FROM</span> itinerary_transports
+    <span class="ck">WHERE</span> itinerary_id = p_itinerary_id
+  ),
+  accom_emissions <span class="ck">AS</span> (
+    <span class="ck">SELECT</span>
+      duration_nights * <span class="ck">CASE</span> accommodation_type
+        <span class="ck">WHEN</span> <span class="cs">'hotel'</span>   <span class="ck">THEN</span> <span class="cv">23000</span>  <span class="cm">-- g CO₂/noite</span>
+        <span class="ck">WHEN</span> <span class="cs">'airbnb'</span>  <span class="ck">THEN</span> <span class="cv">11000</span>
+        <span class="ck">WHEN</span> <span class="cs">'hostel'</span>  <span class="ck">THEN</span> <span class="cv">7000</span>
+        <span class="ck">ELSE</span> <span class="cv">15000</span>
+      <span class="ck">END</span> <span class="ck">AS</span> grams
+    <span class="ck">FROM</span> itineraries <span class="ck">WHERE</span> id = p_itinerary_id
+  )
+  <span class="ck">SELECT</span> jsonb_build_object(
+    <span class="cs">'total_kg'</span>,    ROUND((SUM(te.distance_km * te.emission_factor) + ae.grams) / <span class="cv">1000</span>),
+    <span class="cs">'transport_kg'</span>, ROUND(SUM(te.distance_km * te.emission_factor) / <span class="cv">1000</span>),
+    <span class="cs">'accom_kg'</span>,    ROUND(ae.grams / <span class="cv">1000</span>),
+    <span class="cs">'breakdown'</span>,   jsonb_agg(jsonb_build_object(
+      <span class="cs">'mode'</span>, te.transport_mode,
+      <span class="cs">'kg'</span>,   ROUND(te.distance_km * te.emission_factor / <span class="cv">1000</span>)
+    ))
+  ) <span class="ck">INTO</span> result
+  <span class="ck">FROM</span> transport_emissions te, accom_emissions ae
+  <span class="ck">GROUP BY</span> ae.grams;
+
+  <span class="ck">RETURN</span> result;
+<span class="ck">END</span>;
+$$ <span class="ck">LANGUAGE plpgsql</span>;</pre></div>
+</div>
+
+<!-- 2. EXPENSE TRACKER -->
+<div id="page-expense" class="page">
+  <h1>2. Expense Tracker</h1>
+  <p class="subtitle">Registo de gastos reais durante a viagem com conversão automática de moeda e comparação com o orçamento estimado.</p>
+
+  <div class="alert al-green">
+    <span>✓</span>
+    <div>Fecha o ciclo entre planeamento e execução: o wizard define o orçamento estimado (€120/dia), o expense tracker regista o real, e o diário automático da IA compara os dois no final da viagem.</div>
+  </div>
+
+  <h2>Mockup — ecrã de gastos em viagem</h2>
+  <div class="card" style="max-width:380px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700">💰 Gastos · Tóquio</div>
+        <div style="font-size:11px;color:#888">Dia 3 de 7 · ¥ → € (1 ¥ = €0.0062)</div>
+      </div>
+      <button style="padding:5px 10px;border-radius:7px;border:1px solid #185FA5;font-size:11px;background:#E6F1FB;color:#185FA5;font-weight:600;cursor:pointer">+ Adicionar</button>
+    </div>
+    <div style="background:#f7f7f5;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:#666">Gasto total</span>
+        <span style="font-weight:700;font-size:16px">€291</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span style="color:#666">Estimado (3 dias)</span>
+        <span style="color:#888">€360</span>
+      </div>
+      <div style="height:5px;background:#e8e8e4;border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:81%;background:#0F6E56;border-radius:3px"></div>
+      </div>
+      <div style="font-size:11px;color:#0F6E56;font-weight:600;margin-top:4px">€69 abaixo do estimado ✓</div>
+    </div>
+    <div class="tw" style="margin-bottom:0">
+      <div class="exp-cat"><span class="exp-icon">🍜</span><span class="exp-name">Restaurantes</span><div class="exp-bar-wrap"><div class="exp-bar-track"><div class="exp-bar-fill" style="width:52%;background:#185FA5"></div></div></div><span class="exp-val">€152</span></div>
+      <div class="exp-cat"><span class="exp-icon">🚆</span><span class="exp-name">Transportes</span><div class="exp-bar-wrap"><div class="exp-bar-track"><div class="exp-bar-fill" style="width:24%;background:#534AB7"></div></div></div><span class="exp-val">€71</span></div>
+      <div class="exp-cat"><span class="exp-icon">🏛</span><span class="exp-name">Atividades</span><div class="exp-bar-wrap"><div class="exp-bar-track"><div class="exp-bar-fill" style="width:15%;background:#0F6E56"></div></div></div><span class="exp-val">€44</span></div>
+      <div class="exp-cat"><span class="exp-icon">🛍</span><span class="exp-name">Compras</span><div class="exp-bar-wrap"><div class="exp-bar-track"><div class="exp-bar-fill" style="width:8%;background:#854F0B"></div></div></div><span class="exp-val">€24</span></div>
+    </div>
+  </div>
+
+  <h2>Conversão de moeda</h2>
+  <div class="grid2">
+    <div class="card-sm">
+      <div style="font-size:12px;font-weight:600;margin-bottom:4px">Fonte de taxas</div>
+      <div style="font-size:12px;color:#666">API do Banco Central Europeu (ECB) — gratuita, oficial, actualizada diariamente. Fallback: Open Exchange Rates. Armazenada no Redis com TTL de 6h.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:12px;font-weight:600;margin-bottom:4px">Moeda automática</div>
+      <div style="font-size:12px;color:#666">Detectada pelo país do destino do roteiro. Utilizador pode alterar manualmente. Tudo guardado em EUR cents internamente — conversão apenas na apresentação.</div>
+    </div>
+  </div>
+
+  <h2>Integração com diário automático da IA</h2>
+  <div class="card-sm" style="border-left:3px solid #185FA5;border-radius:0 8px 8px 0">
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px">Exemplo de output do diário automático (já existe) com dados do expense tracker:</div>
+    <div style="font-size:12px;color:#666;font-style:italic">"Em 7 dias em Tóquio gastaste €678 — 11% abaixo dos €760 estimados. O maior gasto foi em restaurantes (€312), o que faz sentido para uma viagem focada em gastronomia. Transportes custaram apenas €89 graças ao JR Pass que comprou antes de sair."</div>
+  </div>
+</div>
+
+<!-- 3. PACKING LIST -->
+<div id="page-packing" class="page">
+  <h1>3. Packing List gerada por IA</h1>
+  <p class="subtitle">Lista personalizada baseada no destino, atividades do roteiro, duração e previsão do tempo.</p>
+
+  <div class="alert al-blue">
+    <span>ℹ</span>
+    <div>A IA tem acesso a todos os inputs do wizard (destino, datas, tipo de viagem, grupo, atividades) e integra previsão do tempo via OpenWeatherMap API para gerar uma lista contextualizada — não genérica.</div>
+  </div>
+
+  <h2>Prompt estruturado enviado à IA</h2>
+  <div class="code"><pre><span class="cm">// Prompt compiler para packing list</span>
+<span class="ck">const</span> packingPrompt = {
+  destination: <span class="cs">"Tóquio, Japão"</span>,
+  dates: <span class="cs">"01–08 Março 2027"</span>,
+  duration_nights: <span class="cv">7</span>,
+  group_type: <span class="cs">"solo"</span>,
+  travel_styles: [<span class="cs">"cultura"</span>, <span class="cs">"gastronomia"</span>],
+  activities: [
+    <span class="cs">"visitas a templos (Senso-ji, Meiji)"</span>,
+    <span class="cs">"experiência de sushi e ramen"</span>,
+    <span class="cs">"exploração de bairros (Shibuya, Harajuku)"</span>
+  ],
+  weather_forecast: {
+    avg_temp_c: <span class="cv">8</span>,
+    conditions: [<span class="cs">"partly cloudy"</span>, <span class="cs">"light rain (2 days)"</span>],
+    humidity: <span class="cs">"medium"</span>
+  },
+  accommodation: <span class="cs">"airbnb"</span>,
+  transport_modes: [<span class="cs">"public"</span>, <span class="cs">"walking"</span>],
+  dietary: [<span class="cs">"none"</span>]
+}
+
+<span class="cm">// System prompt instrui a IA a retornar JSON estruturado:</span>
+<span class="cm">// { categories: [{ name, icon, items: [{ item, reason, priority }] }] }</span></pre></div>
+
+  <h2>Mockup — packing list gerada</h2>
+  <div class="card" style="max-width:420px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <span>🧳 Packing list · Tóquio</span>
+      <span style="font-size:11px;color:#888;font-weight:400">21 itens · 8 essenciais</span>
+    </div>
+    <div class="card-sm" style="margin-bottom:7px">
+      <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">👗 Roupa</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid #f4f4f0">
+        <input type="checkbox" style="flex-shrink:0">
+        <span style="flex:1">Calças confortáveis (2×) — para templos e caminhadas</span>
+        <span class="pill pill-red">Essencial</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid #f4f4f0">
+        <input type="checkbox" checked style="flex-shrink:0">
+        <span style="flex:1;text-decoration:line-through;color:#aaa">Casaco leve (Março, 8°C médios)</span>
+        <span class="pill pill-red">Essencial</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0">
+        <input type="checkbox" style="flex-shrink:0">
+        <span style="flex:1">Meias extra (remove sapatos em templos)</span>
+        <span class="pill pill-amber">Recomendado</span>
+      </div>
+    </div>
+    <div class="card-sm" style="margin-bottom:7px">
+      <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">🔌 Eletrónica</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid #f4f4f0">
+        <input type="checkbox" style="flex-shrink:0">
+        <span style="flex:1">Adaptador de tomada japonês (Type A)</span>
+        <span class="pill pill-red">Essencial</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0">
+        <input type="checkbox" style="flex-shrink:0">
+        <span style="flex:1">Power bank — muito walking, pouca tomada</span>
+        <span class="pill pill-amber">Recomendado</span>
+      </div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">☔ Tempo (2 dias de chuva previstos)</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0">
+        <input type="checkbox" style="flex-shrink:0">
+        <span style="flex:1">Guarda-chuva compacto — chuva prevista Dias 3 e 5</span>
+        <span class="pill pill-red">Essencial</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button style="flex:1;padding:7px;border-radius:7px;border:1px solid #e8e8e4;font-size:12px;cursor:pointer">Editar</button>
+      <button style="flex:1;padding:7px;border-radius:7px;border:1px solid #185FA5;font-size:12px;background:#E6F1FB;color:#185FA5;font-weight:600;cursor:pointer">Partilhar lista</button>
+    </div>
+  </div>
+
+  <h2>Regras da IA na geração</h2>
+  <div class="row-item ok"><span class="ri">✓</span><div>Templos → meias extra, roupas que cobrem ombros (em países como Cambodja, Tailândia)</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Chuva prevista → guarda-chuva compacto com referência aos dias específicos do roteiro</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Adaptadores de tomada específicos por país — base de dados interna de tipos de tomada por país</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Família com crianças → fraldas, medicamentos, SNS número de emergência local</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Hiking ou natureza → botas impermeáveis, protetor solar, saco de hidratação</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Items marcados como concluídos persistem no device (offline-first) — útil durante a viagem</div></div>
+</div>
+
+<!-- 4. DARK MODE -->
+<div id="page-darkmode" class="page">
+  <h1>4. Dark Mode</h1>
+  <p class="subtitle">Sincronizado com o tema do sistema operativo, com opção de override manual e auto-switch por hora do dia.</p>
+
+  <h2>Comparação Light vs Dark</h2>
+  <div class="grid2" style="margin-bottom:14px">
+    <div class="dm-preview">
+      <div class="dm-light">
+        <div class="dm-title" style="color:#1a1a1a">☀ Light mode</div>
+        <div class="dm-toggle">
+          <span style="font-size:15px">🗺</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1a1a1a">Roteiro Tóquio</div><div style="font-size:11px;color:#888">7 dias · Solo</div></div>
+          <span class="pill pill-green">Publicado</span>
+        </div>
+        <div class="dm-card-l">
+          <div class="dm-text-l">Dia 1 — Senso-ji</div>
+          <div class="dm-sub-l">9h00 · Asakusa · 2h</div>
+        </div>
+        <div class="dm-card-l">
+          <div class="dm-text-l">Dia 1 — Ramen Ichiran</div>
+          <div class="dm-sub-l">13h00 · Shinjuku · 1h</div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <div style="flex:1;height:28px;background:#f0f0ec;border-radius:6px"></div>
+          <div style="width:80px;height:28px;background:#185FA5;border-radius:6px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-preview">
+      <div class="dm-dark">
+        <div class="dm-title" style="color:#e8e6f0">🌙 Dark mode</div>
+        <div class="dm-toggle-d">
+          <span style="font-size:15px">🗺</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#e8e6f0">Roteiro Tóquio</div><div style="font-size:11px;color:#6b6880">7 dias · Solo</div></div>
+          <span style="background:#1a3a28;color:#5DCAA5;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600">Publicado</span>
+        </div>
+        <div class="dm-card-d">
+          <div class="dm-text-d">Dia 1 — Senso-ji</div>
+          <div class="dm-sub-d">9h00 · Asakusa · 2h</div>
+        </div>
+        <div class="dm-card-d">
+          <div class="dm-text-d">Dia 1 — Ramen Ichiran</div>
+          <div class="dm-sub-d">13h00 · Shinjuku · 1h</div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <div style="flex:1;height:28px;background:#1c1c24;border-radius:6px;border:1px solid #2a2a38"></div>
+          <div style="width:80px;height:28px;background:#3D6FA8;border-radius:6px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Lógica de switching</h2>
+  <div class="card-sm">
+    <div style="font-size:12px;font-weight:600;margin-bottom:8px">3 modos disponíveis</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:60px;font-weight:600">Sistema</span><span style="color:#666">Segue automaticamente iOS/Android/macOS/Windows. Implementado via CSS <code>prefers-color-scheme</code> na web e <code>traitCollection.userInterfaceStyle</code> no iOS.</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:60px;font-weight:600">Manual</span><span style="color:#666">Override explícito — "sempre light" ou "sempre dark". Guardado em <code>user_preferences.theme</code>.</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:60px;font-weight:600">Auto-hora</span><span style="color:#666">Dark mode automático entre as 21h e as 7h (horário local do utilizador). Útil para planear viagens à noite.</span></div>
+    </div>
+  </div>
+
+  <h2>Implementação técnica</h2>
+  <div class="code"><pre><span class="cm">/* Web — Next.js com CSS variables */</span>
+:root {
+  --bg-primary: #f7f7f5;
+  --bg-secondary: #fff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --accent: #185FA5;
+  --border: #e8e8e4;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0f0f13;
+  --bg-secondary: #1c1c24;
+  --text-primary: #e8e6f0;
+  --text-secondary: #6b6880;
+  --accent: #7BA8D9;
+  --border: #2a2a38;
+}
+
+<span class="cm">/* Respeita preferência do sistema por defeito */</span>
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-primary: #0f0f13;
+    <span class="cm">/* ... */</span>
+  }
+}
+
+<span class="cm">// iOS — SwiftUI</span>
+@Environment(\.colorScheme) <span class="ck">var</span> colorScheme
+
+<span class="ck">var</span> backgroundColor: Color {
+  colorScheme == .dark ? Color(<span class="cs">"bg-dark"</span>) : Color(<span class="cs">"bg-light"</span>)
+}
+
+<span class="cm">// Android — Kotlin</span>
+<span class="ck">val</span> isDark = isSystemInDarkTheme()
+MaterialTheme(colorScheme = if (isDark) DarkColors <span class="ck">else</span> LightColors) { ... }</pre></div>
+
+  <h2>Schema — coluna adicionada</h2>
+  <div class="card-sm">
+    <div style="font-family:monospace;font-size:12px">user_preferences.<strong>theme</strong> VARCHAR(20) DEFAULT 'system'</div>
+    <div style="font-size:11px;color:#666;margin-top:4px">CHECK(theme IN ('system','light','dark','auto_time')). Sincronizado entre dispositivos.</div>
+  </div>
+</div>
+
+<!-- 5. CERTIFICATE PINNING -->
+<div id="page-pinning" class="page">
+  <h1>5. Certificate Pinning</h1>
+  <p class="subtitle">Protege as apps iOS e Android contra ataques man-in-the-middle em redes comprometidas (Wi-Fi de hotel, aeroporto).</p>
+
+  <div class="alert al-amber">
+    <span>⚠</span>
+    <div><strong>Atenção operacional:</strong> certificate pinning requer um processo de atualização de certificado antes da expiração — se o pin expirar sem update da app, todas as apps antigas ficam offline. Implementar sempre com pelo menos 2 pins (atual + backup) e alertas antecipados de 90 dias.</div>
+  </div>
+
+  <h2>Como funciona</h2>
+  <div class="tl-row">
+    <div class="tl-time">Normal</div>
+    <div class="tl-line"><div class="tl-dot" style="background:#0F6E56"></div><div class="tl-vline" style="background:#9FE1CB"></div></div>
+    <div class="tl-content"><div class="tl-title">App → servidor: apresenta certificado SSL</div><div class="tl-sub">O sistema operativo valida a cadeia de certificados (CA chain) — comportamento padrão.</div></div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">Com pinning</div>
+    <div class="tl-line"><div class="tl-dot" style="background:#185FA5"></div><div class="tl-vline" style="background:#85B7EB"></div></div>
+    <div class="tl-content"><div class="tl-title">App verifica também o hash do certificado</div><div class="tl-sub">Compara o certificado apresentado com o hash hard-coded na app. Se não bater certo, a ligação é recusada — mesmo que o CA seja válido.</div></div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">Ataque</div>
+    <div class="tl-line"><div class="tl-dot" style="background:#A32D2D"></div><div class="tl-vline" style="background:transparent"></div></div>
+    <div class="tl-content"><div class="tl-title">Certificado falso é recusado</div><div class="tl-sub">Proxy de intercepção (Burp Suite, Charles Proxy) tem um certificado diferente — o pin não bate certo e a ligação falha com erro claro.</div></div>
+  </div>
+
+  <h2>Implementação</h2>
+  <div class="code"><pre><span class="cm">// iOS — Swift com URLSession</span>
+<span class="ck">class</span> PinnedSessionDelegate: NSObject, URLSessionDelegate {
+  <span class="cm">// SHA-256 hash do certificado público (não a chave privada)</span>
+  <span class="ck">let</span> pinnedHashes: Set&lt;String&gt; = [
+    <span class="cs">"sha256/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx="</span>,  <span class="cm">// certificado atual</span>
+    <span class="cs">"sha256/yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy="</span>   <span class="cm">// backup (próximo)</span>
+  ]
+
+  <span class="ck">func</span> urlSession(_ session: URLSession,
+    didReceive challenge: URLAuthenticationChallenge,
+    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
+  {
+    <span class="ck">guard</span>
+      challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+      <span class="ck">let</span> serverTrust = challenge.protectionSpace.serverTrust,
+      <span class="ck">let</span> certificate = SecTrustGetCertificateAtIndex(serverTrust, <span class="cv">0</span>)
+    <span class="ck">else</span> {
+      completionHandler(.cancelAuthenticationChallenge, <span class="ck">nil</span>)
+      <span class="ck">return</span>
+    }
+
+    <span class="ck">let</span> certData = SecCertificateCopyData(certificate) <span class="ck">as</span> Data
+    <span class="ck">let</span> hash = <span class="cs">"sha256/"</span> + certData.sha256Base64()
+
+    <span class="ck">if</span> pinnedHashes.contains(hash) {
+      completionHandler(.useCredential, URLCredential(trust: serverTrust))
+    } <span class="ck">else</span> {
+      <span class="cm">// Log para Datadog — possível ataque ou certificado expirado</span>
+      Logger.security.error(<span class="cs">"Certificate pin mismatch: \(hash)"</span>)
+      completionHandler(.cancelAuthenticationChallenge, <span class="ck">nil</span>)
+    }
+  }
+}
+
+<span class="cm">// Android — OkHttp CertificatePinner</span>
+<span class="ck">val</span> certificatePinner = CertificatePinner.Builder()
+  .add(<span class="cs">"api.memovoy.com"</span>, <span class="cs">"sha256/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx="</span>)
+  .add(<span class="cs">"api.memovoy.com"</span>, <span class="cs">"sha256/yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy="</span>)
+  .build()
+
+<span class="ck">val</span> client = OkHttpClient.Builder()
+  .certificatePinner(certificatePinner)
+  .build()</pre></div>
+
+  <h2>Processo de rotação de certificado</h2>
+  <div class="row-item ok"><span class="ri">✓</span><div><strong>90 dias antes da expiração:</strong> alerta automático no Datadog. Preparar novo certificado e calcular o seu hash.</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div><strong>60 dias antes:</strong> lançar versão da app com os 2 pins (atual + novo). Ambos são aceites.</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div><strong>No momento da rotação:</strong> trocar certificado no servidor. Apps antigas continuam a funcionar com o pin do novo certificado.</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div><strong>30 dias depois:</strong> lançar versão que remove o pin antigo. Apps muito antigas que não atualizaram ficam offline — forçar update.</div></div>
+
+  <div class="alert al-blue" style="margin-top:12px">
+    <span>ℹ</span>
+    <div>O pinning aplica-se apenas às apps nativas iOS e Android. Na Web, o browser gere a validação de certificados — certificate pinning web (HPKP) foi depreciado em 2018 por causar mais problemas do que resolvia.</div>
+  </div>
+</div>
+
+<!-- 6. SESSÕES -->
+<div id="page-sessions" class="page">
+  <h1>6. Gestão de Sessões Ativas</h1>
+  <p class="subtitle">O utilizador vê todos os dispositivos autenticados e pode revogar sessões individualmente — com feedback imediato.</p>
+
+  <h2>Mockup — ecrã de sessões ativas</h2>
+  <div class="card" style="max-width:420px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px">🔐 Dispositivos ativos</div>
+
+    <div class="sess-card">
+      <div class="sess-icon" style="background:#E6F1FB">📱</div>
+      <div style="flex:1">
+        <div class="sess-name">iPhone 15 Pro</div>
+        <div class="sess-sub">Lisboa, Portugal · Agora</div>
+        <div class="sess-sub">iOS 18 · App v2.1.4</div>
+      </div>
+      <span class="sess-current">Este dispositivo</span>
+    </div>
+
+    <div class="sess-card">
+      <div class="sess-icon" style="background:#f7f7f5">💻</div>
+      <div style="flex:1">
+        <div class="sess-name">Chrome · MacBook</div>
+        <div class="sess-sub">Lisboa, Portugal · Há 2 horas</div>
+        <div class="sess-sub">macOS 15 · Web</div>
+      </div>
+      <button class="sess-revoke">Revogar</button>
+    </div>
+
+    <div class="sess-card" style="border-color:#F09595">
+      <div class="sess-icon" style="background:#FCEBEB">⚠️</div>
+      <div style="flex:1">
+        <div class="sess-name" style="color:#A32D2D">Localização suspeita</div>
+        <div class="sess-sub">São Paulo, Brasil · Há 3 dias</div>
+        <div class="sess-sub">Samsung Galaxy S24 · App v2.0.1</div>
+      </div>
+      <button class="sess-revoke">Revogar</button>
+    </div>
+
+    <div class="sess-card">
+      <div class="sess-icon" style="background:#f7f7f5">🖥</div>
+      <div style="flex:1">
+        <div class="sess-name">Firefox · Windows</div>
+        <div class="sess-sub">Lisboa, Portugal · Há 5 dias</div>
+        <div class="sess-sub">Windows 11 · Web</div>
+      </div>
+      <button class="sess-revoke">Revogar</button>
+    </div>
+
+    <button style="width:100%;margin-top:10px;padding:9px;border-radius:8px;border:1px solid #F09595;font-size:12px;color:#A32D2D;cursor:pointer;background:#FCEBEB;font-weight:600">Revogar todas as outras sessões</button>
+  </div>
+
+  <h2>Implementação técnica</h2>
+  <div class="code"><pre><span class="cm">-- Query: sessões ativas do utilizador para o ecrã de gestão</span>
+<span class="ck">SELECT</span>
+  s.id,
+  s.created_at,
+  s.expires_at,
+  s.is_suspicious,
+  d.device_name,
+  d.platform,
+  d.last_seen_at,
+  d.last_ip_country,
+  (d.id = current_device_id) <span class="ck">AS</span> is_current
+<span class="ck">FROM</span> user_sessions s
+<span class="ck">LEFT JOIN</span> user_devices d <span class="ck">ON</span> d.device_id = s.device_fingerprint
+<span class="ck">WHERE</span>
+  s.user_id = $1
+  <span class="ck">AND</span> s.revoked_at <span class="ck">IS NULL</span>
+  <span class="ck">AND</span> s.expires_at > NOW()
+<span class="ck">ORDER BY</span>
+  is_current <span class="ck">DESC</span>,   <span class="cm">-- este dispositivo sempre primeiro</span>
+  d.last_seen_at <span class="ck">DESC</span>;
+
+<span class="cm">-- Revogar sessão específica</span>
+<span class="ck">UPDATE</span> user_sessions
+<span class="ck">SET</span> revoked_at = NOW()
+<span class="ck">WHERE</span>
+  id = $1
+  <span class="ck">AND</span> user_id = $2  <span class="cm">-- garantir que o user só revoga as suas próprias sessões</span>
+  <span class="ck">AND</span> revoked_at <span class="ck">IS NULL</span>;
+
+<span class="cm">-- O token JWT correspondente fica inválido na próxima verificação</span>
+<span class="cm">-- (a tabela user_sessions é a source of truth para validade)</span></pre></div>
+
+  <h2>Comportamento da sessão suspeita</h2>
+  <div class="row-item ok"><span class="ri">✓</span><div>Sessões com <code>is_suspicious = true</code> aparecem destacadas a vermelho com o aviso "Localização suspeita"</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Email enviado automaticamente quando uma sessão suspeita é criada — "Novo login detetado em São Paulo"</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>Revogar a sessão atual exige confirmação de password — impede que um atacante com acesso ao ecrã revogue tudo</div></div>
+  <div class="row-item ok"><span class="ri">✓</span><div>"Revogar todas as outras sessões" invalida todos os refresh tokens de outros dispositivos em &lt;30 segundos via Kafka event</div></div>
+</div>
+
+<!-- 7. AFFLUÊNCIA -->
+<div id="page-crowding" class="page">
+  <h1>7. Previsão de Affluência</h1>
+  <p class="subtitle">IA usa dados reais da comunidade MemoVoy para prever quando cada local está mais lotado — cresce com a plataforma.</p>
+
+  <div class="alert al-green">
+    <span>✓</span>
+    <div>Diferenciador único: ao contrário do Google Maps (dados de localização anónimos genéricos), o MemoVoy usa dados de utilizadores reais com roteiros — sabe não apenas que alguém passou por um local, mas quando, por quanto tempo e no contexto de que tipo de viagem.</div>
+  </div>
+
+  <h2>Fontes de dados (por fase)</h2>
+  <div class="grid3">
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:4px">MVP — dados externos</div>
+      <div style="font-size:12px;color:#555">Google Places "popular times" via API. Datasets públicos de turismo (Eurostat, OMT). Serve como base antes de ter dados próprios.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:4px">v1.1 — dados MemoVoy</div>
+      <div style="font-size:12px;color:#555">Atividades dos roteiros com horários + posts geo-tagged com timestamp. Agrupados por local, hora e dia da semana. Começa a ser relevante a partir de ~50k roteiros.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:4px">v2.0 — modelo próprio</div>
+      <div style="font-size:12px;color:#555">Modelo de ML treinado em dados MemoVoy + sazonalidade + eventos locais (feriados, festivais). Previsões por hora com intervalo de confiança.</div>
+    </div>
+  </div>
+
+  <h2>Mockup — aviso de affluência no roteiro</h2>
+  <div class="card" style="max-width:420px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:10px">⏰ Affluência prevista</div>
+
+    <div class="card-sm" style="margin-bottom:7px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600">Senso-ji Temple</span>
+        <span class="pill pill-red">Muito lotado às 10h</span>
+      </div>
+      <div style="display:flex;gap:3px;margin-bottom:6px">
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">8h</div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">9h</div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">10h</div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">11h</div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">12h</div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">17h</div>
+      </div>
+      <div style="display:flex;gap:3px;align-items:flex-end;height:32px">
+        <div style="flex:1;background:#E1F5EE;border-radius:2px;height:25%"></div>
+        <div style="flex:1;background:#FAEEDA;border-radius:2px;height:50%"></div>
+        <div style="flex:1;background:#FCEBEB;border-radius:2px;height:100%"></div>
+        <div style="flex:1;background:#FCEBEB;border-radius:2px;height:90%"></div>
+        <div style="flex:1;background:#FAEEDA;border-radius:2px;height:55%"></div>
+        <div style="flex:1;background:#E1F5EE;border-radius:2px;height:30%"></div>
+      </div>
+      <div style="font-size:12px;color:#0F6E56;margin-top:8px;font-weight:600">💡 Melhor horário: antes das 9h ou depois das 16h</div>
+      <div style="font-size:11px;color:#888;margin-top:2px">Baseado em 1.247 visitas de utilizadores MemoVoy</div>
+    </div>
+
+    <div style="background:#E6F1FB;border-radius:8px;padding:10px 12px;font-size:12px;color:#0C447C">
+      <strong>Aviso IA no roteiro:</strong> O Senso-ji está marcado para as 10h — nessa hora costuma ter 45 min de espera. Considera avançar para as 8h30 e ganhas 2h de luz bonita para fotografar.
+    </div>
+  </div>
+
+  <h2>Pipeline de dados para o modelo</h2>
+  <div class="code"><pre><span class="cm">-- Agregação de affluência por local e hora (job diário)</span>
+<span class="cm">-- Fonte: itinerary_activities (localizações + horários reais)</span>
+
+<span class="ck">INSERT INTO</span> location_crowding_stats (
+  location_geo_hash,
+  location_name,
+  day_of_week,
+  hour_of_day,
+  avg_visit_count,
+  sample_size,
+  last_updated
+)
+<span class="ck">SELECT</span>
+  ST_GeoHash(location, <span class="cv">7</span>) <span class="ck">AS</span> geo_hash,  <span class="cm">-- agrupa locais próximos</span>
+  MODE() WITHIN GROUP (ORDER BY name) <span class="ck">AS</span> location_name,
+  EXTRACT(DOW FROM i.start_date + a.start_time) <span class="ck">AS</span> day_of_week,
+  EXTRACT(HOUR FROM a.start_time) <span class="ck">AS</span> hour_of_day,
+  COUNT(*) <span class="ck">AS</span> avg_visit_count,
+  COUNT(*) <span class="ck">AS</span> sample_size,
+  NOW() <span class="ck">AS</span> last_updated
+<span class="ck">FROM</span> itinerary_activities a
+<span class="ck">JOIN</span> itinerary_days d <span class="ck">ON</span> a.day_id = d.id
+<span class="ck">JOIN</span> itineraries i <span class="ck">ON</span> d.itinerary_id = i.id
+<span class="ck">WHERE</span>
+  a.location <span class="ck">IS NOT NULL</span>
+  <span class="ck">AND</span> a.start_time <span class="ck">IS NOT NULL</span>
+  <span class="ck">AND</span> i.status = <span class="cs">'published'</span>
+  <span class="ck">AND</span> a.deleted_at <span class="ck">IS NULL</span>
+<span class="ck">GROUP BY</span> geo_hash, day_of_week, hour_of_day
+<span class="ck">ON CONFLICT</span> (location_geo_hash, day_of_week, hour_of_day)
+<span class="ck">DO UPDATE SET</span>
+  avg_visit_count = EXCLUDED.avg_visit_count,
+  sample_size = EXCLUDED.sample_size,
+  last_updated = NOW();</pre></div>
+</div>
+
+<!-- SCHEMA -->
+<div id="page-schema" class="page">
+  <h1>Schema — tabelas novas</h1>
+  <p class="subtitle">4 tabelas adicionadas ao schema v2 para suportar os 6 novos pontos.</p>
+
+  <div class="tw">
+    <div class="th-row"><div class="th-name">trip_expenses</div><div class="th-desc"><span class="badge b-new">NOVA</span> Gastos reais durante a viagem — expense tracker</div></div>
+    <table><thead><tr><th>Coluna</th><th>Tipo</th><th>Constraints</th><th>Notas</th></tr></thead><tbody>
+      <tr><td class="cn">id</td><td class="ct2">UUID</td><td><span class="badge b-pk">PK</span></td><td class="cd">DEFAULT generate_ulid()</td></tr>
+      <tr><td class="cn">itinerary_id</td><td class="ct2">UUID</td><td><span class="badge b-fk">FK itineraries</span> <span class="badge b-nn">NOT NULL</span></td><td class="cd">ON DELETE CASCADE</td></tr>
+      <tr><td class="cn">user_id</td><td class="ct2">UUID</td><td><span class="badge b-fk">FK users</span> <span class="badge b-nn">NOT NULL</span></td><td class="cd">Quem registou (relevante em roteiros colaborativos).</td></tr>
+      <tr><td class="cn">amount_cents</td><td class="ct2">INTEGER</td><td><span class="badge b-nn">NOT NULL</span> <span class="badge b-ck">CHECK</span></td><td class="cd">CHECK(amount_cents > 0). Sempre em moeda original — nunca converter antes de guardar.</td></tr>
+      <tr><td class="cn">currency</td><td class="ct2">CHAR(3)</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">ISO 4217: 'EUR', 'JPY', 'USD', 'BRL'. DEFAULT moeda do destino.</td></tr>
+      <tr><td class="cn">amount_eur_cents</td><td class="ct2">INTEGER</td><td></td><td class="cd">Conversão para EUR no momento do registo (taxa do ECB). NULL se EUR. Para totais e comparações.</td></tr>
+      <tr><td class="cn">exchange_rate</td><td class="ct2">NUMERIC(10,6)</td><td></td><td class="cd">Taxa usada na conversão. Guardada para auditoria — a taxa muda diariamente.</td></tr>
+      <tr><td class="cn">category</td><td class="ct2">VARCHAR(30)</td><td><span class="badge b-nn">NOT NULL</span> <span class="badge b-ck">CHECK</span></td><td class="cd">CHECK(category IN ('food','transport','accommodation','activities','shopping','health','other'))</td></tr>
+      <tr><td class="cn">description</td><td class="ct2">VARCHAR(200)</td><td></td><td class="cd">Ex: "Ramen Ichiran · Shinjuku". Opcional.</td></tr>
+      <tr><td class="cn">day_id</td><td class="ct2">UUID</td><td><span class="badge b-fk">FK itinerary_days</span></td><td class="cd">NULL = gasto sem dia específico (ex: seguro de viagem).</td></tr>
+      <tr><td class="cn">receipt_url</td><td class="ct2">TEXT</td><td></td><td class="cd">Foto do recibo no S3. Opcional.</td></tr>
+      <tr><td class="cn">spent_at</td><td class="ct2">TIMESTAMPTZ</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">DEFAULT NOW(). Quando o gasto ocorreu.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="tw">
+    <div class="th-row"><div class="th-name">packing_lists</div><div class="th-desc"><span class="badge b-new">NOVA</span> Packing lists geradas pela IA — uma por roteiro</div></div>
+    <table><thead><tr><th>Coluna</th><th>Tipo</th><th>Constraints</th><th>Notas</th></tr></thead><tbody>
+      <tr><td class="cn">id</td><td class="ct2">UUID</td><td><span class="badge b-pk">PK</span></td><td class="cd">DEFAULT generate_ulid()</td></tr>
+      <tr><td class="cn">itinerary_id</td><td class="ct2">UUID</td><td><span class="badge b-fk">FK itineraries</span> <span class="badge b-uq">UNIQUE</span> <span class="badge b-nn">NOT NULL</span></td><td class="cd">UNIQUE — um roteiro tem uma packing list. ON DELETE CASCADE.</td></tr>
+      <tr><td class="cn">items</td><td class="ct2">JSONB</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">[{category, icon, items: [{item, reason, priority, checked}]}]. Editável pelo utilizador.</td></tr>
+      <tr><td class="cn">weather_snapshot</td><td class="ct2">JSONB</td><td></td><td class="cd">Previsão do tempo usada na geração. Para regenerar se o tempo mudar.</td></tr>
+      <tr><td class="cn">generated_at</td><td class="ct2">TIMESTAMPTZ</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">DEFAULT NOW().</td></tr>
+      <tr><td class="cn">last_edited_at</td><td class="ct2">TIMESTAMPTZ</td><td></td><td class="cd">NULL = não foi editada pelo utilizador. Atualizado quando o utilizador altera items.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="tw">
+    <div class="th-row"><div class="th-name">itinerary_carbon</div><div class="th-desc"><span class="badge b-new">NOVA</span> Pegada de carbono calculada por roteiro</div></div>
+    <table><thead><tr><th>Coluna</th><th>Tipo</th><th>Constraints</th><th>Notas</th></tr></thead><tbody>
+      <tr><td class="cn">itinerary_id</td><td class="ct2">UUID</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK itineraries</span></td><td class="cd">1:1 com itineraries. ON DELETE CASCADE.</td></tr>
+      <tr><td class="cn">total_kg_co2</td><td class="ct2">NUMERIC(8,2)</td><td><span class="badge b-nn">NOT NULL</span> <span class="badge b-ck">CHECK</span></td><td class="cd">CHECK(total_kg_co2 >= 0).</td></tr>
+      <tr><td class="cn">transport_kg</td><td class="ct2">NUMERIC(8,2)</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">Emissões de transportes.</td></tr>
+      <tr><td class="cn">accommodation_kg</td><td class="ct2">NUMERIC(8,2)</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">Emissões de alojamento.</td></tr>
+      <tr><td class="cn">breakdown</td><td class="ct2">JSONB</td><td></td><td class="cd">Detalhe por transporte: [{mode, distance_km, kg_co2}].</td></tr>
+      <tr><td class="cn">vs_avg_pct</td><td class="ct2">NUMERIC(5,2)</td><td></td><td class="cd">% vs média da comunidade para o mesmo destino. Negativo = abaixo da média (melhor).</td></tr>
+      <tr><td class="cn">calculated_at</td><td class="ct2">TIMESTAMPTZ</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">DEFAULT NOW(). Recalculado se o roteiro for editado.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="tw">
+    <div class="th-row"><div class="th-name">location_crowding_stats</div><div class="th-desc"><span class="badge b-new">NOVA</span> Dados de affluência agregados por local, dia e hora</div></div>
+    <table><thead><tr><th>Coluna</th><th>Tipo</th><th>Constraints</th><th>Notas</th></tr></thead><tbody>
+      <tr><td class="cn">location_geo_hash</td><td class="ct2">VARCHAR(10)</td><td><span class="badge b-pk">PK</span></td><td class="cd">ST_GeoHash com precisão 7 (~150m²). Agrupa pontos próximos.</td></tr>
+      <tr><td class="cn">day_of_week</td><td class="ct2">SMALLINT</td><td><span class="badge b-pk">PK</span> <span class="badge b-ck">CHECK</span></td><td class="cd">CHECK(day_of_week BETWEEN 0 AND 6). 0=Domingo. PK composta.</td></tr>
+      <tr><td class="cn">hour_of_day</td><td class="ct2">SMALLINT</td><td><span class="badge b-pk">PK</span> <span class="badge b-ck">CHECK</span></td><td class="cd">CHECK(hour_of_day BETWEEN 0 AND 23). PK composta.</td></tr>
+      <tr><td class="cn">location_name</td><td class="ct2">VARCHAR(200)</td><td></td><td class="cd">Nome mais frequente para este geo_hash. Para display.</td></tr>
+      <tr><td class="cn">avg_visit_count</td><td class="ct2">INTEGER</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">Média de visitas neste slot horário.</td></tr>
+      <tr><td class="cn">sample_size</td><td class="ct2">INTEGER</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">Número de observações. Abaixo de 10 → não mostrar ao utilizador (dados insuficientes).</td></tr>
+      <tr><td class="cn">crowding_level</td><td class="ct2">VARCHAR(20)</td><td><span class="badge b-ck">CHECK</span></td><td class="cd">CHECK(crowding_level IN ('low','medium','high','very_high')). Calculado por trigger.</td></tr>
+      <tr><td class="cn">last_updated</td><td class="ct2">TIMESTAMPTZ</td><td><span class="badge b-nn">NOT NULL</span></td><td class="cd">DEFAULT NOW(). Atualizado pelo job diário.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="alert al-green" style="margin-top:4px">
+    <span>✓</span>
+    <div>Com estas 4 tabelas e as implementações descritas nos tabs anteriores, o schema do MemoVoy tem agora <strong>32 tabelas</strong> completas e validadas. O <code>CLAUDE.md</code> deve ser atualizado para refletir este número.</div>
+  </div>
+</div>
+
+<script>
+function s(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

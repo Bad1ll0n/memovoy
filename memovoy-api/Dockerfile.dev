@@ -1,0 +1,30 @@
+# Dockerfile.dev — MemoVoy API (desenvolvimento)
+# Hot-reload via node --watch
+# Não usar em produção — usa Dockerfile.prod para isso
+
+FROM node:22-alpine
+
+# Instalar dependências do sistema necessárias para argon2
+RUN apk add --no-cache python3 make g++ libc6-compat
+
+WORKDIR /app
+
+# Copiar manifesto de dependências primeiro para aproveitar cache de layers
+COPY package*.json ./
+
+# Instalar todas as dependências (incluindo devDependencies)
+RUN npm ci
+
+# Copiar código fonte
+# Em dev, o volume mount em docker-compose.yml sobrepõe isto
+COPY . .
+
+EXPOSE 3000
+
+# Variáveis de ambiente de desenvolvimento
+ENV NODE_ENV=development
+ENV HOST=0.0.0.0
+ENV PORT=3000
+
+# Hot-reload nativo do Node.js 22 — sem nodemon
+CMD ["node", "--watch", "--experimental-vm-modules", "src/server.js"]
