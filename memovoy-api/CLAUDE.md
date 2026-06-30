@@ -164,14 +164,33 @@ DATABASE_URL=postgresql://... npm run test:all
 
 ## Próximos passos (roadmap pós-v1.0)
 
-- [ ] Push notifications reais (FCM + APNs worker)
-- [ ] Kafka consumer para fan-out do feed
-- [ ] Redis cache para feed discovery e top countries
-- [ ] Moderação de conteúdo (worker que processa `moderation_status = 'pending'`)
-- [ ] Elasticsearch para pesquisa full-text de roteiros
-- [ ] App Store / Google Play submission
-- [ ] CI/CD (GitHub Actions → Kubernetes)
-- [ ] Deployment infrastructure (Terraform + AWS)
+### Concluído desde a v1.0
+- [x] Push notifications — worker em `src/workers/push-notifications.js` (FCM + APNs, dry-run sem credenciais)
+- [x] Fan-out do feed — worker em `src/workers/kafka-feed-fanout.js` (polling ou Kafka real)
+- [x] Redis cache — `src/plugins/redis.js`, aplicado em `feed.service.js` (discovery + top countries)
+- [x] Moderação de conteúdo — `src/workers/content-moderation.js` (heurísticas + Claude Vision opcional)
+- [x] Pesquisa full-text — `src/search/` via `pg_trgm` (sem Elasticsearch, suficiente até ~10M registos)
+- [x] Worker de agregação — `src/workers/feed-aggregator.js` (leaderboard, stats, crowding, reconciliação)
+- [x] Testes de integração — `src/tests/integration/` (auth + itineraries + account deletion, com BD real)
+- [x] CI/CD preparado (não activado) — `.github/workflows/ci.yml`
+- [x] Manifesto Kubernetes preparado (não aplicado) — `k8s/deployment.yaml`
+- [x] Dockerfile de produção multi-stage — `Dockerfile`
+- [x] Eliminação de conta (RGPD/LGPD) — `DELETE /users/me` em `users.routes.js`, anonimização + soft-delete
+- [x] Página de Definições na web — `/settings`, com fluxo de eliminação de conta
+- [x] Documentos legais base — Política de Privacidade, Termos de Serviço (rascunho, requer revisão jurídica)
+- [x] Metadata completa para App Store e Google Play — `store-listing/`
+
+### Por fazer — preparação (sem deployment)
+- [ ] Ícones finais e screenshots reais para as lojas (assets gráficos descritos em `store-listing/`, por produzir)
+- [ ] Revisão jurídica da Política de Privacidade e Termos de Serviço
+- [ ] Substituir `BYPASSRLS` por policies RLS específicas para operações de sistema
+- [ ] Credenciais reais: APNs, FCM, ANTHROPIC_API_KEY de produção
+- [ ] Job periódico de hard-delete para conteúdo soft-deleted (actualmente só V17 cobre notificações)
+
+### Por fazer — requer aprovação explícita antes de avançar
+- [ ] Deployment real (Kubernetes, domínio, TLS, secrets de produção)
+- [ ] Activar o pipeline CI/CD
+- [ ] Aplicar o manifesto k8s a um cluster real
 
 ---
 

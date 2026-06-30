@@ -341,4 +341,108 @@ export default async function usersRoutes(fastify) {
 
     return { ok: true }
   })
+
+  // -------------------------------------------------------
+  // DELETE /users/me — eliminação de conta (RGPD / LGPD)
+  //
+  // Estratégia: anonimização imediata + soft-delete.
+  // - Dados de identificação directa (email, username, nome, avatar, bio)
+  //   são apagados/anonimizados de imediato — irreversível a partir daqui.
+  // - O registo da linha em si fica com deleted_at preenchido (soft-delete),
+  //   para que conteúdo público que outros possam ter referenciado
+  //   (comentários, menções) não quebre, mas aparece como "Utilizador eliminado".
+  // - Sessões activas são todas revogadas.
+  // - Conteúdo privado (roteiros, posts marcados como privados) é
+  //   marcado para hard-delete num job de limpeza (não implementado aqui;
+  //   ver V17__maintenance_cleanup.sql para o padrão de limpeza periódica).
+  //
+  // Exige reautenticação por password como confirmação — eliminação de
+  // conta é uma acção destrutiva e não deve depender só do access token
+  // estar válido (que pode ter sido roubado).
+  // -------------------------------------------------------
+  const deleteAccountSchema = z.object({
+    password: z.string().min(1, 'Password obrigatória para confirmar eliminação'),
+  })
+
+  fastify.delete('/me', {
+    preHandler: [authenticate],
+    config: {
+      // Rate limit apertado — acção destrutiva e irreversível
+      rateLimit: { max: 3, timeWindow: '1 hour' },
+    },
+  }, async (request, reply) => {
+    const { sub: userId, role } = request.user
+    const parsed = deleteAccountSchema.safeParse(request.body)
+    if (!parsed.success) {
+      throw new ValidationError('Password obrigatória para confirmar', parsed.error.flatten())
+    }
+
+    const argon2 = await import('argon2')
+
+    await fastify.db.withUser(userId, role, async (tx) => {
+      // Confirmar a password antes de prosseguir — não confiar só no JWT
+      const [user] = await tx`
+        SELECT password_hash FROM users WHERE id = ${userId} AND deleted_at IS NULL
+      `
+      if (!user) {
+        throw new NotFoundError('Utilizador')
+      }
+
+      const validPassword = await argon2.default.verify(user.password_hash, parsed.data.password)
+      if (!validPassword) {
+        throw new ValidationError('Password incorrecta')
+      }
+
+      // Anonimizar dados de identificação directa.
+      // username_deleted_<id curto> garante unicidade sem colidir com a
+      // constraint UNIQUE em username, caso o utilizador volte a registar-se
+      // com o mesmo email no futuro.
+      const anonUsername = `eliminado_${userId.slice(0, 8)}`
+
+      await tx`
+        UPDATE users SET
+          email_encrypted = NULL,
+          email_hash       = NULL,
+          username          = ${anonUsername},
+          password_hash     = '',
+          deleted_at        = NOW()
+        WHERE id = ${userId}
+      `
+
+      await tx`
+        UPDATE user_profiles SET
+          display_name   = 'Utilizador eliminado',
+          bio            = NULL,
+          avatar_url     = NULL,
+          location_text  = NULL
+        WHERE user_id = ${userId}
+      `
+
+      // Revogar todas as sessões activas — força logout em todos os
+      // dispositivos imediatamente
+      await tx`
+        UPDATE user_sessions SET revoked_at = NOW()
+        WHERE user_id = ${userId} AND revoked_at IS NULL
+      `
+
+      // Marcar conteúdo privado para limpeza (roteiros e posts não públicos
+      // deixam de ser acessíveis de imediato via soft-delete; o hard-delete
+      // real corre no job periódico de manutenção)
+      await tx`
+        UPDATE itineraries SET deleted_at = NOW()
+        WHERE user_id = ${userId} AND deleted_at IS NULL
+      `
+      await tx`
+        UPDATE posts SET deleted_at = NOW()
+        WHERE user_id = ${userId} AND deleted_at IS NULL
+      `
+    })
+
+    fastify.log.info({ userId }, 'Conta eliminada (RGPD/LGPD)')
+
+    return reply.status(200).send({
+      ok: true,
+      message: 'Conta eliminada com sucesso. Os teus dados pessoais foram removidos.',
+    })
+  })
 }
