@@ -20,7 +20,7 @@ export default function ExplorePage() {
 
   const {
     data, fetchNextPage, hasNextPage,
-    isFetchingNextPage, isLoading,
+    isFetchingNextPage, isLoading, isError, refetch,
   } = useInfiniteQuery({
     queryKey: ['feed', 'discovery', country],
     queryFn:  ({ pageParam }) =>
@@ -95,6 +95,13 @@ export default function ExplorePage() {
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="skeleton aspect-square rounded-md" />
             ))}
+          </div>
+        ) : isError ? (
+          <div className="card p-8 text-center space-y-3">
+            <p className="text-ink-secondary text-sm">Não foi possível carregar os roteiros.</p>
+            <button onClick={() => refetch()} className="btn-secondary text-sm">
+              Tentar novamente
+            </button>
           </div>
         ) : posts.length === 0 ? (
           <div className="card p-16 text-center space-y-3">

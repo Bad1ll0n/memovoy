@@ -15,8 +15,8 @@ function notifMeta(type: string): { icon: string; color: string } {
   const map: Record<string, { icon: string; color: string }> = {
     like:               { icon: '❤️',  color: 'text-red-500'          },
     comment:            { icon: '💬',  color: 'text-blue'             },
-    follow:             { icon: '👤',  color: 'text-purple-500'       },
-    follow_request:     { icon: '🔔',  color: 'text-purple-500'       },
+    follow:             { icon: '👤',  color: 'text-purple'       },
+    follow_request:     { icon: '🔔',  color: 'text-purple'       },
     challenge_complete: { icon: '🏆',  color: 'text-amber'            },
     badge_earned:       { icon: '⭐',  color: 'text-amber'            },
     geo_alert:          { icon: '📍',  color: 'text-green'            },
@@ -40,7 +40,7 @@ export default function NotificationsPage() {
 
   const {
     data, fetchNextPage, hasNextPage,
-    isFetchingNextPage, isLoading,
+    isFetchingNextPage, isLoading, isError, refetch,
   } = useInfiniteQuery({
     queryKey: ['notifications'],
     queryFn:  ({ pageParam }) =>
@@ -146,6 +146,13 @@ export default function NotificationsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : isError ? (
+          <div className="card p-8 text-center space-y-3">
+            <p className="text-ink-secondary text-sm">Não foi possível carregar as notificações.</p>
+            <button onClick={() => refetch()} className="btn-secondary text-sm">
+              Tentar novamente
+            </button>
           </div>
         ) : notifications.length === 0 ? (
           <div className="card p-16 text-center space-y-3">

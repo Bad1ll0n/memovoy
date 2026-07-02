@@ -4,9 +4,10 @@
 
 @layer base {
   :root {
-    --brand-blue:  #185FA5;
-    --brand-green: #0F6E50;
-    --brand-amber: #EF9F27;
+    --brand-blue:   #185FA5;
+    --brand-green:  #0F6E50;
+    --brand-amber:  #EF9F27;
+    --brand-purple: #7B1FA2;
   }
 
   * { box-sizing: border-box; }
@@ -84,10 +85,36 @@
            transition-colors duration-150;
   }
 
-  /* Badge de level */
+  /* Badge de level — usa CSS var injectada pelo JS via style={{ '--lv': color }} */
   .level-badge {
     @apply inline-flex items-center px-2 py-0.5
            rounded-full text-2xs font-semibold;
+    background-color: var(--lv, theme('colors.ink.secondary'));
+  }
+
+  /* Botão primário em superfície colorida (fundo azul/escuro) */
+  .btn-primary-inverted {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-3 rounded-lg bg-white text-blue
+           font-body font-semibold text-sm
+           hover:bg-blue-50 active:bg-blue-100
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  /* Botão de acção destrutiva */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-3 rounded-lg bg-danger text-white
+           font-body font-semibold text-sm
+           hover:bg-red-700 active:bg-red-800
+           disabled:opacity-40 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  /* Card com borda de perigo */
+  .card-danger {
+    @apply card border border-danger-border;
   }
 }
 

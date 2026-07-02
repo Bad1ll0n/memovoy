@@ -63,7 +63,7 @@ function DangerZone() {
   const [open, setOpen] = useState(false)
 
   return (
-    <section className="card p-5 space-y-4 border-red-200">
+    <section className="card-danger p-5 space-y-4">
       <h2 className="font-semibold text-red-600">Zona de perigo</h2>
       <p className="text-sm text-ink-secondary leading-relaxed">
         Eliminar a tua conta remove permanentemente o teu email, nome de
@@ -167,9 +167,7 @@ function DeleteAccountForm({ onCancel }: { onCancel: () => void }) {
         <button
           onClick={handleDelete}
           disabled={!canSubmit || loading}
-          className="text-sm flex-1 rounded-lg bg-red-600 text-white font-medium
-                     px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed
-                     hover:bg-red-700 transition-colors"
+          className="btn-danger flex-1"
         >
           {loading ? 'A eliminar…' : 'Eliminar definitivamente'}
         </button>

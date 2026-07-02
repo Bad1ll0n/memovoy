@@ -69,7 +69,7 @@ export default function SearchPage() {
   })
 
   // Pesquisa completa (a partir de 3 chars)
-  const { data: results, isLoading } = useQuery({
+  const { data: results, isLoading, isError, refetch } = useQuery({
     queryKey: ['search', debouncedQuery, tab],
     queryFn:  () => api.get<SearchResult>('/search', {
       params: { q: debouncedQuery, type: tab, limit: 20 },
@@ -104,10 +104,7 @@ export default function SearchPage() {
               value={query}
               onChange={(e) => startTransition(() => setQuery(e.target.value))}
               placeholder="Pesquisar roteiros, destinos, viajantes…"
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-surface-muted bg-surface
-                         text-ink placeholder-ink-tertiary text-base
-                         focus:outline-none focus:ring-2 focus:ring-blue/30 focus:border-blue
-                         shadow-card transition-all"
+              className="input pl-12 pr-4 py-3.5 rounded-xl text-base shadow-card"
             />
             {query && (
               <button
@@ -212,6 +209,16 @@ export default function SearchPage() {
                 </button>
               ))}
             </div>
+
+            {/* Erro */}
+            {isError && (
+              <div className="card p-8 text-center space-y-3">
+                <p className="text-ink-secondary text-sm">Não foi possível realizar a pesquisa.</p>
+                <button onClick={() => refetch()} className="btn-secondary text-sm">
+                  Tentar novamente
+                </button>
+              </div>
+            )}
 
             {/* Loading */}
             {isLoading && (
@@ -354,8 +361,8 @@ function UserSearchRow({ user: u }: { user: UserProfile }) {
           <span className="font-semibold text-sm text-ink">{u.profile.displayName}</span>
           {u.isVerified && <span className="text-xs">✅</span>}
           <span
-            className="text-2xs font-semibold px-2 py-0.5 rounded-full text-white"
-            style={{ backgroundColor: lvColor }}
+            className="level-badge text-white"
+            style={{ '--lv': lvColor } as React.CSSProperties}
           >
             {lvLabel}
           </span>

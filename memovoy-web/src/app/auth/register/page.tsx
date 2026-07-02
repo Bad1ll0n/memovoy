@@ -17,7 +17,7 @@ function passwordStrength(pwd: string): { score: number; label: string; color: s
   if (/[0-9]/.test(pwd))                               score++
   const levels = [
     { label: 'Muito fraca',  color: 'bg-red-500'    },
-    { label: 'Fraca',        color: 'bg-orange-400' },
+    { label: 'Fraca',        color: 'bg-amber-400'  },
     { label: 'Razoável',     color: 'bg-yellow-400' },
     { label: 'Boa',          color: 'bg-green-500'  },
     { label: 'Excelente',    color: 'bg-green-600'  },

@@ -140,7 +140,7 @@ export default function FeedPage() {
 
         {/* Lista de posts */}
         {posts.length > 0 && (
-          <div className="bg-surface rounded-xl overflow-hidden shadow-card divide-y divide-surface-muted">
+          <div className="card overflow-hidden divide-y divide-surface-muted">
             {posts.map((post) => (
               <PostCard
                 key={post.id}

@@ -108,7 +108,7 @@ export default function ProfilePage() {
                   className="rounded-full object-cover"
                 />
               ) : (
-                <div className="w-22 h-22 w-[88px] h-[88px] rounded-full bg-blue/10 flex items-center justify-center text-blue text-3xl font-bold">
+                <div className="w-[88px] h-[88px] rounded-full bg-blue/10 flex items-center justify-center text-blue text-3xl font-bold">
                   {profile.profile.displayName[0].toUpperCase()}
                 </div>
               )}
@@ -123,7 +123,7 @@ export default function ProfilePage() {
                 {profile.isVerified && <span title="Verificado">✅</span>}
                 <span
                   className="level-badge text-white text-xs"
-                  style={{ backgroundColor: lvColor }}
+                  style={{ '--lv': lvColor } as React.CSSProperties}
                 >
                   {lvLabel}
                 </span>
@@ -145,12 +145,12 @@ export default function ProfilePage() {
                   )}
                   disabled={followMutation.isPending}
                   className={cn(
-                    'px-5 py-2 rounded-lg text-sm font-semibold transition-colors',
+                    'inline-flex items-center justify-center px-5 py-2 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed',
                     isFollowing
                       ? 'bg-surface-muted text-ink hover:bg-red-50 hover:text-red-600 border border-surface-muted'
                       : isFollowPending
                       ? 'bg-surface-muted text-ink-secondary border border-surface-muted cursor-default'
-                      : 'bg-blue text-white hover:bg-blue-700'
+                      : 'bg-blue text-white hover:bg-blue-700 active:bg-blue-800'
                   )}
                 >
                   {followMutation.isPending ? '…' :
@@ -394,7 +394,7 @@ function ProfileSkeleton() {
     <div className="space-y-6">
       <div className="card p-6">
         <div className="flex gap-6 items-center">
-          <div className="skeleton w-22 h-22 w-[88px] h-[88px] rounded-full shrink-0" />
+          <div className="skeleton w-[88px] h-[88px] rounded-full shrink-0" />
           <div className="flex-1 space-y-3">
             <div className="skeleton h-6 w-40 rounded" />
             <div className="skeleton h-4 w-28 rounded" />

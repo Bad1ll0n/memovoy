@@ -132,7 +132,7 @@ export default function LandingPage() {
         </p>
         <Link
           href="/auth/register"
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg bg-white text-blue font-semibold hover:bg-blue-50 transition-colors"
+          className="btn-primary-inverted px-8 py-3.5 text-base"
         >
           Criar conta gratuita
         </Link>

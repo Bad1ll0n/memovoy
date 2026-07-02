@@ -64,7 +64,7 @@ export default function ItineraryPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               </div>
             ) : (
-              <div className="h-56 md:h-72 bg-gradient-to-br from-blue-600 to-blue flex items-center justify-center">
+              <div className="h-56 md:h-72 bg-gradient-to-br from-blue-500 to-blue flex items-center justify-center">
                 <div className="text-center text-white">
                   <p className="text-5xl mb-2">✈️</p>
                   <p className="text-xl font-semibold">{itinerary.destinationName}</p>
@@ -116,7 +116,7 @@ export default function ItineraryPage() {
                 {itinerary.carbonVsAvgPct != null && (
                   <p className={cn(
                     'text-xs font-medium',
-                    itinerary.carbonVsAvgPct < 0 ? 'text-green-600' : 'text-orange-500'
+                    itinerary.carbonVsAvgPct < 0 ? 'text-green-600' : 'text-amber-500'
                   )}>
                     {itinerary.carbonVsAvgPct < 0 ? '↓' : '↑'}{' '}
                     {Math.abs(Math.round(itinerary.carbonVsAvgPct))}%{' '}

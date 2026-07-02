@@ -90,15 +90,15 @@ export function groupTypeLabel(type: string): string {
   return labels[type] ?? type
 }
 
-// Label do nível
+// Label do nível — cores via CSS vars para que alterações à paleta propaguem automaticamente
 export function levelLabel(level: string): { label: string; color: string } {
   const map: Record<string, { label: string; color: string }> = {
-    explorer:     { label: 'Explorador',  color: '#185FA5' },
-    traveler:     { label: 'Viajante',    color: '#0F6E50' },
-    nomad:        { label: 'Nómada',      color: '#7B1FA2' },
-    globetrotter: { label: 'Globetrotter', color: '#EF9F27' },
+    explorer:     { label: 'Explorador',   color: 'var(--brand-blue)'   },
+    traveler:     { label: 'Viajante',     color: 'var(--brand-green)'  },
+    nomad:        { label: 'Nómada',       color: 'var(--brand-purple)' },
+    globetrotter: { label: 'Globetrotter', color: 'var(--brand-amber)'  },
   }
-  return map[level] ?? { label: level, color: '#5C5C5C' }
+  return map[level] ?? { label: level, color: 'var(--brand-blue)' }
 }
 
 // Truncar texto com reticências

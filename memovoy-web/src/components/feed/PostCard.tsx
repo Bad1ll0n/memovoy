@@ -53,7 +53,7 @@ export function PostCard({ post, onLike }: Props) {
             {post.level && (
               <span
                 className="level-badge text-white"
-                style={{ backgroundColor: lvColor }}
+                style={{ '--lv': lvColor } as React.CSSProperties}
               >
                 {lvLabel}
               </span>

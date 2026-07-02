@@ -572,7 +572,7 @@ export default function NewItineraryPage() {
           </div>
           <div className="h-1.5 bg-surface-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue rounded-full transition-all duration-400 ease-out"
+              className="h-full bg-blue rounded-full transition-all duration-300 ease-out"
               style={{ width: `${(step / TOTAL) * 100}%` }}
             />
           </div>

@@ -166,7 +166,7 @@ function ItineraryCard({ itinerary: it }: { itinerary: Itinerary }) {
           <p className="text-xs text-green-700 flex items-center gap-1">
             🌱 {Math.round(it.totalKgCo2)} kg CO₂
             {it.carbonVsAvgPct != null && (
-              <span className={it.carbonVsAvgPct < 0 ? 'text-green-600' : 'text-orange-500'}>
+              <span className={it.carbonVsAvgPct < 0 ? 'text-green-600' : 'text-amber-500'}>
                 ({it.carbonVsAvgPct > 0 ? '+' : ''}{Math.round(it.carbonVsAvgPct)}% vs média)
               </span>
             )}

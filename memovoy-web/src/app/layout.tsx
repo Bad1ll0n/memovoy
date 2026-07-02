@@ -3,10 +3,6 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Providers } from '@/components/layout/Providers'
 
-// Fonts: Google Fonts indisponível neste ambiente — usar system fonts
-const displayFont = { variable: '' }
-const bodyFont    = { variable: '' }
-
 export const metadata: Metadata = {
   title:       { default: 'MemoVoy', template: '%s · MemoVoy' },
   description: 'A tua rede social de viagens. Cria roteiros, partilha aventuras, inspira-te.',
@@ -35,11 +31,21 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html
-      lang="pt"
-      className={`${displayFont.variable} ${bodyFont.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="pt" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <style>{`
+          :root {
+            --font-display: 'Playfair Display';
+            --font-body: 'Inter';
+          }
+        `}</style>
+      </head>
       <body className="bg-surface-subtle font-body text-ink antialiased">
         <Providers>{children}</Providers>
       </body>

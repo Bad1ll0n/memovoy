@@ -46,6 +46,26 @@ const config: Config = {
           800: '#7C4C09',
           900: '#503106',
         },
+        // Cor do nível "nomad" — sem equivalente nas paletas base
+        purple: {
+          DEFAULT: '#7B1FA2',
+          50:  '#F5E8FB',
+          100: '#E8C9F5',
+          200: '#D194EB',
+          300: '#BA5FE1',
+          400: '#A33DD6',
+          500: '#8E22BE',
+          600: '#7B1FA2',
+          700: '#621882',
+          800: '#491261',
+          900: '#300C40',
+        },
+        // Token semântico de perigo (mapeado para red Tailwind)
+        danger: {
+          DEFAULT: '#DC2626',
+          subtle:  '#FEF2F2',
+          border:  '#FECACA',
+        },
         // Neutros
         surface: {
           DEFAULT: '#FFFFFF',

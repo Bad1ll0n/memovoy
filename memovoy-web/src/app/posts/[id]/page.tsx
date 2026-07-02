@@ -130,8 +130,8 @@ export default function PostPage() {
                   {post.displayName}
                 </Link>
                 <span
-                  className="text-2xs font-semibold px-2 py-0.5 rounded-full text-white"
-                  style={{ backgroundColor: lvColor }}
+                  className="level-badge text-white"
+                  style={{ '--lv': lvColor } as React.CSSProperties}
                 >{lvLabel}</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-ink-tertiary mt-0.5">
@@ -251,7 +251,7 @@ export default function PostPage() {
               <button
                 type="submit"
                 disabled={!commentText.trim() || commentMutation.isPending}
-                className="btn-primary px-4 py-2 text-sm rounded-full"
+                className="btn-primary px-4 py-2 text-sm"
               >
                 {commentMutation.isPending ? '…' : 'Enviar'}
               </button>
