@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,6 +10,8 @@
     --brand-green:  #0F6E50;
     --brand-amber:  #EF9F27;
     --brand-purple: #7B1FA2;
+    --font-display: 'Playfair Display';
+    --font-body:    'Inter';
   }
 
   * { box-sizing: border-box; }
