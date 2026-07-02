@@ -105,7 +105,7 @@
   /* Botão de acção destrutiva */
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2
-           px-5 py-3 rounded-lg bg-danger text-white
+           px-5 py-3 rounded-lg bg-red-600 text-white
            font-body font-semibold text-sm
            hover:bg-red-700 active:bg-red-800
            disabled:opacity-40 disabled:cursor-not-allowed
@@ -114,7 +114,7 @@
 
   /* Card com borda de perigo */
   .card-danger {
-    @apply card border border-danger-border;
+    @apply card border border-red-200;
   }
 }
 
