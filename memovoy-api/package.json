@@ -5,8 +5,8 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "NODE_ENV=production node src/server.js",
+    "dev": "node --watch --env-file=.env src/server.js",
+    "start": "NODE_ENV=production node --env-file=.env src/server.js",
     "test": "node --test \"src/**/*.test.js\" \"src/tests/*.test.js\"",
     "test:integration": "node --test src/tests/integration/*.test.js",
     "test:all": "node --test 'src/**/*.test.js' 'src/tests/integration/*.test.js'",

@@ -15,8 +15,8 @@ set -euo pipefail
 # Configuração
 # ============================================================
 
-DB_URL="${DATABASE_URL:-postgresql://memovoy:memovoy_dev_password@localhost:5432/memovoy_dev}"
-MIGRATIONS_DIR="$(cd "$(dirname "$0")/db/migrations" 2>/dev/null && pwd || echo "./db/migrations")"
+DB_URL="${DATABASE_URL:-postgresql://memovoy:memovoy_dev_password@localhost:5433/memovoy_dev}"
+MIGRATIONS_DIR="$(cd "$(dirname "$0")/../migrations" 2>/dev/null && pwd || echo "../migrations")"
 FLYWAY_IMAGE="flyway/flyway:10-alpine"
 COMMAND="${1:-migrate}"
 
