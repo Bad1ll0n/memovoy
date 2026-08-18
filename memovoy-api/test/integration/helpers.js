@@ -60,3 +60,27 @@ export async function registarUtilizador(app, dados = dadosDeRegisto()) {
 
   return { ...JSON.parse(res.body), dados }
 }
+
+/** Cabeçalho de autorização a partir de um access token. */
+export function comToken(accessToken) {
+  return { authorization: `Bearer ${accessToken}` }
+}
+
+/**
+ * Cria um post e devolve-o. Falha ruidosamente se a criação não correr bem —
+ * um teste que dependa disto não deve seguir em silêncio.
+ */
+export async function criarPost(app, accessToken, corpo = { caption: 'Um post.' }) {
+  const res = await app.inject({
+    method:  'POST',
+    url:     '/posts',
+    headers: comToken(accessToken),
+    payload: corpo,
+  })
+
+  if (res.statusCode >= 300) {
+    throw new Error(`criação de post falhou (${res.statusCode}): ${res.body}`)
+  }
+
+  return JSON.parse(res.body)
+}

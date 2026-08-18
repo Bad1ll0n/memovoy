@@ -65,6 +65,10 @@ Os dois conjuntos vivem em pastas separadas porque a descoberta automática do
 `node --test` apanharia os de integração ao correr `npm test` — daí os globs
 explícitos nos scripts.
 
+Os de integração correm com `--test-concurrency=1`. Partilham uma base de dados
+e cada ficheiro limpa a tabela `users` no `beforeEach`; em paralelo, limpavam-se
+uns aos outros a meio. Ao acrescentar ficheiros novos, manter assim.
+
 Ao mexer em `aiAgent.js`, `totp.js`, na validação de uploads, no hashing de
 passwords, nas rotas de autenticação ou no cliente HTTP do frontend, correr os
 testes: são essas as zonas cobertas.
