@@ -36,14 +36,13 @@ seguinte — nunca editar uma já aplicada.
 Como cada ficheiro corre dentro de `BEGIN`/`COMMIT`, `CREATE INDEX
 CONCURRENTLY` **falha** aqui (não pode correr em transação).
 
-## `.archive/` não é verdade actual
+## Docs antigos descrevem coisas que não existem
 
-Contém docs de uma estrutura anterior que também usava o prefixo `memovoy-`,
-mas com quatro pastas — `memovoy-{api,web,android,ios}`. Não confundir com as
-duas de hoje. Descrevem PostGIS, TimescaleDB,
-Kafka, Elasticsearch, Kubernetes, Flyway e UUID v7 via `pg_idkit` — nada disso
-está construído. O que existe é PostgreSQL com `pgcrypto`, `pg_trgm`,
-`pg_partman`, e UUID v4 via `gen_random_uuid()`. Tratar como intenção histórica.
+Se desenterrares documentação do histórico — havia uma pasta `.archive/`,
+removida em 2026-08-18 — não a tomes por verdade. Descrevia PostGIS,
+TimescaleDB, Kafka, Elasticsearch, Kubernetes, Flyway e UUID v7 via `pg_idkit`,
+nada disso construído. O que existe é PostgreSQL com `pgcrypto`, `pg_trgm` e
+`pg_partman`, e UUID v4 via `gen_random_uuid()`.
 
 ## Segredos
 

@@ -7,12 +7,16 @@ if (process.env.OTEL_ENABLED === 'true') {
   const { NodeSDK }                    = await import('@opentelemetry/sdk-node')
   const { OTLPTraceExporter }          = await import('@opentelemetry/exporter-trace-otlp-http')
   const { getNodeAutoInstrumentations } = await import('@opentelemetry/auto-instrumentations-node')
-  const { Resource }                   = await import('@opentelemetry/resources')
-  const { SEMRESATTRS_SERVICE_NAME }   = await import('@opentelemetry/semantic-conventions')
+  // @opentelemetry/resources v2 substituiu `new Resource({...})` por
+  // resourceFromAttributes(). A forma antiga rebentava com
+  // "Resource is not a constructor" — ou seja, ligar OTEL_ENABLED impedia
+  // a API de arrancar.
+  const { resourceFromAttributes }     = await import('@opentelemetry/resources')
+  const { ATTR_SERVICE_NAME }          = await import('@opentelemetry/semantic-conventions')
 
   const sdk = new NodeSDK({
-    resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? 'memovoy-api',
+    resource: resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? 'memovoy-api',
     }),
     traceExporter: new OTLPTraceExporter({
       url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318'}/v1/traces`,

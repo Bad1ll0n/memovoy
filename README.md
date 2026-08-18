@@ -81,9 +81,8 @@ informativo — tem 11 erros por resolver e por isso ainda não bloqueia.
   `Roteiro`, que já não existe na máquina — não conseguia arrancar. Fica no
   histórico: `git show 7b6ebdd:server.js`, ou
   `git checkout 7b6ebdd -- views/ controllers/ routes/` para a repor.
-- **`.archive/`** guarda documentação da estrutura `memovoy-*` anterior e os
-  diffs por commitar de worktrees de agentes já removidos. É referência
-  histórica: descreve uma arquitectura planeada (Kubernetes, Kafka,
-  Elasticsearch, TimescaleDB, Flyway, UUID v7) que **não** corresponde ao que
-  está construído.
+- Documentação de fases anteriores (a pasta `.archive/`, removida na mesma
+  data) descrevia uma arquitectura planeada — Kubernetes, Kafka, Elasticsearch,
+  TimescaleDB, Flyway — que nunca foi construída. Continua no histórico, mas
+  não a tomes por verdade.
 - O lint do frontend tem 11 erros por resolver; o CI corre-o sem bloquear.
