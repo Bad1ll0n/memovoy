@@ -84,4 +84,16 @@ alimentaram esta base de dados.
   histórica: descreve uma arquitectura planeada (Kubernetes, Kafka,
   Elasticsearch, TimescaleDB, Flyway, UUID v7) que **não** corresponde ao que
   está construído.
-- **Não há testes nem CI** neste repositório.
+### Testes
+
+```bash
+cd insight-api && npm test
+```
+
+46 testes unitários sobre lógica pura (sanitização de saídas de IA, TOTP,
+validação de magic bytes em uploads). Correm em ~300ms e não precisam de
+PostgreSQL, Redis nem chaves de API. O frontend ainda não tem testes.
+
+O CI (`.github/workflows/ci.yml`) corre os testes da API, o typecheck e o
+build do frontend. O lint corre em modo informativo — tem 15 erros por
+resolver e por isso ainda não bloqueia.

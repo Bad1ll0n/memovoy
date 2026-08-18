@@ -37,8 +37,14 @@ e um valor vazio, nunca o valor real.
 
 ## Estado da qualidade
 
-Não há testes nem CI. Não existe `npm test` em lado nenhum. Qualquer alteração
-tem de ser verificada à mão até isso mudar.
+`cd insight-api && npm test` corre 46 testes unitários (node:test nativo, sem
+dependências extra). Não tocam na BD nem fazem rede — as variáveis falsas de que
+precisam estão em `insight-api/test/test.env`. Ao mexer em `aiAgent.js`,
+`totp.js` ou na validação de uploads, correr os testes.
+
+O frontend não tem testes. Aí a rede é o `tsc --noEmit` e o `next build`, ambos
+no CI. O lint tem 15 erros por resolver (12 `set-state-in-effect`, 2 `purity`,
+1 `refs`) e corre em modo informativo — não bloquear PRs com isso até estar limpo.
 
 Ficheiros grandes que convém partir antes de crescerem mais:
 `insight-api/src/routes/itineraries.js` (1477 linhas),
