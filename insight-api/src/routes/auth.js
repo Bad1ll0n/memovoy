@@ -18,7 +18,7 @@ const ARGON2_OPTIONS = { type: argon2.argon2id, memoryCost: 65536, timeCost: 3, 
  * Hash a password using Argon2id (new registrations) or bcrypt (legacy).
  * Returns the hash string.
  */
-async function hashPassword(password) {
+export async function hashPassword(password) {
   return argon2.hash(password, ARGON2_OPTIONS)
 }
 
@@ -28,7 +28,7 @@ async function hashPassword(password) {
  * - '$2b$...' / '$2a$...' → bcrypt verify
  * Returns { valid: boolean, needsRehash: boolean }
  */
-async function verifyPassword(password, storedHash) {
+export async function verifyPassword(password, storedHash) {
   if (storedHash.startsWith('$argon2')) {
     const valid = await argon2.verify(storedHash, password)
     const needsRehash = valid && argon2.needsRehash(storedHash, ARGON2_OPTIONS)

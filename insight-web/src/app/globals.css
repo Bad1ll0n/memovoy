@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ─── Page transitions — React ViewTransition API (Next.js 16 + experimental.viewTransition) ─── */
+/* ─── Page transitions — React ViewTransition API (estável desde o Next.js 16.3) ─── */
 ::view-transition-old(.page-fade) {
   animation: 160ms ease-out both fade-out;
 }
