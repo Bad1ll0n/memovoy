@@ -46,8 +46,9 @@ export function Lightbox({ images, initialIndex = 0, onClose }: Props) {
       onClick={onClose}
     >
       {/* Close */}
+      {/* stopPropagation: o backdrop tambem fecha; sem isto o onClose corria duas vezes */}
       <button
-        onClick={onClose}
+        onClick={(e) => { e.stopPropagation(); onClose() }}
         className="absolute top-4 right-4 p-2 rounded-full hover:opacity-70 transition-opacity"
         style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }}
         aria-label="Fechar"

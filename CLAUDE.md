@@ -53,7 +53,7 @@ e um valor vazio, nunca o valor real.
 ## Estado da qualidade
 
 `npm test` corre os unitários em ambas as apps: 58 na API (node:test nativo,
-`test/unit/`) e 48 na web (vitest). Não tocam na BD nem fazem rede.
+`test/unit/`) e 65 na web (vitest). Não tocam na BD nem fazem rede.
 
 `npm run test:integration` corre 104 testes contra Postgres a sério
 (`test/integration/`), via `app.inject()`. **A app é construída por
@@ -68,6 +68,10 @@ explícitos nos scripts.
 Os de integração correm com `--test-concurrency=1`. Partilham uma base de dados
 e cada ficheiro limpa a tabela `users` no `beforeEach`; em paralelo, limpavam-se
 uns aos outros a meio. Ao acrescentar ficheiros novos, manter assim.
+
+Testar componentes que usem `next/image` obriga a substituí-lo por um `<img>`
+com `vi.mock('next/image', ...)` — o componente do Next não corre fora dele.
+Ver `Lightbox.test.tsx`.
 
 Ao mexer em `aiAgent.js`, `totp.js`, na validação de uploads, no hashing de
 passwords, nas rotas de autenticação ou no cliente HTTP do frontend, correr os

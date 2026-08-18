@@ -52,7 +52,7 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 
 ```bash
 cd memovoy-api && npm test    # 58 testes (node:test)
-cd memovoy-web && npm test    # 54 testes (vitest)
+cd memovoy-web && npm test    # 65 testes (vitest)
 ```
 
 Nenhum precisa de PostgreSQL, Redis ou chaves de API. Cobrem lógica pura:
@@ -85,7 +85,8 @@ sobre o `--env-file`.
 
 ### O que não está coberto
 
-Componentes React (só os hooks `useTheme` e `useEstaAoVivo`) e end-to-end. Aí a
+Quase todos os componentes React — só o `Lightbox` está coberto, mais os hooks
+`useTheme`, `useEstaAoVivo` e `useValorDoCliente` — e end-to-end. Aí a
 rede de segurança é o `tsc --noEmit` e o `next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
