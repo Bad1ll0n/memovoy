@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
@@ -16,44 +16,48 @@ export function useSocket() {
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { accessToken, user } = useAuthStore()
   const qc = useQueryClient()
-  const socketRef = useRef<Socket | null>(null)
+
+  // Estado, não ref: atribuir a uma ref não provoca re-render, por isso o
+  // contexto continuava a servir null depois de o socket já existir — quem
+  // depende de useSocket() (o progresso da geração de roteiros por IA) nunca
+  // chegava a recebê-lo.
+  const [socket, setSocket] = useState<Socket | null>(null)
 
   useEffect(() => {
-    if (!accessToken || !user) {
-      socketRef.current?.disconnect()
-      socketRef.current = null
-      return
-    }
+    if (!accessToken || !user) return
 
-    if (socketRef.current?.connected) return
-
-    const socket = io(API_URL, {
+    const s = io(API_URL, {
       auth:       { token: accessToken },
       transports: ['websocket'],
     })
 
-    socket.on('new_notification', () => {
+    s.on('new_notification', () => {
       qc.invalidateQueries({ queryKey: ['notifications'] })
       qc.invalidateQueries({ queryKey: ['unread-notif-count'] })
     })
 
-    socket.on('conversations:updated', () => {
+    s.on('conversations:updated', () => {
       qc.invalidateQueries({ queryKey: ['conversations'] })
     })
 
     // Async AI generation progress — consumers subscribe to 'itinerary:job' via useSocket()
     // No query invalidation here; components handle the event directly for streaming UX.
 
-    socketRef.current = socket
+    // Excepção deliberada ao set-state-in-effect: expor um recurso externo
+    // criado no efeito é precisamente para isto que o estado serve. Criá-lo
+    // durante o render — num useMemo — abriria a ligação num sítio que tem de
+    // ser puro, o que é pior.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSocket(s)
 
     return () => {
-      socket.disconnect()
-      socketRef.current = null
+      s.disconnect()
+      setSocket(null)
     }
   }, [accessToken, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <SocketContext.Provider value={socketRef.current}>
+    <SocketContext.Provider value={socket}>
       {children}
     </SocketContext.Provider>
   )

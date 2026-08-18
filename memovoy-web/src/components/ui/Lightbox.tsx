@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEstaHidratado } from '@/hooks/useValorDoCliente'
 
 interface Props {
   images: string[]
@@ -13,12 +14,11 @@ interface Props {
 
 export function Lightbox({ images, initialIndex = 0, onClose }: Props) {
   const [current, setCurrent] = useState(initialIndex)
-  const [mounted, setMounted] = useState(false)
+  // O portal precisa do document, que não existe no servidor.
+  const mounted = useEstaHidratado()
 
   // Touch/swipe state
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
-
-  useEffect(() => { setMounted(true) }, [])
 
   const prev = useCallback(() => setCurrent((c) => (c - 1 + images.length) % images.length), [images.length])
   const next = useCallback(() => setCurrent((c) => (c + 1) % images.length), [images.length])

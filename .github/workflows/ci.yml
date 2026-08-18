@@ -103,11 +103,10 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:4000
 
   lint:
-    name: Web — lint (informativo)
+    name: Web — lint
     runs-on: ubuntu-latest
-    # Não bloqueia: há 25 erros e 23 avisos por resolver do ESLint 9 /
-    # React 19. Passar isto a bloqueante assim que a dívida estiver saldada.
-    continue-on-error: true
+    # Bloqueante desde 2026-08-18, quando os 25 erros do ESLint 9 / React 19
+    # foram resolvidos. Restam 25 avisos, que não fazem falhar o job.
     defaults:
       run:
         working-directory: memovoy-web

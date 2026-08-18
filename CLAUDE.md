@@ -78,8 +78,16 @@ Testes com DOM usam jsdom e @testing-library/react — declarar
 omissão é Node. Só `useTheme` e `useEstaAoVivo` estão cobertos assim; não há
 testes end-to-end.
 
-O lint tem 11 erros por resolver (10 `set-state-in-effect`, 1 `refs`) e corre
-sem bloquear — não bloquear PRs com isso até estar limpo.
+O lint está sem erros e **bloqueia no CI**. Restam 25 avisos, quase todos
+variáveis por usar.
+
+Ler valores que só existem no cliente — `localStorage`, `navigator`, `window` —
+faz-se com `useEstaHidratado()` ou `useValorDoCliente()` de
+`@/hooks/useValorDoCliente`, não com estado sincronizado num `useEffect`. Há
+duas excepções documentadas no código, ambas com `eslint-disable-next-line` e a
+razão por escrito: o rascunho do wizard de roteiros (estado editável, e ler
+durante o render daria mismatch de hidratação) e o `SocketProvider` (expor um
+recurso externo criado no efeito). Se acrescentares outra, justifica-a igual.
 
 As dependências estão sem vulnerabilidades conhecidas nas duas apps. Confirmar
 com `npm audit` antes de subir versões.

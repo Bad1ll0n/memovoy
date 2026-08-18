@@ -12,12 +12,16 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams()
   const router       = useRouter()
   const { user, setAuth, accessToken } = useAuthStore()
-  const [state, setState] = useState<State>('loading')
-  const [msg,   setMsg]   = useState('')
+  const token = searchParams.get('token')
+
+  // A falta de token é derivável do URL durante o render — não precisa de um
+  // efeito a corrigir o estado depois de pintar.
+  const [resultado, setResultado] = useState<{ state: State; msg: string } | null>(null)
+  const state = resultado?.state ?? (token ? 'loading' : 'error')
+  const msg   = resultado?.msg   ?? (token ? '' : 'Token em falta.')
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    if (!token) { setState('error'); setMsg('Token em falta.'); return }
+    if (!token) return
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/auth/verify-email?token=${token}`)
       .then(async (res) => {
@@ -25,17 +29,16 @@ function VerifyEmailContent() {
           const body = await res.json().catch(() => ({}))
           throw new Error(body.message ?? 'Token inválido ou expirado.')
         }
-        setState('success')
+        setResultado({ state: 'success', msg: '' })
         if (user && accessToken) {
           setAuth({ ...user, emailVerified: true }, accessToken)
         }
         setTimeout(() => router.replace('/feed'), 2500)
       })
       .catch((err: Error) => {
-        setState('error')
-        setMsg(err.message)
+        setResultado({ state: 'error', msg: err.message })
       })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div

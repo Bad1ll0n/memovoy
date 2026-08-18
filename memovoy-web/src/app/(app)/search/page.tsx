@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Search, X, BadgeCheck, Lock, Map, Camera, Users, Clock, Sparkles, MapPin, Wallet } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -68,37 +68,57 @@ function useDebounce(value: string, ms = 350) {
 const HISTORY_KEY = 'memovoy-search-history'
 const MAX_HISTORY  = 8
 
+// O histórico vive no localStorage, não no React. Exposto como store externa
+// para o componente o ler com useSyncExternalStore em vez de o copiar para
+// estado num efeito. O snapshot tem de ser referencialmente estável — devolver
+// um array novo a cada leitura punha o React em ciclo de renders — daí a cache.
+
+const HISTORICO_VAZIO: string[] = []
+const ouvintesHistorico = new Set<() => void>()
+let historicoCache: string[] | null = null
+
 function loadHistory(): string[] {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') } catch { return [] }
 }
 
+function lerHistorico(): string[] {
+  if (historicoCache === null) historicoCache = loadHistory()
+  return historicoCache
+}
+
+function subscreverHistorico(aoMudar: () => void) {
+  ouvintesHistorico.add(aoMudar)
+  return () => { ouvintesHistorico.delete(aoMudar) }
+}
+
+function escreverHistorico(next: string[]) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch {}
+  historicoCache = next
+  ouvintesHistorico.forEach((o) => o())
+}
+
 function saveToHistory(term: string) {
-  const prev = loadHistory()
-  const next = [term, ...prev.filter((t) => t !== term)].slice(0, MAX_HISTORY)
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+  const prev = lerHistorico()
+  if (prev[0] === term) return   // já está no topo: não mexer nem re-renderizar
+  escreverHistorico([term, ...prev.filter((t) => t !== term)].slice(0, MAX_HISTORY))
 }
 
 function removeFromHistory(term: string) {
-  const next = loadHistory().filter((t) => t !== term)
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+  escreverHistorico(lerHistorico().filter((t) => t !== term))
 }
 
 export default function SearchPage() {
   const [q, setQ] = useState('')
   const [tab, setTab] = useState<Tab>('users')
   const [mode, setMode] = useState<SearchMode>('normal')
-  const [history, setHistory] = useState<string[]>([])
+  const history = useSyncExternalStore(subscreverHistorico, lerHistorico, () => HISTORICO_VAZIO)
   const [focused, setFocused] = useState(false)
   const dq = useDebounce(q, 350)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { setHistory(loadHistory()) }, [])
-
+  // Gravar é o efeito; a lista actualiza-se sozinha porque a store notifica.
   useEffect(() => {
-    if (dq.length >= 2 && mode === 'normal') {
-      saveToHistory(dq)
-      setHistory(loadHistory())
-    }
+    if (dq.length >= 2 && mode === 'normal') saveToHistory(dq)
   }, [dq, mode])
 
   const { data, isLoading } = useQuery<SearchResults>({
@@ -196,7 +216,7 @@ export default function SearchPage() {
                   {term}
                 </button>
                 <button
-                  onClick={() => { removeFromHistory(term); setHistory(loadHistory()) }}
+                  onClick={() => removeFromHistory(term)}
                   className="shrink-0 hover:opacity-70"
                   style={{ color: 'var(--text-muted)' }}
                   aria-label={`Remover '${term}' do histórico`}

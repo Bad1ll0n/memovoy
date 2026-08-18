@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -82,19 +82,24 @@ export function ActivityMap({ activities }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<L.Map | null>(null)
   const [markers, setMarkers]   = useState<GeoMarker[]>([])
-  const [status, setStatus]     = useState<'loading' | 'ready' | 'empty'>('loading')
+  const [statusGeocode, setStatusGeocode] = useState<'loading' | 'ready' | 'empty'>('loading')
+
+  // Não haver nada para geocodificar é derivável das props — não precisa de um
+  // efeito a corrigir o estado depois de pintar.
+  const toGeocode = useMemo(
+    () => activities
+      .map((a, i) => ({ ...a, index: i }))
+      .filter((a) => a.type !== 'transport' && ((a.geoName && a.geoName.trim().length > 0) || (a.address && a.address.trim().length > 0)))
+      .slice(0, 12), // cap at 12 to avoid long waits
+    [activities],
+  )
+
+  const status = toGeocode.length === 0 ? 'empty' : statusGeocode
+  const setStatus = setStatusGeocode
 
   // Geocode all activities with addresses (rate-limited: 1 req/s)
   useEffect(() => {
-    const toGeocode = activities
-      .map((a, i) => ({ ...a, index: i }))
-      .filter((a) => a.type !== 'transport' && ((a.geoName && a.geoName.trim().length > 0) || (a.address && a.address.trim().length > 0)))
-      .slice(0, 12) // cap at 12 to avoid long waits
-
-    if (toGeocode.length === 0) {
-      setStatus('empty')
-      return
-    }
+    if (toGeocode.length === 0) return
 
     let cancelled = false
     const results: GeoMarker[] = []
@@ -116,7 +121,7 @@ export function ActivityMap({ activities }: Props) {
     })()
 
     return () => { cancelled = true }
-  }, [activities])
+  }, [toGeocode])
 
   // Init/update Leaflet map when markers are ready
   useEffect(() => {

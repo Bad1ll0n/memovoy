@@ -307,9 +307,18 @@ export default function NewItineraryPage() {
 
   const [data, setData] = useState<WizardData>(defaultData)
 
-  // Load draft on mount
+  // Rascunho guardado, restaurado depois da hidratação.
+  //
+  // Excepção deliberada ao set-state-in-effect. As outras ocorrências foram
+  // resolvidas com useSyncExternalStore, mas aqui não serve: `data` é estado
+  // editável, alterado por funções de actualização em seis sítios, e um
+  // snapshot externo não pode ser escrito. Ler o localStorage num inicializador
+  // lazy também não serve — o servidor renderizaria defaultData e o cliente o
+  // rascunho, o que é um mismatch de hidratação. Um render extra é o preço
+  // certo a pagar.
   useEffect(() => {
     const draft = loadDraft()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (draft.destination) setData(draft)
   }, [])
 

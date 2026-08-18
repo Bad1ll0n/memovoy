@@ -1,10 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X, ChevronRight, Wand2, Map, Trophy } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
+import { useValorDoCliente } from '@/hooks/useValorDoCliente'
 
 const TOUR_KEY = 'memovoy-tour-v1'
+
+function tourJaVisto() {
+  try {
+    return localStorage.getItem(TOUR_KEY) !== null
+  } catch {
+    return true
+  }
+}
 
 const STEPS = [
   {
@@ -26,15 +35,12 @@ const STEPS = [
 
 export function FeatureTour() {
   const { user } = useAuthStore()
-  const [step, setStep]       = useState(0)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!user) return
-    if (typeof window === 'undefined') return
-    const done = localStorage.getItem(TOUR_KEY)
-    if (!done) setVisible(true)
-  }, [user])
+  const [step, setStep] = useState(0)
+  // No servidor assume-se já visto, para o tour não piscar na hidratação.
+  const jaVisto = useValorDoCliente(tourJaVisto, true)
+  const [dispensado, setDispensado] = useState(false)
+  const visible = Boolean(user) && !jaVisto && !dispensado
+  const setVisible = (v: boolean) => setDispensado(!v)
 
   function dismiss() {
     localStorage.setItem(TOUR_KEY, '1')

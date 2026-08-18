@@ -2,28 +2,33 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
+import { useValorDoCliente } from '@/hooks/useValorDoCliente'
 
 type PushState = 'unsupported' | 'default' | 'granted' | 'denied' | 'subscribed'
 
+const suportaPush = () => 'serviceWorker' in navigator && 'PushManager' in window
+
 export function usePushNotifications() {
-  const [state, setState]     = useState<PushState>('default')
+  // Suporte é uma capacidade do browser, não estado: derivada, não sincronizada.
+  const suportado = useValorDoCliente(suportaPush, false)
+  const [estadoSubscricao, setEstadoSubscricao] = useState<PushState>('default')
+  const state: PushState = suportado ? estadoSubscricao : 'unsupported'
+  const setState = setEstadoSubscricao
+
   const [loading, setLoading] = useState(false)
   const swReg                 = useRef<ServiceWorkerRegistration | null>(null)
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setState('unsupported')
-      return
-    }
+    if (!suportado) return
 
     navigator.serviceWorker.ready.then((reg) => {
       swReg.current = reg
       reg.pushManager.getSubscription().then((sub) => {
-        if (sub) setState('subscribed')
-        else setState(Notification.permission as PushState)
+        if (sub) setEstadoSubscricao('subscribed')
+        else setEstadoSubscricao(Notification.permission as PushState)
       })
     })
-  }, [])
+  }, [suportado])
 
   async function subscribe() {
     if (!swReg.current) return

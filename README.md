@@ -83,8 +83,7 @@ Componentes React (só os hooks `useTheme` e `useEstaAoVivo`) e end-to-end. Aí 
 rede de segurança é o `tsc --noEmit` e o `next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
-a integração. O lint corre em modo informativo — tem 11 erros por resolver e por
-isso ainda não bloqueia.
+a integração. O lint é bloqueante; restam 25 avisos, que não fazem falhar o job.
 
 ## Rotas da API
 
@@ -105,4 +104,5 @@ isso ainda não bloqueia.
   data) descrevia uma arquitectura planeada — Kubernetes, Kafka, Elasticsearch,
   TimescaleDB, Flyway — que nunca foi construída. Continua no histórico, mas
   não a tomes por verdade.
-- O lint do frontend tem 11 erros por resolver; o CI corre-o sem bloquear.
+- O lint do frontend está sem erros e bloqueia no CI. Restam 25 avisos,
+  quase todos variáveis por usar.

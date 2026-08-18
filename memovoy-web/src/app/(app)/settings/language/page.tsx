@@ -1,12 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check } from 'lucide-react'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
+import { useValorDoCliente } from '@/hooks/useValorDoCliente'
 import { Spinner } from '@/components/ui/Spinner'
 
 const LANG_KEY = 'memovoy-lang'
+
+function lerIdiomaGuardado() {
+  try {
+    return localStorage.getItem(LANG_KEY) ?? 'pt'
+  } catch {
+    return 'pt'
+  }
+}
 
 const LANGUAGES = [
   { code: 'pt', label: 'Português', native: 'Português (PT)', flag: '🇵🇹' },
@@ -16,17 +25,14 @@ const LANGUAGES = [
 export default function LanguagePage() {
   const router = useRouter()
   const { isReady } = useRequireAuth()
-  const [lang, setLang] = useState('pt')
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LANG_KEY)
-      if (stored) setLang(stored)
-    } catch {}
-  }, [])
+  // O valor guardado é a fonte de verdade; `escolhido` sobrepõe-se assim que
+  // o utilizador clica, sem esperar por nova leitura do localStorage.
+  const guardado = useValorDoCliente(lerIdiomaGuardado, 'pt')
+  const [escolhido, setEscolhido] = useState<string | null>(null)
+  const lang = escolhido ?? guardado
 
   function selectLang(code: string) {
-    setLang(code)
+    setEscolhido(code)
     try { localStorage.setItem(LANG_KEY, code) } catch {}
   }
 

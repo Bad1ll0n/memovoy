@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { MapPin, Navigation, Wifi } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { useValorDoCliente } from '@/hooks/useValorDoCliente'
 import { PostCard } from '@/components/feed/PostCard'
 import { Spinner } from '@/components/ui/Spinner'
 import { PostCardSkeleton } from '@/components/ui/Skeleton'
@@ -24,17 +25,18 @@ interface NearbyPage {
 
 type GeoState = 'idle' | 'loading' | 'granted' | 'denied' | 'unsupported'
 
+const temGeolocalizacao = () => 'geolocation' in navigator
+
 export default function NearbyPage() {
   const { isReady } = useRequireAuth()
-  const [geoState, setGeoState] = useState<GeoState>('idle')
+  // Assume-se suportado no servidor: é o caso comum, e evita mostrar o aviso
+  // de "não suportado" por um instante a quem tem geolocalização.
+  const suportado = useValorDoCliente(temGeolocalizacao, true)
+  const [estadoPedido, setEstadoPedido] = useState<GeoState>('idle')
+  const geoState: GeoState = suportado ? estadoPedido : 'unsupported'
+  const setGeoState = setEstadoPedido
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
   const RADIUS = 50 // km
-
-  useEffect(() => {
-    if (!('geolocation' in navigator)) {
-      setGeoState('unsupported')
-    }
-  }, [])
 
   function requestLocation() {
     setGeoState('loading')
