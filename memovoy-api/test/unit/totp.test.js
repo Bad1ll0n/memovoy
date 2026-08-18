@@ -1,6 +1,6 @@
 import { test, describe, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import { generateTotpSecret, verifyTotp, otpauthUrl } from '../src/services/totp.js'
+import { generateTotpSecret, verifyTotp, otpauthUrl } from '../../src/services/totp.js'
 
 // Vectores oficiais do RFC 6238 (SHA-1, secret ASCII "12345678901234567890").
 // A implementação devolve 6 dígitos (code % 1e6), logo usamos os 6 últimos

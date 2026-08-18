@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { checkMagicBytes } from '../src/routes/uploads.js'
+import { checkMagicBytes } from '../../src/routes/uploads.js'
 
 // Última linha de defesa dos uploads: garante que os bytes do ficheiro
 // correspondem ao Content-Type declarado. Sem isto, basta renomear um

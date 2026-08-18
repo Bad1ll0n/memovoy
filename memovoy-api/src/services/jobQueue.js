@@ -1,9 +1,14 @@
-// pg-boss ships as CJS — use createRequire for reliable ESM interop
+// pg-boss ships as CJS — use createRequire for reliable ESM interop.
+// A v12 exporta { PgBoss } como named export; fazer `require('pg-boss')` sem
+// destructuring devolvia o objecto do módulo e rebentava com
+// "PgBoss is not a constructor" — silenciosamente, porque quem chama isto
+// engole o erro num .catch.
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-const PgBoss  = require('pg-boss')
+const { PgBoss } = require('pg-boss')
 
-export const JOB_AI_GENERATE = 'ai:generate-itinerary'
+// Ponto, não dois-pontos: a v12 valida o nome da fila e rejeita ':'.
+export const JOB_AI_GENERATE = 'ai.generate-itinerary'
 
 let boss = null
 
@@ -18,6 +23,11 @@ export async function startJobQueue(connectionString) {
 
   boss.on('error', (err) => console.error('[pg-boss]', err.message))
   await boss.start()
+
+  // Desde a v10 as filas não são criadas automaticamente: sem isto, tanto
+  // work() como send() falham com "Queue ... does not exist". É idempotente.
+  await boss.createQueue(JOB_AI_GENERATE)
+
   console.info('[pg-boss] Job queue started')
   return boss
 }
@@ -132,7 +142,7 @@ export async function registerWorkers(bossInstance, { io }) {
 
       await notifyUser('done', { id: rows[0].id })
     } catch (err) {
-      console.error('[pg-boss] ai:generate-itinerary failed', err.message)
+      console.error(`[pg-boss] ${JOB_AI_GENERATE} failed`, err.message)
       await notifyUser('error', { message: 'Erro ao gerar o roteiro. Tenta novamente.' }).catch(() => {})
       throw err
     }

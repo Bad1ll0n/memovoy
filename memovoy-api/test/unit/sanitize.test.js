@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { sanitizeText, sanitizeOutput } from '../src/services/aiAgent.js'
+import { sanitizeText, sanitizeOutput } from '../../src/services/aiAgent.js'
 
 // sanitizeOutput corre sobre TODAS as respostas de IA (callOpenAI em aiAgent.js).
 // Um bug aqui corrompe roteiros, dicas, listas de bagagem e legendas de uma vez só.

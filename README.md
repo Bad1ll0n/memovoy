@@ -48,23 +48,43 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 
 ## Testes
 
+### Unitários — rápidos, sem dependências
+
 ```bash
 cd memovoy-api && npm test    # 58 testes (node:test)
 cd memovoy-web && npm test    # 48 testes (vitest)
 ```
 
-106 testes ao todo, a correr em poucos segundos. Nenhum precisa de
-PostgreSQL, Redis ou chaves de API — cobrem lógica pura: sanitização das
-saídas de IA, TOTP contra os vectores do RFC 6238, validação de magic bytes
-nos uploads, hashing de passwords, configuração de JWT, o cliente HTTP com o
-refresh em 401, e as stores.
+Nenhum precisa de PostgreSQL, Redis ou chaves de API. Cobrem lógica pura:
+sanitização das saídas de IA, TOTP contra os vectores do RFC 6238, validação de
+magic bytes nos uploads, hashing de passwords, configuração de JWT, o cliente
+HTTP com o refresh em 401, e as stores.
 
-A cobertura de componentes é mínima — só os hooks `useTheme` e
-`useEstaAoVivo`. Não há testes
-end-to-end. Aí a rede de segurança é o `tsc --noEmit` e o `next build`.
+### Integração — contra Postgres a sério
 
-O CI (`.github/workflows/ci.yml`) corre tudo isto. O lint corre em modo
-informativo — tem 11 erros por resolver e por isso ainda não bloqueia.
+```bash
+cd memovoy-api
+createdb memovoy_test
+npm run test:integration:setup   # aplica as migrations
+npm run test:integration         # 24 testes
+```
+
+Exercitam as rotas de autenticação de ponta a ponta via `app.inject()`:
+registo, login, bloqueio por tentativas falhadas, resistência à enumeração de
+emails, e que campos privados saem (ou não) em cada perfil.
+
+`test/integration.env` traz as credenciais que o CI usa. Localmente, define
+`DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente
+sobre o `--env-file`.
+
+### O que não está coberto
+
+Componentes React (só os hooks `useTheme` e `useEstaAoVivo`) e end-to-end. Aí a
+rede de segurança é o `tsc --noEmit` e o `next build`.
+
+O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
+a integração. O lint corre em modo informativo — tem 11 erros por resolver e por
+isso ainda não bloqueia.
 
 ## Rotas da API
 

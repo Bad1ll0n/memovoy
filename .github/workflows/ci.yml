@@ -28,9 +28,51 @@ jobs:
 
       - run: npm ci
 
-      # Os testes são unitários: não tocam na base de dados nem fazem rede.
+      # Testes unitários: não tocam na base de dados nem fazem rede.
       # As variáveis falsas vivem em test/test.env.
       - run: npm test
+
+  api-integration:
+    name: API — integração
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: memovoy-api
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: memovoy_test
+        ports:
+          - 5432:5432
+        # Sem isto os passos arrancam antes de o Postgres aceitar ligações.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: memovoy-api/package-lock.json
+
+      - run: npm ci
+
+      # As credenciais do serviço acima coincidem com as de test/integration.env,
+      # por isso não é preciso passar DATABASE_URL aqui.
+      - name: Aplicar migrations
+        run: npm run test:integration:setup
+
+      - name: Testes de integração
+        run: npm run test:integration
 
   web:
     name: Web — testes, typecheck e build

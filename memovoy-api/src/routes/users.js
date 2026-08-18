@@ -6,6 +6,14 @@ import { notifyUser } from '../services/notifyUser.js'
 import { agentTravelBuddyMatch } from '../services/aiAgent.js'
 
 function userDto(row, viewerId) {
+  // Campos privados só quando a linha é do próprio: este DTO também serve
+  // perfis de terceiros, e incluí-los sempre vazava emails alheios.
+  //
+  // O frontend guarda o resultado do PATCH /users/me na authStore com
+  // setAuth(). Sem estes campos, editar o perfil apagava emailVerified e
+  // fazia reaparecer o aviso de verificação a quem já tinha verificado.
+  const proprio = viewerId != null && row.id === viewerId
+
   return {
     id:                row.id,
     username:          row.username,
@@ -24,6 +32,11 @@ function userDto(row, viewerId) {
     countriesCount:    Number(row.countries_count ?? 0),
     itinerariesCount:  Number(row.itineraries_count ?? 0),
     viewerFollows:     row.viewer_follows ?? false,
+    ...(proprio ? {
+      email:               row.email,
+      emailVerified:       row.email_verified ?? false,
+      onboardingCompleted: row.onboarding_completed ?? false,
+    } : {}),
   }
 }
 

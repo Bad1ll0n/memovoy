@@ -52,13 +52,22 @@ e um valor vazio, nunca o valor real.
 
 ## Estado da qualidade
 
-`npm test` corre em ambas as apps: 58 testes na API (node:test nativo) e 48 na
-web (vitest). Nenhum toca na BD nem faz rede — as variáveis falsas de que a API
-precisa estão em `memovoy-api/test/test.env`.
+`npm test` corre os unitários em ambas as apps: 58 na API (node:test nativo,
+`test/unit/`) e 48 na web (vitest). Não tocam na BD nem fazem rede.
+
+`npm run test:integration` corre 24 testes contra Postgres a sério
+(`test/integration/`), via `app.inject()`. **A app é construída por
+`src/app.js`**, que devolve a instância Fastify sem a pôr à escuta;
+`src/server.js` é só o ponto de entrada que a levanta e liga Socket.IO e a fila
+de jobs. Rotas novas registam-se em `app.js`.
+
+Os dois conjuntos vivem em pastas separadas porque a descoberta automática do
+`node --test` apanharia os de integração ao correr `npm test` — daí os globs
+explícitos nos scripts.
 
 Ao mexer em `aiAgent.js`, `totp.js`, na validação de uploads, no hashing de
-passwords ou no cliente HTTP do frontend, correr os testes: são essas as zonas
-cobertas.
+passwords, nas rotas de autenticação ou no cliente HTTP do frontend, correr os
+testes: são essas as zonas cobertas.
 
 Testes com DOM usam jsdom e @testing-library/react — declarar
 `// @vitest-environment jsdom` no topo do ficheiro, porque o ambiente por

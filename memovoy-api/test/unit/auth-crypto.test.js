@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import Fastify from 'fastify'
 import fastifyJwt from '@fastify/jwt'
 import bcrypt from 'bcrypt'
-import { hashPassword, verifyPassword } from '../src/routes/auth.js'
+import { hashPassword, verifyPassword } from '../../src/routes/auth.js'
 
 // Estes testes guardam a subida de @fastify/jwt 9→10 e bcrypt 5→6, feitas
 // para fechar advisories críticas. Se um major futuro partir o contrato,

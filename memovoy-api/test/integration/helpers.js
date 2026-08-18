@@ -1,0 +1,62 @@
+import { buildApp } from '../../src/app.js'
+import { pool, query } from '../../src/db/pool.js'
+
+/**
+ * Instância da app partilhada por todos os testes de um ficheiro.
+ * Rate limiting desligado: o registo permite 5 pedidos por minuto e os testes
+ * criam vários utilizadores seguidos.
+ */
+export async function criarApp() {
+  const { app } = await buildApp({ rateLimit: false })
+  await app.ready()
+  return app
+}
+
+/** Fecha a app e a pool. Chamar no fim de cada ficheiro de teste. */
+export async function fecharApp(app) {
+  await app.close()
+  await pool.end()
+}
+
+/**
+ * Esvazia as tabelas entre casos.
+ *
+ * DELETE e não TRUNCATE de propósito: o hook onRequest do last_seen dispara um
+ * `UPDATE users` sem esperar por ele (fire-and-forget com .catch()), e esse
+ * update fica em voo depois da resposta. O TRUNCATE pede ACCESS EXCLUSIVE e
+ * entra em deadlock com ele; o DELETE tranca linhas e limita-se a esperar.
+ *
+ * Todas as chaves estrangeiras para users(id) têm ON DELETE CASCADE, por isso
+ * apagar os utilizadores arrasta o resto.
+ */
+export async function limparBaseDeDados() {
+  await query('DELETE FROM users')
+}
+
+/** Corpo válido de registo, com sufixo único para não colidir. */
+export function dadosDeRegisto(sufixo = Math.random().toString(36).slice(2, 8)) {
+  return {
+    username: `utilizador${sufixo}`.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+    email:    `${sufixo}@exemplo.pt`,
+    password: 'PasswordValida1',
+  }
+}
+
+/**
+ * Regista um utilizador e devolve o corpo da resposta mais os dados usados.
+ * Falha ruidosamente se o registo não devolver 2xx — um teste que depende
+ * disto não deve continuar em silêncio.
+ */
+export async function registarUtilizador(app, dados = dadosDeRegisto()) {
+  const res = await app.inject({
+    method:  'POST',
+    url:     '/auth/register',
+    payload: dados,
+  })
+
+  if (res.statusCode >= 300) {
+    throw new Error(`registo falhou (${res.statusCode}): ${res.body}`)
+  }
+
+  return { ...JSON.parse(res.body), dados }
+}
