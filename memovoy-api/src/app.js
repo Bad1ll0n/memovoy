@@ -31,6 +31,30 @@ import { groupsRoutes }        from './routes/groups.js'
 import { reportsRoutes }       from './routes/reports.js'
 
 /**
+ * Remove utilizador e password de um URL antes de o registar nos logs.
+ *
+ * REDIS_URL tem o formato redis://[user]:[password]@host:porta — registá-lo em
+ * bruto punha a password no stdout, e daí em qualquer agregador de logs.
+ *
+ * @param {string | undefined} url
+ * @returns {string} O URL sem credenciais, ou '(ilegível)' se não fizer parse.
+ */
+export function redactarCredenciais(url) {
+  if (!url) return '(vazio)'
+  try {
+    const u = new URL(url)
+    if (u.username || u.password) {
+      u.username = '***'
+      u.password = ''
+    }
+    return u.toString()
+  } catch {
+    // URL malformado: não arriscar imprimir o original.
+    return '(ilegível)'
+  }
+}
+
+/**
  * Constrói a aplicação Fastify sem a pôr à escuta.
  *
  * Separado do server.js para os testes poderem usar app.inject() sem levantar
@@ -117,7 +141,7 @@ export async function buildApp({ rateLimit = true } = {}) {
 
     await redisClient.connect().catch((e) => console.warn('[redis] connect failed:', e.message))
     await redisSub.connect().catch((e) => console.warn('[redis] sub connect failed:', e.message))
-    console.info('[redis] Connected —', process.env.REDIS_URL)
+    console.info('[redis] Connected —', redactarCredenciais(process.env.REDIS_URL))
   }
 
   if (rateLimit) {

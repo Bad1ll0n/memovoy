@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
 
-// Comentarios, reaccoes e linhagem de roteiros. Separado de itineraries.js, que
-// tinha 1483 linhas: este bloco so depende de query e zod, o que o torna a
-// divisao mais segura de fazer.
+// Comentários, reacções e linhagem de roteiros. Separado de itineraries.js, que
+// tinha 1483 linhas: este bloco só depende de query e zod, o que o torna a
+// divisão mais segura de fazer.
 //
 // Registado sob o mesmo prefixo /itineraries em app.js — para quem consome a
 // API nada muda.

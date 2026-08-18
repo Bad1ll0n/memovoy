@@ -218,7 +218,7 @@ export async function usersRoutes(app) {
 
   // DELETE /users/me
   app.delete('/me', { preHandler: [app.authenticate] }, async (request, reply) => {
-    // await de proposito: sem ele o DELETE abaixo pode ganhar a corrida e o
+    // await de propósito: sem ele o DELETE abaixo pode ganhar a corrida e o
     // INSERT do registo falha por chave estrangeira, perdendo o rasto de que a
     // conta foi eliminada a pedido.
     await logAudit(request.user.id, 'account_delete', {}, request.headers['x-forwarded-for'] ?? null)
