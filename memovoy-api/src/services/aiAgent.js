@@ -22,12 +22,34 @@ export function sanitizeOutput(obj) {
   return sanitizeText(obj)
 }
 
-const openai = new OpenAI({
-  apiKey:     process.env.GROQ_API_KEY,
-  baseURL:    'https://api.groq.com/openai/v1',
-  timeout:    30_000,
-  maxRetries: 0,
-})
+// Cliente construido a pedido, nao no import.
+//
+// Duas razoes. Uma: importar este modulo deixa de exigir GROQ_API_KEY, o que
+// tornava impossivel carrega-lo em testes sem uma chave falsa. Outra: permite
+// substitui-lo por um duplo, que e a unica forma de testar os agentes sem
+// chamar a API a serio.
+let clienteLlm = null
+
+function obterCliente() {
+  if (clienteLlm === null) {
+    clienteLlm = new OpenAI({
+      apiKey:     process.env.GROQ_API_KEY,
+      baseURL:    'https://api.groq.com/openai/v1',
+      timeout:    30_000,
+      maxRetries: 0,
+    })
+  }
+  return clienteLlm
+}
+
+/**
+ * Substitui o cliente do LLM. Passar null repoe o real na proxima chamada.
+ * Existe para os testes; nao usar em codigo de producao.
+ * @param {{ chat: { completions: { create: Function } } } | null} cliente
+ */
+export function definirClienteLlm(cliente) {
+  clienteLlm = cliente
+}
 const MODEL       = 'llama-3.3-70b-versatile'
 const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -71,7 +93,7 @@ async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperatu
   if (temperature !== undefined) params.temperature = temperature
 
   async function run() {
-    const completion = await openai.chat.completions.create(params, {
+    const completion = await obterCliente().chat.completions.create(params, {
       signal: AbortSignal.timeout(25_000),
     })
     if (completion.usage) {
@@ -335,7 +357,7 @@ Return a JSON object with:
  * Uses JSON-Lines format in the prompt — model outputs one JSON object per line.
  */
 export async function* agentStreamSuggestActivity({ destination, currency, existingActivity, feedback, feedbackHistory = [] }) {
-  const stream = await openai.chat.completions.create({
+  const stream = await obterCliente().chat.completions.create({
     model: MODEL,
     temperature: 0.8,
     max_tokens: 1800,
@@ -411,7 +433,7 @@ export async function* agentStreamCaption({ destination, images }) {
     userContent = `Destination: ${destination}.`
   }
 
-  const stream = await openai.chat.completions.create({
+  const stream = await obterCliente().chat.completions.create({
     model: hasImages ? VISION_MODEL : MODEL,
     temperature: 0.9,
     max_tokens: 300,

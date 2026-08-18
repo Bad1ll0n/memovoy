@@ -55,7 +55,7 @@ e um valor vazio, nunca o valor real.
 `npm test` corre os unitários em ambas as apps: 58 na API (node:test nativo,
 `test/unit/`) e 95 na web (vitest). Não tocam na BD nem fazem rede.
 
-`npm run test:integration` corre 145 testes contra Postgres a sério
+`npm run test:integration` corre 158 testes contra Postgres a sério
 (`test/integration/`), via `app.inject()`. **A app é construída por
 `src/app.js`**, que devolve a instância Fastify sem a pôr à escuta;
 `src/server.js` é só o ponto de entrada que a levanta e liga Socket.IO e a fila
@@ -83,9 +83,11 @@ omissão é Node. Componentes que precisem de providers renderizam-se com
 `renderComProviders` de `@/test-utils`.
 
 Cobertos: os componentes `Lightbox`, `Avatar`, `EmailVerificationBanner` e
-`FeatureTour`, e os hooks `useTheme`, `useEstaAoVivo` e `useValorDoCliente`. Não
-há end-to-end, nem testes dos endpoints de geração por IA — esses precisariam de
-um duplo do cliente da Groq.
+`FeatureTour`, e os hooks `useTheme`, `useEstaAoVivo` e `useValorDoCliente`.
+
+Os agentes de IA testam-se com `definirClienteLlm()` de `aiAgent.js`, que
+substitui o cliente da Groq por um duplo. O cliente é construído a pedido, não
+no import — por isso carregar o módulo não exige `GROQ_API_KEY`.
 
 O lint **bloqueia no CI** e está limpo: zero erros, zero avisos. Manter assim —
 se um aviso novo aparecer, resolvê-lo em vez de o deixar acumular.

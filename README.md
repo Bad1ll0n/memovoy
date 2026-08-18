@@ -66,7 +66,7 @@ HTTP com o refresh em 401, e as stores.
 cd memovoy-api
 createdb memovoy_test
 npm run test:integration:setup   # aplica as migrations
-npm run test:integration         # 145 testes
+npm run test:integration         # 158 testes
 ```
 
 Exercitam as rotas de ponta a ponta via `app.inject()`, com o foco em
@@ -81,6 +81,8 @@ autorização — quem pode ler e escrever o quê:
 - **utilizadores** — seguir, sessões de dispositivo, e a eliminação de conta do
   RGPD (que apaga mesmo, e só o conteúdo de quem apaga)
 - **despesas e notificações** — despesas só do próprio, notificações privadas
+- **agentes de IA** — com um duplo do cliente da Groq: cache, saídas
+  malformadas do modelo, e a retentativa em erros 5xx
 
 `test/integration.env` traz as credenciais que o CI usa. Localmente, define
 `DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente
@@ -90,9 +92,8 @@ sobre o `--env-file`.
 
 A maioria dos componentes React. Estão cobertos o `Lightbox`, o `Avatar`, o
 `EmailVerificationBanner` e o `FeatureTour`, mais os hooks `useTheme`,
-`useEstaAoVivo` e `useValorDoCliente`. Não há testes end-to-end, nem dos
-endpoints de geração por IA — esses precisariam da API da Groq. Aí a rede de
-segurança é o `tsc --noEmit` e o `next build`.
+`useEstaAoVivo` e `useValorDoCliente`. Não há testes end-to-end. Aí a rede de segurança é o `tsc --noEmit` e o
+`next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
 a integração. O lint é bloqueante e está sem erros nem avisos.
