@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 
 type State = 'loading' | 'success' | 'error'

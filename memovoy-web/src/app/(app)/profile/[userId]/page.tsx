@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore'
 import { Avatar } from '@/components/ui/Avatar'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { ProfileHeaderSkeleton, ItineraryGridSkeleton, PostCardSkeleton } from '@/components/ui/Skeleton'
+import { ProfileHeaderSkeleton } from '@/components/ui/Skeleton'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import type { Post } from '@/components/feed/PostCard'
 

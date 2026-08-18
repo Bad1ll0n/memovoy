@@ -55,7 +55,7 @@ function timeAgo(iso: string) {
 }
 
 export default function NotificationsPage() {
-  const { isReady, user } = useRequireAuth()
+  const { isReady } = useRequireAuth()
   const qc = useQueryClient()
   const push = usePushNotifications()
   // Real-time is handled by the SocketProvider singleton in (app)/layout.tsx

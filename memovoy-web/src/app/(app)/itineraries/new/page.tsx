@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import {
   Compass, ChevronLeft, ChevronRight, Loader2,
-  Users, Utensils, Car, Backpack, Check, Sparkles,
+  Car, Check, Sparkles,
   Sun, Moon, Clock, MapPin
 } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -207,8 +207,10 @@ function DestinationInput({ value, onChange }: { value: string; onChange: (val: 
 
   return (
     <div>
+      {/* role=combobox: o papel textbox implicito nao suporta aria-expanded */}
       <input
         type="text"
+        role="combobox"
         className="input text-lg h-12"
         placeholder="Ex: Tóquio, Japão"
         value={query}
@@ -221,6 +223,8 @@ function DestinationInput({ value, onChange }: { value: string; onChange: (val: 
         autoComplete="off"
         aria-autocomplete="list"
         aria-expanded={showSuggestions}
+        aria-controls="sugestoes-destino"
+        aria-activedescendant={activeIdx >= 0 ? `sugestao-${activeIdx}` : undefined}
       />
 
       {/* Suggestions replace the hint text — in normal flow, never overflow the card */}
@@ -229,6 +233,7 @@ function DestinationInput({ value, onChange }: { value: string; onChange: (val: 
           className="mt-1.5 rounded-xl overflow-hidden"
           style={{ border: '1px solid var(--border)' }}
           role="listbox"
+          id="sugestoes-destino"
         >
           {loading ? (
             <li className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -238,6 +243,7 @@ function DestinationInput({ value, onChange }: { value: string; onChange: (val: 
             suggestions.map((s, i) => (
               <li
                 key={i}
+                id={`sugestao-${i}`}
                 role="option"
                 aria-selected={i === activeIdx}
                 className="px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2.5"

@@ -95,7 +95,6 @@ export function ActivityMap({ activities }: Props) {
   )
 
   const status = toGeocode.length === 0 ? 'empty' : statusGeocode
-  const setStatus = setStatusGeocode
 
   // Geocode all activities with addresses (rate-limited: 1 req/s)
   useEffect(() => {
@@ -116,7 +115,7 @@ export function ActivityMap({ activities }: Props) {
       }
       if (!cancelled) {
         setMarkers(results)
-        setStatus(results.length > 0 ? 'ready' : 'empty')
+        setStatusGeocode(results.length > 0 ? 'ready' : 'empty')
       }
     })()
 

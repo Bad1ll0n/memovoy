@@ -24,7 +24,6 @@ export default function FollowingPage() {
   const router = useRouter()
   const { isReady } = useRequireAuth()
   const { user: me } = useAuthStore()
-  const qc = useQueryClient()
 
   const { data, isLoading } = useQuery<{ users: FollowUser[] }>({
     queryKey: ['following', userId],

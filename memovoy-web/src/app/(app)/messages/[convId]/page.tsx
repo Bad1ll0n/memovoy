@@ -100,7 +100,7 @@ export default function ConversationPage() {
 
     socketRef.current = socket
     return () => { socket.disconnect() }
-  }, [isReady, accessToken, convId, qc])
+  }, [isReady, accessToken, convId, qc, user?.id])
 
   // Scroll to bottom on new messages
   useEffect(() => {

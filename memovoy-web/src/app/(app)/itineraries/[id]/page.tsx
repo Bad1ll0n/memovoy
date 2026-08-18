@@ -45,6 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ItineraryPage({ params }: Props) {
+// O id vem do useParams() dentro do ItineraryClient; a pagina nao precisa dele.
+export default function ItineraryPage() {
   return <ItineraryClient />
 }

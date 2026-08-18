@@ -78,8 +78,8 @@ Testes com DOM usam jsdom e @testing-library/react — declarar
 omissão é Node. Só `useTheme` e `useEstaAoVivo` estão cobertos assim; não há
 testes end-to-end.
 
-O lint está sem erros e **bloqueia no CI**. Restam 25 avisos, quase todos
-variáveis por usar.
+O lint **bloqueia no CI** e está limpo: zero erros, zero avisos. Manter assim —
+se um aviso novo aparecer, resolvê-lo em vez de o deixar acumular.
 
 Ler valores que só existem no cliente — `localStorage`, `navigator`, `window` —
 faz-se com `useEstaHidratado()` ou `useValorDoCliente()` de

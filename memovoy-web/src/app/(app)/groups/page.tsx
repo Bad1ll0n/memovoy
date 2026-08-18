@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Users, Plus, Lock, Globe, Search, MapPin, UserCheck, UserPlus } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -11,7 +12,6 @@ import { useAuthStore } from '@/store/authStore'
 import { Spinner } from '@/components/ui/Spinner'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Avatar } from '@/components/ui/Avatar'
 
 interface Group {
   id: string
@@ -141,7 +141,8 @@ function GroupCard({ group }: { group: Group }) {
           <button
             onClick={(e) => {
               e.preventDefault()
-              group.viewerIsMember ? leaveMutation.mutate() : joinMutation.mutate()
+              if (group.viewerIsMember) leaveMutation.mutate()
+              else joinMutation.mutate()
             }}
             disabled={joinMutation.isPending || leaveMutation.isPending}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg w-full justify-center transition-colors"
@@ -171,6 +172,7 @@ function GroupCard({ group }: { group: Group }) {
 }
 
 export default function GroupsPage() {
+  const router = useRouter()
   const { isReady } = useRequireAuth()
   const { user } = useAuthStore()
   const [showCreate, setShowCreate] = useState(false)
@@ -245,7 +247,7 @@ export default function GroupsPage() {
       {showCreate && (
         <CreateGroupModal
           onClose={() => setShowCreate(false)}
-          onCreated={(id) => { setShowCreate(false); window.location.href = `/groups/${id}` }}
+          onCreated={(id) => { setShowCreate(false); router.push(`/groups/${id}`) }}
         />
       )}
     </div>

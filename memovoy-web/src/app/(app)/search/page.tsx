@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Search, X, BadgeCheck, Lock, Map, Camera, Users, Clock, Sparkles, MapPin, Wallet } from 'lucide-react'
 import { api } from '@/lib/api'

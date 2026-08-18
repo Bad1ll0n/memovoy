@@ -114,7 +114,8 @@ export default function ManualBuilderPage() {
   function toggleDay(dayId: string) {
     setExpandedDays((prev) => {
       const next = new Set(prev)
-      next.has(dayId) ? next.delete(dayId) : next.add(dayId)
+      if (next.has(dayId)) next.delete(dayId)
+      else next.add(dayId)
       return next
     })
   }

@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { MessageCircle } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { Avatar } from '@/components/ui/Avatar'

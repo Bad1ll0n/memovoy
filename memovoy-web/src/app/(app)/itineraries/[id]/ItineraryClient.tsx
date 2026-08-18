@@ -554,8 +554,6 @@ function ManualActivityModal({
 function SortableActivityCard({
   act,
   sortId,
-  actIdx,
-  activeDay,
   isOwner,
   checkedIn,
   onEditClick,
@@ -820,7 +818,7 @@ export default function ItineraryClient() {
     const capturedDay = activeDay
     if (reorderTimer.current) clearTimeout(reorderTimer.current)
     reorderTimer.current = setTimeout(() => reorderMutation.mutate({ dayIndex: capturedDay, activities: reordered }), 500)
-  }, [it, activeDay, id, qc, reorderMutation])
+  }, [it, refinedDays, activeDay, id, qc, reorderMutation])
 
   const handleManualSave = useCallback((activities: Activity[]) => {
     if (!manualTarget) return
@@ -1273,7 +1271,7 @@ export default function ItineraryClient() {
           <CollaboratorsPanel
             itineraryId={id}
             isOwner={isOwner}
-            ownerId={it.author.id}
+
             ownerUsername={it.author.username}
           />
         </div>

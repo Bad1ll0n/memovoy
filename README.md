@@ -52,7 +52,7 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 
 ```bash
 cd memovoy-api && npm test    # 58 testes (node:test)
-cd memovoy-web && npm test    # 48 testes (vitest)
+cd memovoy-web && npm test    # 54 testes (vitest)
 ```
 
 Nenhum precisa de PostgreSQL, Redis ou chaves de API. Cobrem lógica pura:
@@ -83,7 +83,7 @@ Componentes React (só os hooks `useTheme` e `useEstaAoVivo`) e end-to-end. Aí 
 rede de segurança é o `tsc --noEmit` e o `next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
-a integração. O lint é bloqueante; restam 25 avisos, que não fazem falhar o job.
+a integração. O lint é bloqueante e está sem erros nem avisos.
 
 ## Rotas da API
 
@@ -104,5 +104,4 @@ a integração. O lint é bloqueante; restam 25 avisos, que não fazem falhar o 
   data) descrevia uma arquitectura planeada — Kubernetes, Kafka, Elasticsearch,
   TimescaleDB, Flyway — que nunca foi construída. Continua no histórico, mas
   não a tomes por verdade.
-- O lint do frontend está sem erros e bloqueia no CI. Restam 25 avisos,
-  quase todos variáveis por usar.
+- O lint do frontend bloqueia no CI e está limpo — zero erros, zero avisos.

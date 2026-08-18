@@ -20,11 +20,11 @@ interface Collaborator {
 interface Props {
   itineraryId: string
   isOwner:     boolean
-  ownerId:     string
+
   ownerUsername: string
 }
 
-export function CollaboratorsPanel({ itineraryId, isOwner, ownerId, ownerUsername }: Props) {
+export function CollaboratorsPanel({ itineraryId, isOwner, ownerUsername }: Props) {
   const qc   = useQueryClient()
   const qKey = ['itinerary-collaborators', itineraryId]
 

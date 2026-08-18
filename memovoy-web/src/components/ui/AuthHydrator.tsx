@@ -24,7 +24,9 @@ export function AuthHydrator() {
       })
       .catch(() => { /* sem sessão activa — normal */ })
       .finally(() => hydrate())
-  }, [])
+    // As accoes da store Zustand e o setAccessToken sao referencias estaveis;
+    // isHydrated so muda uma vez e o guard do attempted evita repeticoes.
+  }, [isHydrated, setAuth, hydrate])
 
   return null
 }

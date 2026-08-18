@@ -6,7 +6,6 @@ import { Monitor, Smartphone, Tablet, Trash2, Shield } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { Spinner } from '@/components/ui/Spinner'
-import { AlertBanner } from '@/components/ui/AlertBanner'
 import { toast } from '@/store/toastStore'
 
 interface Session {
