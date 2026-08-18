@@ -55,7 +55,7 @@ e um valor vazio, nunca o valor real.
 `npm test` corre os unitários em ambas as apps: 58 na API (node:test nativo,
 `test/unit/`) e 95 na web (vitest). Não tocam na BD nem fazem rede.
 
-`npm run test:integration` corre 158 testes contra Postgres a sério
+`npm run test:integration` corre 162 testes contra Postgres a sério
 (`test/integration/`), via `app.inject()`. **A app é construída por
 `src/app.js`**, que devolve a instância Fastify sem a pôr à escuta;
 `src/server.js` é só o ponto de entrada que a levanta e liga Socket.IO e a fila
@@ -114,8 +114,15 @@ As dependências estão sem vulnerabilidades conhecidas nas duas apps. Confirmar
 com `npm audit` antes de subir versões.
 
 Ficheiros grandes que convém partir antes de crescerem mais:
-`memovoy-api/src/routes/itineraries.js` (1477 linhas),
-`services/aiAgent.js` (717), `routes/users.js` (665), `routes/auth.js` (529).
+`memovoy-api/src/routes/itineraries.js` (1283 linhas — os comentários,
+reacções e linhagem saíram para `itinerariesSocial.js`), `services/aiAgent.js`
+(717), `routes/users.js` (665), `routes/auth.js` (529).
+
+O bloco maior que resta em `itineraries.js` são as rotas de geração por IA. Não
+as separei porque **são as menos cobertas por testes** e estão espalhadas pelo
+ficheiro — mover código sem rede, em blocos não contíguos, é como se introduz um
+bug silencioso. A ordem certa é cobri-las primeiro, agora que o
+`definirClienteLlm()` o permite.
 
 ## Next.js 16
 

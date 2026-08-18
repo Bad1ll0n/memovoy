@@ -15,6 +15,7 @@ import { usersRoutes }         from './routes/users.js'
 import { postsRoutes }         from './routes/posts.js'
 import { feedRoutes }          from './routes/feed.js'
 import { itinerariesRoutes }   from './routes/itineraries.js'
+import { itinerariesSocialRoutes } from './routes/itinerariesSocial.js'
 import { conversationsRoutes } from './routes/conversations.js'
 import { messagesRoutes }      from './routes/messages.js'
 import { notificationsRoutes } from './routes/notifications.js'
@@ -161,16 +162,33 @@ export async function buildApp({ rateLimit = true } = {}) {
   // ─── last_seen — update every 5 min per authenticated user ─────────────────
   // Uses request.user if already set by authenticate, otherwise tries a silent verify.
 
+  const LAST_SEEN_INTERVALO_MS = 5 * 60 * 1000
+  // Acima disto, purga as entradas já expiradas. Sem limite o Map crescia uma
+  // entrada por utilizador autenticado e nunca encolhia — num processo de longa
+  // duração é uma fuga de memória. Entradas mais velhas que o intervalo não
+  // servem para nada: o pedido seguinte reescreve na mesma.
+  const LAST_SEEN_MAX_ENTRADAS = 10_000
+
   const lastSeenCache = new Map()
+
   app.addHook('onRequest', async (request) => {
     try {
       const userId = request.user?.id ?? (await request.jwtVerify().then(() => request.user?.id).catch(() => null))
       if (!userId) return
       const now = Date.now()
       const prev = lastSeenCache.get(userId) ?? 0
-      if (now - prev > 5 * 60 * 1000) {
+      if (now - prev > LAST_SEEN_INTERVALO_MS) {
+        if (lastSeenCache.size >= LAST_SEEN_MAX_ENTRADAS) {
+          for (const [id, quando] of lastSeenCache) {
+            if (now - quando > LAST_SEEN_INTERVALO_MS) lastSeenCache.delete(id)
+          }
+        }
         lastSeenCache.set(userId, now)
-        query('UPDATE users SET last_seen = NOW() WHERE id = $1', [userId]).catch(() => {})
+        // Deliberadamente sem await: é escrituração, não deve atrasar a
+        // resposta. Mas o erro deixa de ser engolido em silêncio — se isto
+        // falhar sempre, ninguém dava por nada.
+        query('UPDATE users SET last_seen = NOW() WHERE id = $1', [userId])
+          .catch((err) => console.warn('[last_seen] falhou:', err.message))
       }
     } catch {
       // unauthenticated request — ignore
@@ -184,6 +202,7 @@ export async function buildApp({ rateLimit = true } = {}) {
   await app.register(postsRoutes,         { prefix: '/posts' })
   await app.register(feedRoutes,          { prefix: '/feed' })
   await app.register(itinerariesRoutes,   { prefix: '/itineraries' })
+  await app.register(itinerariesSocialRoutes, { prefix: '/itineraries' })
   await app.register(conversationsRoutes, { prefix: '/conversations' })
   await app.register(messagesRoutes,      { prefix: '/messages' })
   await app.register(notificationsRoutes, { prefix: '/notifications' })

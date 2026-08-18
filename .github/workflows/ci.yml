@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # Sem filtro de branches: corre em qualquer push, para um erro aparecer no
+  # ramo de trabalho e não só quando chega ao main. O concurrency abaixo
+  # cancela runs antigos, por isso não se acumulam.
   push:
-    branches: [main, develop]
   pull_request:
 
 # Cancela runs antigos do mesmo branch quando chega um push novo.

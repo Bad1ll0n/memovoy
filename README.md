@@ -66,7 +66,7 @@ HTTP com o refresh em 401, e as stores.
 cd memovoy-api
 createdb memovoy_test
 npm run test:integration:setup   # aplica as migrations
-npm run test:integration         # 158 testes
+npm run test:integration         # 162 testes
 ```
 
 Exercitam as rotas de ponta a ponta via `app.inject()`, com o foco em
@@ -113,8 +113,9 @@ antes de um deploy.
 
 A maioria dos componentes React. Estão cobertos o `Lightbox`, o `Avatar`, o
 `EmailVerificationBanner` e o `FeatureTour`, mais os hooks `useTheme`,
-`useEstaAoVivo` e `useValorDoCliente`. Não há testes end-to-end. Aí a rede de segurança é o `tsc --noEmit` e o
-`next build`.
+`useEstaAoVivo` e `useValorDoCliente`. Além do smoke test acima, não há
+cobertura end-to-end dos restantes percursos. Aí a rede de segurança é o
+`tsc --noEmit` e o `next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
 a integração. O lint é bloqueante e está sem erros nem avisos.

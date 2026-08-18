@@ -26,17 +26,13 @@ export async function fecharApp(app) {
  * update fica em voo depois da resposta. O TRUNCATE pede ACCESS EXCLUSIVE e
  * entra em deadlock com ele; o DELETE tranca linhas e limita-se a esperar.
  *
- * As chaves estrangeiras para users(id) têm ON DELETE CASCADE, por isso apagar
- * os utilizadores arrasta quase tudo. Duas tabelas não vêm atrás:
- *
- * - `conversations` não tem coluna user_id — só `conversation_participants` a
- *   tem. Apagar utilizadores deixa a conversa lá, vazia. (Vale o mesmo em
- *   produção: cada conta eliminada deixa uma linha órfã.)
- * - `audit_logs` sobrevive de propósito — é um registo de auditoria.
+ * As chaves estrangeiras para users(id) têm ON DELETE CASCADE, e desde a
+ * migration 025 um trigger apaga as conversas que ficam sem participantes — por
+ * isso apagar os utilizadores arrasta tudo menos os `audit_logs`, que
+ * sobrevivem de propósito por serem um registo de auditoria.
  */
 export async function limparBaseDeDados() {
   await query('DELETE FROM users')
-  await query('DELETE FROM conversations')
   await query('DELETE FROM audit_logs')
 }
 

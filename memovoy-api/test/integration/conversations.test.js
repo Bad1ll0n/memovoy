@@ -134,6 +134,46 @@ describe('GET /conversations/:id — acesso', () => {
   })
 })
 
+describe('limpeza de conversas órfãs', () => {
+  // A tabela conversations não tem user_id, por isso apagar uma conta não a
+  // arrastava: ficava lá uma linha vazia e inalcançável, para sempre. Um
+  // trigger em conversation_participants passa a apagá-la quando sai o último.
+
+  test('apagar a conta do último participante remove a conversa', async () => {
+    const convId = await abrirConversa(ana, bruno)
+
+    await app.inject({ method: 'DELETE', url: '/users/me', headers: comToken(ana.accessToken) })
+    await app.inject({ method: 'DELETE', url: '/users/me', headers: comToken(bruno.accessToken) })
+
+    const { rows } = await query('SELECT 1 FROM conversations WHERE id = $1', [convId])
+    assert.equal(rows.length, 0, 'a conversa devia ter desaparecido com o último participante')
+  })
+
+  test('a conversa sobrevive enquanto restar um participante', async () => {
+    const convId = await abrirConversa(ana, bruno)
+
+    await app.inject({ method: 'DELETE', url: '/users/me', headers: comToken(ana.accessToken) })
+
+    const { rows } = await query('SELECT 1 FROM conversations WHERE id = $1', [convId])
+    assert.equal(rows.length, 1, 'o Bruno ainda lá está')
+  })
+
+  test('as mensagens vão atrás da conversa', async () => {
+    const convId = await abrirConversa(ana, bruno)
+    await app.inject({
+      method: 'POST', url: '/messages',
+      headers: comToken(ana.accessToken),
+      payload: { conversationId: convId, content: 'olá' },
+    })
+
+    await app.inject({ method: 'DELETE', url: '/users/me', headers: comToken(ana.accessToken) })
+    await app.inject({ method: 'DELETE', url: '/users/me', headers: comToken(bruno.accessToken) })
+
+    const { rows } = await query('SELECT count(*)::int AS n FROM messages WHERE conversation_id = $1', [convId])
+    assert.equal(rows[0].n, 0)
+  })
+})
+
 describe('GET /conversations — listagem', () => {
   test('só lista as conversas de quem pergunta', async () => {
     await abrirConversa(ana, bruno)

@@ -244,30 +244,43 @@ describe('notificações', () => {
     assert.equal(res.statusCode, 401)
   })
 
-  // O PATCH exige os quatro campos: e uma substituicao total, nao um patch
-  // parcial, apesar do verbo. Um payload incompleto da 400.
-  test('guardar preferências exige o objecto completo', async () => {
-    const parcial = await app.inject({
+  // O PATCH e parcial desde que deixou de exigir os quatro campos: manda-se so
+  // o que muda e o resto fica como estava.
+  test('actualização parcial mantém os campos não enviados', async () => {
+    await app.inject({
+      method: 'PATCH', url: '/notifications/settings',
+      headers: comToken(ana.accessToken),
+      payload: { likes: false, comments: false, follows: true, messages: true },
+    })
+
+    const res = await app.inject({
       method: 'PATCH', url: '/notifications/settings',
       headers: comToken(ana.accessToken),
       payload: { follows: false },
     })
-    assert.equal(parcial.statusCode, 400)
+
+    assert.equal(res.statusCode, 200)
+    const prefs = JSON.parse(res.body)
+    assert.equal(prefs.follows, false, 'o campo enviado muda')
+    assert.equal(prefs.likes, false, 'os outros ficam como estavam')
+    assert.equal(prefs.comments, false)
   })
 
-  test('as preferências são por utilizador e sobrevivem à releitura', async () => {
+  test('campo desconhecido e recusado em vez de ignorado', async () => {
     const res = await app.inject({
       method: 'PATCH', url: '/notifications/settings',
       headers: comToken(ana.accessToken),
-      payload: { likes: true, comments: true, follows: false, messages: true },
+      payload: { folows: false },
     })
-    assert.equal(res.statusCode, 200)
+    assert.equal(res.statusCode, 400)
+  })
 
-    const daAna = await app.inject({
-      method: 'GET', url: '/notifications/settings',
+  test('as preferências são por utilizador', async () => {
+    await app.inject({
+      method: 'PATCH', url: '/notifications/settings',
       headers: comToken(ana.accessToken),
+      payload: { follows: false },
     })
-    assert.equal(JSON.parse(daAna.body).follows, false)
 
     const doBruno = await app.inject({
       method: 'GET', url: '/notifications/settings',

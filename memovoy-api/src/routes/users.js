@@ -218,7 +218,10 @@ export async function usersRoutes(app) {
 
   // DELETE /users/me
   app.delete('/me', { preHandler: [app.authenticate] }, async (request, reply) => {
-    logAudit(request.user.id, 'account_delete', {}, request.headers['x-forwarded-for'] ?? null)
+    // await de proposito: sem ele o DELETE abaixo pode ganhar a corrida e o
+    // INSERT do registo falha por chave estrangeira, perdendo o rasto de que a
+    // conta foi eliminada a pedido.
+    await logAudit(request.user.id, 'account_delete', {}, request.headers['x-forwarded-for'] ?? null)
     await query('DELETE FROM users WHERE id = $1', [request.user.id])
     reply.clearCookie('refreshToken', { path: '/auth' })
     reply.send({ ok: true })

@@ -2,12 +2,17 @@ import { z } from 'zod'
 import { query } from '../db/pool.js'
 import { getVapidPublicKey } from '../services/webPush.js'
 
+const PREFS_POR_OMISSAO = { likes: true, comments: true, follows: true, messages: true }
+
+// Campos opcionais: e um PATCH, faz o que o verbo promete. Antes exigia os
+// quatro, o que obrigava o cliente a reenviar tudo para mudar um. .strict()
+// para um campo mal escrito dar erro em vez de ser silenciosamente ignorado.
 const notifPrefsSchema = z.object({
-  likes:    z.boolean(),
-  comments: z.boolean(),
-  follows:  z.boolean(),
-  messages: z.boolean(),
-})
+  likes:    z.boolean().optional(),
+  comments: z.boolean().optional(),
+  follows:  z.boolean().optional(),
+  messages: z.boolean().optional(),
+}).strict()
 
 export async function notificationsRoutes(app) {
   // GET /notifications?cursor=
@@ -78,15 +83,20 @@ export async function notificationsRoutes(app) {
   app.get('/settings', { preHandler: [app.authenticate] }, async (request, reply) => {
     const { rows } = await query('SELECT notif_prefs FROM users WHERE id = $1', [request.user.id])
     if (rows.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
-    reply.send(rows[0].notif_prefs ?? { likes: true, comments: true, follows: true, messages: true })
+    reply.send({ ...PREFS_POR_OMISSAO, ...(rows[0].notif_prefs ?? {}) })
   })
 
   // PATCH /notifications/settings — guardar preferências de notificação
   app.patch('/settings', { preHandler: [app.authenticate] }, async (request, reply) => {
     const parsed = notifPrefsSchema.safeParse(request.body)
     if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
-    await query('UPDATE users SET notif_prefs = $1 WHERE id = $2', [JSON.stringify(parsed.data), request.user.id])
-    reply.send({ ok: true })
+
+    const { rows } = await query('SELECT notif_prefs FROM users WHERE id = $1', [request.user.id])
+    const actuais = rows[0]?.notif_prefs ?? PREFS_POR_OMISSAO
+    const novas   = { ...PREFS_POR_OMISSAO, ...actuais, ...parsed.data }
+
+    await query('UPDATE users SET notif_prefs = $1 WHERE id = $2', [JSON.stringify(novas), request.user.id])
+    reply.send(novas)
   })
 
   // GET /notifications/vapid-key — public VAPID key for push subscriptions
