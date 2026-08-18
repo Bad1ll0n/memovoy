@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { VideoPlayer, isVideoUrl } from '@/components/ui/VideoPlayer'
 import { Lightbox } from '@/components/ui/Lightbox'
 import { ReportModal } from '@/components/ui/ReportModal'
+import { useEstaAoVivo } from '@/hooks/useEstaAoVivo'
 import { useAuthStore } from '@/store/authStore'
 import { toast } from '@/store/toastStore'
 
@@ -44,6 +45,8 @@ export interface Post {
 
 export function PostCard({ post, queryKey, index = 0 }: { post: Post; queryKey: unknown[]; index?: number }) {
   const qc = useQueryClient()
+
+  const estaAoVivo = useEstaAoVivo(post.createdAt)
   const { user } = useAuthStore()
   const [imgIdx, setImgIdx]         = useState(0)
   const [showMenu, setShowMenu]     = useState(false)
@@ -196,7 +199,7 @@ export function PostCard({ post, queryKey, index = 0 }: { post: Post; queryKey: 
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {post.destination}
               </span>
-              {Date.now() - new Date(post.createdAt).getTime() < 2 * 60 * 60 * 1000 && (
+              {estaAoVivo && (
                 <span
                   className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1"
                   style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
