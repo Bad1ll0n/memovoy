@@ -147,8 +147,8 @@ export function AuthBrandPanel({ tagline }: { tagline?: string }) {
           ))}
         </div>
         <p className="text-sm leading-relaxed mb-4" style={{ color: '#8AAECB' }}>
-          "Esta app mudou por completo a forma como planeio as minhas viagens.
-          O itinerário de Tóquio foi absolutamente perfeito."
+          “Esta app mudou por completo a forma como planeio as minhas viagens.
+          O itinerário de Tóquio foi absolutamente perfeito.”
         </p>
         <div className="flex items-center gap-3">
           <div

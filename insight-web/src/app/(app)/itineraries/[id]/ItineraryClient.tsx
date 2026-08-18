@@ -437,7 +437,7 @@ function ManualActivityModal({
           />
           {conflictActivity && (
             <p className="text-xs mt-1" style={{ color: 'var(--warning, #f59e0b)' }}>
-              Já existe "{conflictActivity.name}" às {time}. Podes continuar — as actividades ficam ordenadas cronologicamente.
+              Já existe “{conflictActivity.name}” às {time}. Podes continuar — as actividades ficam ordenadas cronologicamente.
             </p>
           )}
         </div>

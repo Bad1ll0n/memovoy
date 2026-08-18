@@ -94,7 +94,7 @@ export function ItineraryRefinement({ itineraryId, onDaysUpdated }: Props) {
                   Descreve o que queres mudar
                 </p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Ex: "Torna o dia 2 mais tranquilo" · "Adiciona uma tarde de praia no dia 3" · "Remove as visitas caras"
+                  Ex: “Torna o dia 2 mais tranquilo” · “Adiciona uma tarde de praia no dia 3” · “Remove as visitas caras”
                 </p>
               </div>
             ) : history.map((msg, i) => (
