@@ -53,7 +53,7 @@ If either is down — stop. Do not test with servers down.
 
 **2. Get DB connection string:**
 ```bash
-grep DATABASE_URL insight-api/.env | head -1
+grep DATABASE_URL memovoy-api/.env | head -1
 # Export as: export DB_URL="postgresql://..."
 ```
 
@@ -401,7 +401,7 @@ If empty: no partitioning yet. Flag `SCALE-FUTURE` for `notifications`, `message
 
 **C1 — @fastify/under-pressure presence**
 ```bash
-grep -n "under-pressure\|underPressure" insight-api/package.json insight-api/src/server.js 2>/dev/null
+grep -n "under-pressure\|underPressure" memovoy-api/package.json memovoy-api/src/server.js 2>/dev/null
 ```
 `@fastify/under-pressure` automatically returns 503 when the event loop delay exceeds a threshold, protecting the API from cascading failures under load. Flag as MISSING — it's a one-line addition and critical for production.
 
@@ -447,7 +447,7 @@ Flag: P95 lag >10ms = something is blocking the event loop synchronously.
 **C4 — Cold start time**
 ```bash
 time node --input-type=module --eval "
-import('./insight-api/src/server.js')
+import('./memovoy-api/src/server.js')
   .then(() => { console.log('Server started'); process.exit(0); })
   .catch(e => { console.error(e.message); process.exit(1); });
 " 2>&1 | tail -5
@@ -457,21 +457,21 @@ Flag: >3s cold start. In containerised deployments, slow cold start = long pod s
 **C5 — Stateless architecture audit**
 ```bash
 # In-memory state that breaks horizontal scaling
-grep -rn "global\." insight-api/src/ | grep -v "_io\|console\|process\|__dirname" | head -20
+grep -rn "global\." memovoy-api/src/ | grep -v "_io\|console\|process\|__dirname" | head -20
 # Module-level caches (survive restarts but not multi-instance)
-grep -rn "^const.*= new Map\|^const.*= new Set\|^let.*= \[\]\|^const cache" insight-api/src/routes/ | head -15
+grep -rn "^const.*= new Map\|^const.*= new Set\|^let.*= \[\]\|^const cache" memovoy-api/src/routes/ | head -15
 # Timers (must not hold per-user state)
-grep -rn "setInterval\|setTimeout" insight-api/src/ | grep -v "node_modules\|pool\|heartbeat" | head -10
+grep -rn "setInterval\|setTimeout" memovoy-api/src/ | grep -v "node_modules\|pool\|heartbeat" | head -10
 ```
 Flag: any in-memory cache keyed by user ID or conversation ID — breaks when load balancer routes the same user to a different instance.
 
 **C6 — OpenTelemetry readiness**
 ```bash
-grep -rn "opentelemetry\|instrumentation" insight-api/package.json insight-api/src/ 2>/dev/null | grep -v node_modules | head -10
+grep -rn "opentelemetry\|instrumentation" memovoy-api/package.json memovoy-api/src/ 2>/dev/null | grep -v node_modules | head -10
 # Check startup flag
-grep -n "OTEL_ENABLED\|instrumentation.js" insight-api/package.json 2>/dev/null
+grep -n "OTEL_ENABLED\|instrumentation.js" memovoy-api/package.json 2>/dev/null
 # Is OTel enabled in .env?
-grep "OTEL_ENABLED" insight-api/.env 2>/dev/null || echo "OTEL_ENABLED not set (tracing disabled)"
+grep "OTEL_ENABLED" memovoy-api/.env 2>/dev/null || echo "OTEL_ENABLED not set (tracing disabled)"
 ```
 OTel SDK is installed: `@opentelemetry/sdk-node`, `@opentelemetry/auto-instrumentations-node`, `@opentelemetry/exporter-trace-otlp-http`. Loaded via `--import ./src/instrumentation.js` in start scripts. Enable with `OTEL_ENABLED=true` in `.env` + set `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
@@ -548,7 +548,7 @@ return vitals;
 
 **D3 — useReportWebVitals hook check**
 ```bash
-grep -rn "useReportWebVitals\|reportWebVitals\|web-vitals" insight-web/src/ | head -10
+grep -rn "useReportWebVitals\|reportWebVitals\|web-vitals" memovoy-web/src/ | head -10
 ```
 Next.js 16 ships `useReportWebVitals` built-in — it collects real user CWV and can send to any analytics endpoint. Flag as MISSING if not implemented — without it, you have no visibility into real-world performance post-launch.
 
@@ -575,7 +575,7 @@ Mobile gets 20% less CPU budget in Lighthouse simulation. An LCP of 2.0s on desk
 
 **E1 — Production build analysis**
 ```bash
-cd insight-web && npm run build 2>&1 | grep -E "First Load|Route|Size|chunks|⚠"
+cd memovoy-web && npm run build 2>&1 | grep -E "First Load|Route|Size|chunks|⚠"
 ```
 Read the Next.js build table. Flag:
 - Any route with First Load JS >300KB
@@ -584,7 +584,7 @@ Read the Next.js build table. Flag:
 
 **E2 — Dynamic imports coverage**
 ```bash
-grep -rn "dynamic(\|React.lazy\|import(" insight-web/src/ \
+grep -rn "dynamic(\|React.lazy\|import(" memovoy-web/src/ \
   | grep -v "node_modules\|__tests__\|\.d\.ts" \
   | grep -v "^Binary" | head -30
 ```
@@ -597,7 +597,7 @@ Heavy components that should be dynamically imported if not already:
 
 **E3 — Raw `<img>` tags (missing Next.js Image optimisation)**
 ```bash
-grep -rn "<img\b" insight-web/src/ \
+grep -rn "<img\b" memovoy-web/src/ \
   | grep -v "node_modules\|next/image\|\.test\." \
   | grep -v "^Binary" | head -20
 ```
@@ -605,7 +605,7 @@ Every raw `<img>` is a missed opportunity: no WebP conversion, no lazy loading, 
 
 **E4 — Large dependency audit**
 ```bash
-cd insight-web && cat package.json | python3 -c "
+cd memovoy-web && cat package.json | python3 -c "
 import json,sys
 d = json.load(sys.stdin)
 deps = {**d.get('dependencies',{}), **d.get('devDependencies',{})}
@@ -618,7 +618,7 @@ Flag: `moment` (use `date-fns` or `Intl`), full `lodash` import (tree-shake or u
 
 **E5 — React Query staleTime audit**
 ```bash
-grep -rn "staleTime\|gcTime\|cacheTime\|refetchInterval" insight-web/src/ | head -20
+grep -rn "staleTime\|gcTime\|cacheTime\|refetchInterval" memovoy-web/src/ | head -20
 ```
 React Query defaults to `staleTime: 0` — every component mount triggers a background refetch. For data that doesn't change per-second (rankings, explore, user profile), `staleTime: 30_000` halves server requests. Flag: any `useQuery` on read-heavy, slow-changing data without a `staleTime`.
 
@@ -799,13 +799,13 @@ If call 2 is not dramatically faster → cache key is not matching.
 
 **G2 — AI cache key inspection**
 ```bash
-grep -n "cache_key\|cacheKey\|hash\|crypto" insight-api/src/services/aiAgent.js | head -20
+grep -n "cache_key\|cacheKey\|hash\|crypto" memovoy-api/src/services/aiAgent.js | head -20
 ```
 The cache key must include ALL parameters that affect the output: destination, dates, budget, currency, feedback, day index. A missing parameter causes either cache misses (too specific) or wrong results (too generic).
 
 **G3 — OpenAI timeout protection**
 ```bash
-grep -n "timeout\|signal\|AbortController\|AbortSignal" insight-api/src/services/aiAgent.js | head -15
+grep -n "timeout\|signal\|AbortController\|AbortSignal" memovoy-api/src/services/aiAgent.js | head -15
 ```
 Flag: NO timeout on OpenAI calls. Without it, a slow OpenAI response holds a Fastify handler indefinitely — one slow AI response per second will exhaust the 20-connection pool in 20 seconds, taking down the entire API.
 Expected: `AbortSignal.timeout(30_000)` or equivalent.
@@ -814,14 +814,14 @@ Expected: `AbortSignal.timeout(30_000)` or equivalent.
 ```bash
 # Simulate OpenAI timeout by temporarily pointing to a non-existent host
 # Check error handling in the AI route
-grep -n "catch\|fallback\|retry\|error" insight-api/src/routes/itineraries.js | grep -i "ai\|suggest\|generat" | head -15
+grep -n "catch\|fallback\|retry\|error" memovoy-api/src/routes/itineraries.js | grep -i "ai\|suggest\|generat" | head -15
 ```
 At scale, OpenAI has outages. The API should return a graceful 503 (not 500, not hang) when AI is unavailable.
 
 **G5 — Token usage estimation**
 ```bash
 # Check if token usage is logged
-grep -n "usage\|tokens\|prompt_tokens\|completion_tokens" insight-api/src/services/aiAgent.js | head -10
+grep -n "usage\|tokens\|prompt_tokens\|completion_tokens" memovoy-api/src/services/aiAgent.js | head -10
 ```
 At 1M AI itinerary generations/month, token costs matter. Logging `usage.prompt_tokens` and `usage.completion_tokens` per call enables cost analysis and prompt optimisation.
 
@@ -851,13 +851,13 @@ Flag: >200ms. In production behind a load balancer, expect 100–300ms.
 
 **H2 — Unrestricted broadcast audit (critical at scale)**
 ```bash
-grep -n "io\.emit\b" insight-api/src/services/socket.js insight-api/src/routes/ -r 2>/dev/null
+grep -n "io\.emit\b" memovoy-api/src/services/socket.js memovoy-api/src/routes/ -r 2>/dev/null
 ```
 `io.emit(event, data)` broadcasts to ALL connected users simultaneously. At 1M users, one call = 1M socket writes. This is catastrophic. Flag any `io.emit()` that is not `io.to(room).emit()`.
 
 **H3 — Room fan-out analysis**
 ```bash
-grep -n "socket\.join\|io\.to\|socket\.to" insight-api/src/services/socket.js | head -30
+grep -n "socket\.join\|io\.to\|socket\.to" memovoy-api/src/services/socket.js | head -30
 ```
 Verify rooms are correctly scoped:
 - `user:{userId}` — per-user notifications ✓
@@ -868,14 +868,14 @@ Each room should have a bounded size. Flag any room that could grow to 1M+ membe
 
 **H4 — Socket.IO adapter and Redis readiness**
 ```bash
-grep -n "createAdapter\|redis-adapter\|REDIS_URL" insight-api/src/server.js 2>/dev/null
-grep "REDIS_URL" insight-api/.env 2>/dev/null || echo "REDIS_URL not set"
+grep -n "createAdapter\|redis-adapter\|REDIS_URL" memovoy-api/src/server.js 2>/dev/null
+grep "REDIS_URL" memovoy-api/.env 2>/dev/null || echo "REDIS_URL not set"
 ```
 `@socket.io/redis-adapter` is installed. The server conditionally attaches it when `REDIS_URL` env var is set (look for `[socket.io] Redis adapter attached` in server log). Without `REDIS_URL`, falls back to in-memory adapter (single-instance only).
 
-Also verify frontend singleton: `SocketProvider` in `insight-web/src/components/ui/SocketProvider.tsx` ensures one connection per session (not per page). Check:
+Also verify frontend singleton: `SocketProvider` in `memovoy-web/src/components/ui/SocketProvider.tsx` ensures one connection per session (not per page). Check:
 ```bash
-grep -rn "io(" insight-web/src/app/ 2>/dev/null | grep -v node_modules | head -10
+grep -rn "io(" memovoy-web/src/app/ 2>/dev/null | grep -v node_modules | head -10
 # Expect: 0 results (all connections go through SocketProvider)
 ```
 
@@ -905,7 +905,7 @@ Rule of thumb: each Socket.IO connection uses ~50–100KB RAM. At 100k concurren
 **I1 — Clinic Doctor (30-second health check)**
 ```bash
 # Terminal 1: Start API under clinic
-cd insight-api && npx clinic doctor -- node src/server.js &
+cd memovoy-api && npx clinic doctor -- node src/server.js &
 CLINIC_PID=$!
 sleep 5
 
@@ -923,7 +923,7 @@ Clinic Doctor reports:
 
 **I2 — Clinic Flame (CPU bottleneck flamegraph)**
 ```bash
-cd insight-api && npx clinic flame -- node src/server.js &
+cd memovoy-api && npx clinic flame -- node src/server.js &
 sleep 5
 npx autocannon -c 30 -d 15 -H "Authorization: Bearer $TOKEN" http://localhost:4000/feed
 # Flame will generate an interactive flamegraph HTML
@@ -936,7 +936,7 @@ In the flamegraph, look for:
 
 **I3 — Clinic Bubbleprof (async bottleneck mapping)**
 ```bash
-cd insight-api && npx clinic bubbleprof -- node src/server.js &
+cd memovoy-api && npx clinic bubbleprof -- node src/server.js &
 sleep 5
 npx autocannon -c 10 -d 20 -H "Authorization: Bearer $TOKEN" http://localhost:4000/feed
 # Generates async operation "bubble" map
@@ -979,7 +979,7 @@ This suite audits code for patterns that will break at scale. Report as `SCALE-F
 
 **J1 — Feed fan-out problem**
 ```bash
-grep -n "follows\|follower\|following" insight-api/src/routes/feed.js | head -30
+grep -n "follows\|follower\|following" memovoy-api/src/routes/feed.js | head -30
 ```
 The feed query joins `follows` to find posts from followed users. With 10M follows rows and a user following 5,000 accounts:
 - The `IN (SELECT following_id FROM follows WHERE follower_id = $1)` subquery returns 5,000 IDs
@@ -1017,14 +1017,14 @@ Flag: if `max_bytes > 100KB` → the `activities` column should be extracted to 
 
 **J3 — Pagination strategy audit**
 ```bash
-grep -n "OFFSET\|offset\|page\b" insight-api/src/routes/ -r | grep -v "node_modules" | head -20
+grep -n "OFFSET\|offset\|page\b" memovoy-api/src/routes/ -r | grep -v "node_modules" | head -20
 ```
 OFFSET pagination: `SELECT ... LIMIT 20 OFFSET 10000` = PostgreSQL scans 10,020 rows to skip 10,000 of them. At page 500, it's scanning 10,000 rows per request.
 Flag any `OFFSET` on `posts`, `messages`, `notifications`, or `itineraries`. Cursor-based (`WHERE created_at < $cursor`) is already used in conversations — apply the same pattern everywhere.
 
 **J4 — Notification fan-out at viral scale**
 ```bash
-grep -n "INSERT INTO notifications" insight-api/src/routes/ -r | head -20
+grep -n "INSERT INTO notifications" memovoy-api/src/routes/ -r | head -20
 ```
 If a user with 1M followers posts something and 100k people like it within an hour:
 - Each like = 1 notification INSERT for the post author ✓ (1:1, fine)
@@ -1034,8 +1034,8 @@ Check: does commenting notify ALL previous commenters? That's an N×M fan-out. A
 
 **J5 — Background job queue**
 ```bash
-grep -rn "pg-boss" insight-api/package.json 2>/dev/null | head -3
-grep -n "startJobQueue\|JOB_AI_GENERATE" insight-api/src/server.js 2>/dev/null
+grep -rn "pg-boss" memovoy-api/package.json 2>/dev/null | head -3
+grep -n "startJobQueue\|JOB_AI_GENERATE" memovoy-api/src/server.js 2>/dev/null
 # Check pgboss schema was created on first start
 psql $DB_URL -c "\dt pgboss.*" 2>/dev/null | head -10 || echo "pgboss schema not yet initialised (starts on first server boot)"
 ```
@@ -1050,10 +1050,10 @@ Flag ⚠️ YELLOW if notification fan-out still runs in-request (move to pg-bos
 
 **J6 — Redis readiness**
 ```bash
-grep -rn "ioredis\|redis-adapter" insight-api/package.json 2>/dev/null | head -5
-grep -n "REDIS_URL\|createAdapter\|redisClient" insight-api/src/server.js 2>/dev/null | head -5
+grep -rn "ioredis\|redis-adapter" memovoy-api/package.json 2>/dev/null | head -5
+grep -n "REDIS_URL\|createAdapter\|redisClient" memovoy-api/src/server.js 2>/dev/null | head -5
 # Is REDIS_URL configured?
-grep "REDIS_URL" insight-api/.env 2>/dev/null || echo "REDIS_URL not in .env (Redis disabled — ok for single instance)"
+grep "REDIS_URL" memovoy-api/.env 2>/dev/null || echo "REDIS_URL not in .env (Redis disabled — ok for single instance)"
 ```
 `ioredis` and `@socket.io/redis-adapter` are installed. The server enables them automatically when `REDIS_URL` is set:
 - Socket.IO Redis adapter attaches at startup → cross-instance events work
@@ -1094,7 +1094,7 @@ Tables with >100M projected annual rows should use PostgreSQL range partitioning
 
 **J9 — BRIN indexes**
 ```bash
-grep -n "BRIN\|brin" insight-api/migrations/ -r | head -10
+grep -n "BRIN\|brin" memovoy-api/migrations/ -r | head -10
 # Verify in DB
 psql $DB_URL -c "SELECT indexname, indexdef FROM pg_indexes WHERE indexdef ILIKE '%brin%' ORDER BY indexname;" 2>/dev/null | head -15
 ```
@@ -1109,7 +1109,7 @@ Flag ❌ RED if migration 022 not applied (run `npm run migrate`).
 
 **K1 — bcrypt cost factor**
 ```bash
-grep -n "saltRounds\|bcrypt\|genSalt\|cost" insight-api/src/routes/auth.js | head -10
+grep -n "saltRounds\|bcrypt\|genSalt\|cost" memovoy-api/src/routes/auth.js | head -10
 ```
 Cost factor benchmarks on a typical server:
 | Factor | Time per hash |
@@ -1122,13 +1122,13 @@ Factor 12 is the sweet spot for 2025 hardware (OWASP recommendation). Factor 14 
 
 **K2 — JWT verification overhead**
 ```bash
-grep -n "authenticate\|verify\|preHandler" insight-api/src/server.js insight-api/src/routes/auth.js | head -10
+grep -n "authenticate\|verify\|preHandler" memovoy-api/src/server.js memovoy-api/src/routes/auth.js | head -10
 ```
 JWT verify is synchronous ~0.5ms — negligible. But flag if every authenticated request also does a DB lookup (e.g., to check if the user still exists or is still admin). That adds 1 DB round-trip per request, multiplied by request volume.
 
 **K3 — Revocation check index**
 ```bash
-grep -n "revoked_tokens\|jti" insight-api/src/ -r | head -15
+grep -n "revoked_tokens\|jti" memovoy-api/src/ -r | head -15
 ```
 If every request checks `SELECT 1 FROM revoked_tokens WHERE jti = $1`:
 ```sql

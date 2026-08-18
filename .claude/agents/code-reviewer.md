@@ -8,9 +8,9 @@ You are a lead engineer orchestrating a pre-merge code review for the Memovoy tr
 
 ## Project context
 
-- `insight-api/` — Fastify 5 backend, Node.js, PostgreSQL
-- `insight-web/` — Next.js 15 App Router frontend
-- `insight-api/migrations/` — SQL migration files applied via `npm run migrate`
+- `memovoy-api/` — Fastify 5 backend, Node.js, PostgreSQL
+- `memovoy-web/` — Next.js 15 App Router frontend
+- `memovoy-api/migrations/` — SQL migration files applied via `npm run migrate`
 
 ## Your workflow
 
@@ -26,17 +26,17 @@ to identify files changed in the last commit. If there are uncommitted changes, 
 ### Step 2 — Decide which sub-agents to invoke
 
 Based on the changed files:
-- Any file in `insight-api/src/routes/`, `insight-api/src/services/`, `insight-api/src/`, or `insight-web/src/lib/api.ts` → invoke **security-agent**
-- Any file in `insight-web/src/` (components, pages, app) → invoke **design-agent**
-- Any file in `insight-api/migrations/` → invoke **migration-agent**
-- Any file in `insight-web/src/` or `insight-api/src/` (new routes or pages) → invoke **test-agent**
+- Any file in `memovoy-api/src/routes/`, `memovoy-api/src/services/`, `memovoy-api/src/`, or `memovoy-web/src/lib/api.ts` → invoke **security-agent**
+- Any file in `memovoy-web/src/` (components, pages, app) → invoke **design-agent**
+- Any file in `memovoy-api/migrations/` → invoke **migration-agent**
+- Any file in `memovoy-web/src/` or `memovoy-api/src/` (new routes or pages) → invoke **test-agent**
 
 If multiple categories are present, invoke all relevant sub-agents **in parallel** using separate Agent tool calls in a single response turn.
 
 ### Step 2-B — ux-tester sync check (always, no sub-agent needed)
 
 Read `.claude/agents/ux-tester.md` and compare its test blocks against the changed files:
-- Was a new **page** added under `insight-web/src/app/`? → Check if ux-tester has a test for it.
+- Was a new **page** added under `memovoy-web/src/app/`? → Check if ux-tester has a test for it.
 - Was a new **user-visible feature** added (new button, modal, form, flow)? → Check if it's covered.
 - Was an **existing route or component changed** in a way that alters user behaviour? → Check if the existing ux-tester step still reflects the new behaviour.
 
@@ -57,11 +57,11 @@ If `package.json` or any `package-lock.json` / `pnpm-lock.yaml` changed, read th
 When invoking a sub-agent, give it:
 1. The list of changed files relevant to it
 2. The instruction to read those files and apply its rules
-3. For **security-agent**: also pass the current `insight-api/src/server.js` and the relevant route file(s)
-4. For **migration-agent**: ask it to read all files in `insight-api/migrations/` and focus on the newest one(s)
+3. For **security-agent**: also pass the current `memovoy-api/src/server.js` and the relevant route file(s)
+4. For **migration-agent**: ask it to read all files in `memovoy-api/migrations/` and focus on the newest one(s)
 
 Example invocation prompt for security-agent:
-> "Review these changed files for security issues, applying all rules in your instructions: [list files]. Also read insight-api/src/server.js for context."
+> "Review these changed files for security issues, applying all rules in your instructions: [list files]. Also read memovoy-api/src/server.js for context."
 
 ### Step 4 — Consolidate and report
 

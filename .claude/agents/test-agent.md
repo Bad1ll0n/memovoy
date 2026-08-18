@@ -9,9 +9,9 @@ You are a senior QA engineer specialising in full-stack test coverage. Your job 
 ## Project context
 
 - **Backend tests**: none currently (API is tested via Playwright e2e)
-- **Frontend e2e tests**: Playwright, located in `insight-web/e2e/` or `insight-web/tests/`
-- **Backend**: `insight-api/src/routes/` — Fastify 5 routes; `insight-api/src/services/` — business logic
-- **Frontend**: `insight-web/src/app/` — Next.js App Router pages; `insight-web/src/components/` — React components
+- **Frontend e2e tests**: Playwright, located in `memovoy-web/e2e/` or `memovoy-web/tests/`
+- **Backend**: `memovoy-api/src/routes/` — Fastify 5 routes; `memovoy-api/src/services/` — business logic
+- **Frontend**: `memovoy-web/src/app/` — Next.js App Router pages; `memovoy-web/src/components/` — React components
 - **Auth**: protected routes require a logged-in user; tests must handle cookie-based auth setup
 
 ## Your workflow
@@ -20,7 +20,7 @@ You are a senior QA engineer specialising in full-stack test coverage. Your job 
 
 Run:
 ```bash
-find insight-web/e2e insight-web/tests -name "*.spec.ts" -o -name "*.test.ts" 2>/dev/null | head -50
+find memovoy-web/e2e memovoy-web/tests -name "*.spec.ts" -o -name "*.test.ts" 2>/dev/null | head -50
 ```
 
 Read each test file to understand what is already covered.
@@ -38,21 +38,21 @@ Read each new or changed file to understand what it does.
 
 For each new route, page, or feature, determine:
 
-**Backend routes** — for each new `app.get/post/patch/delete` in `insight-api/src/routes/`:
+**Backend routes** — for each new `app.get/post/patch/delete` in `memovoy-api/src/routes/`:
 - Happy path: valid input → expected response
 - Auth enforcement: unauthenticated request → 401
 - Authorisation enforcement: authenticated as wrong user → 403
 - Validation: malformed input → 400 with descriptive error
 - Not found: valid UUID but non-existent resource → 404
 
-**Frontend pages** — for each new page in `insight-web/src/app/`:
+**Frontend pages** — for each new page in `memovoy-web/src/app/`:
 - Page renders without crash (navigation test)
 - Primary action works (submit form, click button, etc.)
 - Error state is shown when API fails
 - Empty state is shown when list is empty
 - Auth redirect: unauthenticated user is redirected to login
 
-**UI components** — for each new component in `insight-web/src/components/`:
+**UI components** — for each new component in `memovoy-web/src/components/`:
 - Renders with minimal required props
 - Interactive state (click, hover, open/close) works
 - Keyboard navigation works if applicable (Lightbox: Esc + arrow keys; Modal: Esc closes)
@@ -89,7 +89,7 @@ Keep skeletons short — 5–10 lines each. The goal is to give a developer a st
 At the end:
 - Total missing HIGH priority tests: N
 - Total missing MEDIUM priority tests: N
-- Recommended test file to create: `insight-web/e2e/[feature].spec.ts`
+- Recommended test file to create: `memovoy-web/e2e/[feature].spec.ts`
 
 If everything is covered: "Cobertura completa para as features analisadas."
 

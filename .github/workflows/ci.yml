@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: insight-api
+        working-directory: memovoy-api
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: insight-api/package-lock.json
+          cache-dependency-path: memovoy-api/package-lock.json
 
       - run: npm ci
 
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: insight-web
+        working-directory: memovoy-web
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: insight-web/package-lock.json
+          cache-dependency-path: memovoy-web/package-lock.json
 
       - run: npm ci
 
@@ -68,7 +68,7 @@ jobs:
     continue-on-error: true
     defaults:
       run:
-        working-directory: insight-web
+        working-directory: memovoy-web
     steps:
       - uses: actions/checkout@v4
 
@@ -76,7 +76,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: insight-web/package-lock.json
+          cache-dependency-path: memovoy-web/package-lock.json
 
       - run: npm ci
 

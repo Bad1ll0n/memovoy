@@ -3,13 +3,12 @@
 Rede social de viagens: feed, roteiros gerados por IA, mensagens em tempo real,
 grupos, despesas partilhadas, mapas, rankings e gamificação.
 
-- **`insight-api/`** — API Fastify 5, na base de dados `insight`
-- **`insight-web/`** — frontend Next.js 16
+- **`memovoy-api/`** — API Fastify 5, na base de dados `insight`
+- **`memovoy-web/`** — frontend Next.js 16
 
 **Sobre os nomes:** o produto chama-se MemoVoy — é o que aparece nos emails, na
-exportação iCal, no bucket S3 e no arranque da API. `insight-api`/`insight-web`
-são apenas nomes de pastas, e `Project_Roteiros` é o nome da pasta local. O
-repositório (`memovoy`) é que está certo; as pastas é que ficaram para trás.
+exportação iCal, no bucket S3 e no arranque da API. A pasta local ainda se chama
+`Project_Roteiros` e a base de dados `insight`, restos de fases anteriores.
 
 ## Stack real
 
@@ -26,7 +25,7 @@ repositório (`memovoy`) é que está certo; as pastas é que ficaram para trás
 ## Arrancar
 
 ```bash
-cd insight-api && npm install && cp .env.example .env
+cd memovoy-api && npm install && cp .env.example .env
 ```
 
 Preencher `.env` — no mínimo `DATABASE_URL`, `JWT_SECRET` e `JWT_REFRESH_SECRET`
@@ -39,10 +38,10 @@ npm run dev
 ```
 
 A API sobe em `http://localhost:4000`. Para storage local de uploads,
-`docker compose up -d` em `insight-api/` levanta MinIO em `:9000` (consola `:9001`).
+`docker compose up -d` em `memovoy-api/` levanta MinIO em `:9000` (consola `:9001`).
 
 ```bash
-cd insight-web && npm install && npm run dev
+cd memovoy-web && npm install && npm run dev
 ```
 
 O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
@@ -51,8 +50,8 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 ## Testes
 
 ```bash
-cd insight-api && npm test    # 58 testes (node:test)
-cd insight-web && npm test    # 48 testes (vitest)
+cd memovoy-api && npm test    # 58 testes (node:test)
+cd memovoy-web && npm test    # 48 testes (vitest)
 ```
 
 106 testes ao todo, a correr em poucos segundos. Nenhum precisa de

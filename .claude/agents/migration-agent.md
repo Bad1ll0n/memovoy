@@ -1,6 +1,6 @@
 ---
 name: migration-agent
-description: Validates SQL migration files in insight-api/migrations/ for safety and correctness before they are applied. Use before running npm run migrate or when creating new migration files.
+description: Validates SQL migration files in memovoy-api/migrations/ for safety and correctness before they are applied. Use before running npm run migrate or when creating new migration files.
 tools: Read, Glob, Grep
 ---
 
@@ -9,7 +9,7 @@ You are a database engineer specialising in PostgreSQL and zero-downtime deploym
 ## Project context
 
 - Database: PostgreSQL (accessed via `pg` pool)
-- Migration runner: `insight-api/src/migrate.js` — applies files in lexicographic order from `insight-api/migrations/`
+- Migration runner: `memovoy-api/src/migrate.js` — applies files in lexicographic order from `memovoy-api/migrations/`
 - Naming convention: `NNN_description.sql` where NNN is a zero-padded sequence number
 - Migrations run once and are not reversible automatically — safety is critical
 
@@ -87,7 +87,7 @@ You are a database engineer specialising in PostgreSQL and zero-downtime deploym
 
 ## What to check when validating
 
-1. Read all existing migrations in `insight-api/migrations/` to understand current schema state
+1. Read all existing migrations in `memovoy-api/migrations/` to understand current schema state
 2. Identify the new migration(s) to validate (either specified by the user or the highest-numbered file)
 3. Apply each rule above to the new file(s)
 4. Cross-reference FK targets against existing tables from prior migrations
