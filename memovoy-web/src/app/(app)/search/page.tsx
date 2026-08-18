@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Search, X, BadgeCheck, Lock, Map, Camera, Users, Clock, Sparkles, MapPin, Wallet } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchResultsSkeleton, ItineraryGridSkeleton } from '@/components/ui/Skeleton'
@@ -108,6 +109,9 @@ function removeFromHistory(term: string) {
 }
 
 export default function SearchPage() {
+  // Mesma protecção dos irmãos do grupo (app).
+  const { isReady } = useRequireAuth()
+
   const [q, setQ] = useState('')
   const [tab, setTab] = useState<Tab>('users')
   const [mode, setMode] = useState<SearchMode>('normal')
@@ -124,7 +128,7 @@ export default function SearchPage() {
   const { data, isLoading } = useQuery<SearchResults>({
     queryKey: ['search', dq],
     queryFn: () => api.get(`/search?q=${encodeURIComponent(dq)}`),
-    enabled: dq.length >= 2 && mode === 'normal',
+    enabled: isReady && dq.length >= 2 && mode === 'normal',
   })
 
   const aiSearchMutation = useMutation({

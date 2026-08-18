@@ -185,11 +185,26 @@ export async function buildApp({ rateLimit = true } = {}) {
   const PARAMS_UUID = new Set(['id', 'itineraryId', 'userId', 'postId', 'commentId'])
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+  // Same for pagination cursors, which are message/post ids. /posts/nearby is
+  // the exception — its cursor is a distance, not an id — and declares so with
+  // `config: { cursorNumerico: true }`. Centralising the rule means a new route
+  // inherits it instead of having to remember.
+  const PARAMS_QUERY_UUID = new Set(['cursor', 'before'])
+
   app.addHook('preValidation', async (request, reply) => {
     for (const [nome, valor] of Object.entries(request.params ?? {})) {
       if (!PARAMS_UUID.has(nome)) continue
       if (typeof valor === 'string' && !UUID_RE.test(valor)) {
         return reply.status(400).send({ message: 'Identificador inválido.' })
+      }
+    }
+
+    if (request.routeOptions?.config?.cursorNumerico) return
+
+    for (const [nome, valor] of Object.entries(request.query ?? {})) {
+      if (!PARAMS_QUERY_UUID.has(nome)) continue
+      if (typeof valor === 'string' && valor !== '' && !UUID_RE.test(valor)) {
+        return reply.status(400).send({ message: 'Cursor de paginação inválido.' })
       }
     }
   })

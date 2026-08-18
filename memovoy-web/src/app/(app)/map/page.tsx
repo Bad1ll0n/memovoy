@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import Link from 'next/link'
 import { Map } from 'lucide-react'
@@ -50,18 +51,23 @@ interface DestinationItem {
 type MapMode = 'world' | 'mine'
 
 export default function MapPage() {
+  // Mesma protecção dos irmãos do grupo (app): as APIs de mapa são públicas,
+  // mas esta página desenha a interface de utilizador autenticado.
+  const { isReady } = useRequireAuth()
+
   const [selected, setSelected]   = useState<string | null>(null)
   const [mapMode, setMapMode]     = useState<MapMode>('world')
 
   const { data: worldCountries } = useQuery<CountryData[]>({
     queryKey: ['map-countries'],
     queryFn: () => api.get('/map/countries'),
+    enabled: isReady,
   })
 
   const { data: mineCountries } = useQuery<CountryData[]>({
     queryKey: ['map-mine'],
     queryFn: () => api.get('/map/mine'),
-    enabled: mapMode === 'mine',
+    enabled: isReady && mapMode === 'mine',
   })
 
   const countries = mapMode === 'mine' ? (mineCountries ?? []) : (worldCountries ?? [])
@@ -69,7 +75,7 @@ export default function MapPage() {
   const { data: items, isLoading: loadingItems } = useQuery<DestinationItem[]>({
     queryKey: ['map-items', selected],
     queryFn: () => api.get(`/itineraries?country=${encodeURIComponent(selected!)}&limit=5`),
-    enabled: !!selected,
+    enabled: isReady && !!selected,
   })
 
   return (

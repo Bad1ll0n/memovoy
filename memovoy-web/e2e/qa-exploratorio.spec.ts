@@ -27,13 +27,12 @@ test.describe('acesso directo a URLs internos sem sessão', () => {
     })
   }
 
-  // Estas não redireccionam — as APIs por trás são públicas. Documenta o
-  // comportamento actual; ver o relatório de QA sobre a inconsistência.
+  // /map e /search passaram a exigir sessão como os irmãos do grupo (app).
+  // As APIs por trás continuam públicas — a mudança é de coerência da interface.
   for (const url of ['/map', '/search']) {
-    test(`${url} é acessível sem sessão`, async ({ page }) => {
+    test(`${url} passou a exigir sessão`, async ({ page }) => {
       await page.goto(url)
-      await page.waitForLoadState('networkidle')
-      await expect(page).not.toHaveURL(/\/auth\/login/)
+      await expect(page).toHaveURL(/\/auth\/login/, { timeout: 20_000 })
     })
   }
 })

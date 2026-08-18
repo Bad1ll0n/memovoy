@@ -16,6 +16,28 @@ export async function reportsRoutes(app) {
 
     const { targetType, targetId, reason, detail } = parsed.data
 
+    // Denunciar-se a si próprio não faz sentido e só enche a fila de moderação.
+    if (targetType === 'user' && targetId === request.user.id) {
+      return reply.status(400).send({ message: 'Não podes denunciar-te a ti próprio.' })
+    }
+
+    // Confirmar que o alvo existe. Sem isto aceitava-se qualquer UUID e a fila
+    // enchia-se de denúncias sobre conteúdo inexistente — a moderação por IA
+    // corria à mesma, a gastar chamadas.
+    const TABELA_DO_ALVO = {
+      post:      'posts',
+      comment:   'post_comments',
+      itinerary: 'itineraries',
+      user:      'users',
+    }
+    const { rows: alvo } = await query(
+      `SELECT 1 FROM ${TABELA_DO_ALVO[targetType]} WHERE id = $1`,
+      [targetId],
+    )
+    if (alvo.length === 0) {
+      return reply.status(404).send({ message: 'Conteúdo não encontrado.' })
+    }
+
     try {
       const { rowCount } = await query(
         `INSERT INTO content_reports (reporter_id, target_type, target_id, reason, detail)

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { limparCampos } from '../services/sanitize.js'
 import { notifyUser } from '../services/notifyUser.js'
 
 function groupDto(row, viewerId) {
@@ -36,7 +37,8 @@ export async function groupsRoutes(app) {
     const parsed = schema.safeParse(request.body)
     if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
 
-    const { name, description, destination, isPrivate } = parsed.data
+    const { name, description, destination, isPrivate } =
+      limparCampos(parsed.data, ['name', 'description', 'destination'])
     const { rows } = await query(
       `INSERT INTO travel_groups (owner_id, name, description, destination, is_private)
        VALUES ($1, $2, $3, $4, $5) RETURNING id`,

@@ -33,9 +33,17 @@ export async function awardBadge(userId, code) {
 
     if (rowCount > 0) {
       await query(
+        // O id vai como dois parâmetros de propósito. Usá-lo uma só vez fazia o
+        // Postgres vê-lo como UUID (recipient_id) e como texto (concatenação) e
+        // recusar-se a inferir um tipo: "inconsistent types deduced for
+        // parameter $1". A query falhava sempre, o catch abaixo engolia o erro,
+        // e os badges eram atribuídos sem ninguém ser notificado.
+        //
+        // Um cast duplo ($1::uuid e $1::text) também resolve, mas obriga quem
+        // lê a reconstruir este raciocínio. Dois parâmetros não têm ambiguidade.
         `INSERT INTO notifications (recipient_id, type, message, target_url)
-         VALUES ($1, 'badge', $2, '/profile/' || $1)`,
-        [userId, message],
+         VALUES ($1, 'badge', $2, '/profile/' || $3)`,
+        [userId, message, userId],
       )
       if (global._io) {
         global._io.to(`user:${userId}`).emit('new_notification', { type: 'badge' })

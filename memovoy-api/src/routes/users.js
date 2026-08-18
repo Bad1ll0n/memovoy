@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { limparCampos } from '../services/sanitize.js'
 import { checkFirstFollower } from '../services/badges.js'
 import { logAudit } from '../services/audit.js'
 import { notifyUser } from '../services/notifyUser.js'
@@ -192,7 +193,10 @@ export async function usersRoutes(app) {
       return reply.status(400).send({ message: parsed.error.errors[0].message })
     }
 
-    const { displayName, bio, location, website, isPrivate, avatarUrl, coverUrl } = parsed.data
+    // Campos de texto livre: retirar markup antes de guardar. As URLs e o
+    // booleano ficam intactos.
+    const { displayName, bio, location, website, isPrivate, avatarUrl, coverUrl } =
+      limparCampos(parsed.data, ['displayName', 'bio', 'location'])
     const updates = []
     const values = []
     let idx = 1

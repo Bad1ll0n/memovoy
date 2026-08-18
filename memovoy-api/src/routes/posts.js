@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { limparCampos } from '../services/sanitize.js'
 import { checkFirstPost, checkFirstLike } from '../services/badges.js'
 import { agentSuggestCaption, agentStreamCaption, agentIdentifyDestinationFromPhoto } from '../services/aiAgent.js'
 import { notifyUser } from '../services/notifyUser.js'
@@ -68,7 +69,9 @@ const createCommentSchema = z.object({
 
 export async function postsRoutes(app) {
   // GET /posts/nearby?lat=&lon=&radius=&cursor=
-  app.get('/nearby', async (request, reply) => {
+  // O cursor aqui é uma distância, não um id — daí a excepção à validação
+  // de UUID que o hook em app.js aplica aos cursores.
+  app.get('/nearby', { config: { cursorNumerico: true } }, async (request, reply) => {
     const lat    = parseFloat(request.query.lat ?? '')
     const lon    = parseFloat(request.query.lon ?? '')
     const radius = Math.min(Math.max(parseFloat(request.query.radius ?? '50'), 1), 200) // km, 1–200
@@ -160,7 +163,8 @@ export async function postsRoutes(app) {
     const parsed = createPostSchema.safeParse(request.body)
     if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
 
-    const { caption, images, destination, region, lat, lon, itineraryId, groupId } = parsed.data
+    const { caption, images, destination, region, lat, lon, itineraryId, groupId } =
+      limparCampos(parsed.data, ['caption', 'destination', 'region'])
 
     // Validate itinerary ownership if provided
     if (itineraryId) {
@@ -247,7 +251,7 @@ export async function postsRoutes(app) {
     if (check.length === 0) return reply.status(404).send({ message: 'Post não encontrado.' })
     if (check[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
 
-    const { caption, destination } = parsed.data
+    const { caption, destination } = limparCampos(parsed.data, ['caption', 'destination'])
     const updates = []
     const values  = []
     let idx = 1
@@ -333,7 +337,7 @@ export async function postsRoutes(app) {
     const parsed = createCommentSchema.safeParse(request.body)
     if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
 
-    const { content, parentId } = parsed.data
+    const { content, parentId } = limparCampos(parsed.data, ['content'])
 
     const { rows } = await query(
       `INSERT INTO post_comments (post_id, user_id, content, parent_id)
