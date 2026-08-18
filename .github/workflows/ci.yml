@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+# Cancela runs antigos do mesmo branch quando chega um push novo.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API — testes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: insight-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: insight-api/package-lock.json
+
+      - run: npm ci
+
+      # Os testes são unitários: não tocam na base de dados nem fazem rede.
+      # As variáveis falsas vivem em test/test.env.
+      - run: npm test
+
+  web:
+    name: Web — typecheck e build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: insight-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: insight-web/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+
+  lint:
+    name: Web — lint (informativo)
+    runs-on: ubuntu-latest
+    # Não bloqueia: há 25 erros e 23 avisos por resolver do ESLint 9 /
+    # React 19. Passar isto a bloqueante assim que a dívida estiver saldada.
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: insight-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: insight-web/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
