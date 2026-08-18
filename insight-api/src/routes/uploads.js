@@ -35,7 +35,7 @@ const ALLOWED_VIDEO_TYPES = {
 }
 
 // Validates buffer magic bytes match the declared MIME type
-function checkMagicBytes(buf, mimeType) {
+export function checkMagicBytes(buf, mimeType) {
   if (buf.length < 8) return false
   if (mimeType === 'image/jpeg')
     return buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF

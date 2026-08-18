@@ -3,16 +3,16 @@ import OpenAI from 'openai'
 import { query } from '../db/pool.js'
 
 // Strip HTML tags and null-bytes from any string that comes out of the LLM
-function sanitizeText(value) {
+export function sanitizeText(value) {
   if (typeof value !== 'string') return value
   return value
     .replace(/<[^>]*>/g, '')      // strip HTML tags
-    .replace(/ /g, '')       // strip null bytes
+    .replace(/\0/g, '')      // strip null bytes
     .trim()
 }
 
 // Recursively sanitize all string fields in an object/array
-function sanitizeOutput(obj) {
+export function sanitizeOutput(obj) {
   if (Array.isArray(obj)) return obj.map(sanitizeOutput)
   if (obj !== null && typeof obj === 'object') {
     const out = {}
