@@ -1,10 +1,15 @@
-# Project Roteiros
+# MemoVoy
 
 Rede social de viagens: feed, roteiros gerados por IA, mensagens em tempo real,
 grupos, despesas partilhadas, mapas, rankings e gamificação.
 
 - **`insight-api/`** — API Fastify 5, na base de dados `insight`
 - **`insight-web/`** — frontend Next.js 16
+
+**Sobre os nomes:** o produto chama-se MemoVoy — é o que aparece nos emails, na
+exportação iCal, no bucket S3 e no arranque da API. `insight-api`/`insight-web`
+são apenas nomes de pastas, e `Project_Roteiros` é o nome da pasta local. O
+repositório (`memovoy`) é que está certo; as pastas é que ficaram para trás.
 
 ## Stack real
 

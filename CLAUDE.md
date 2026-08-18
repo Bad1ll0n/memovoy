@@ -1,6 +1,18 @@
-# Project Roteiros — contexto para agentes
+# MemoVoy — contexto para agentes
 
 Ler o `README.md` primeiro. Este ficheiro cobre só o que costuma induzir em erro.
+
+## O produto chama-se MemoVoy
+
+Não "Insight" nem "Roteiros". MemoVoy é o que o utilizador vê: assunto dos
+emails, cabeçalho da marca, `PRODID` da exportação iCal, emissor do TOTP, nome
+do ficheiro de exportação de dados, banner de arranque da API.
+
+`insight-api/` e `insight-web/` são só nomes de pastas, e `Project_Roteiros` é o
+nome da pasta local — resíduos de fases anteriores. O repositório no GitHub
+(`memovoy`) é o nome correcto. Não sugerir renomeá-lo.
+
+Ao adicionar texto visível ao utilizador, usar MemoVoy.
 
 ## Uma app, uma base de dados
 
