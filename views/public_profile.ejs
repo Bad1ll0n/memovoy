@@ -1,0 +1,329 @@
+<%
+let coverImage = 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000';
+if (profileUser.Header_Url) coverImage = profileUser.Header_Url;
+const joinDate = new Date(profileUser.created_at || Date.now()).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+%>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var t=localStorage.getItem('insight-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insight | <%= profileUser.Name %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="pf-nav">
+    <a class="pf-nav__brand" href="/dashboard"><i class="fa-solid fa-compass"></i> INSIGHT</a>
+    <div class="pf-nav__links">
+        <a href="/dashboard"><i class="fa-solid fa-house-chimney"></i> Home</a>
+        <a href="#"><i class="fa-solid fa-plus"></i> New Trip</a>
+        <a href="#"><i class="fa-regular fa-image"></i> New Post</a>
+        <a href="/profile_trips" class="pf-nav__link--accent"><i class="fa-solid fa-heart"></i> My Trips</a>
+    </div>
+    <div class="pf-nav__right">
+        <i class="fa-regular fa-bell pf-nav__bell"></i>
+        <div class="dropdown">
+            <img src="<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                class="pf-nav__avatar" role="button" data-bs-toggle="dropdown">
+            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                <li><a class="dropdown-item" href="/profile"><%- t('nav.profile') %></a></li>
+                <li><a class="dropdown-item" href="/profile/edit"><%- t('nav.editProfile') %></a></li>
+                <li><a class="dropdown-item" href="/settings"><i class="fa-solid fa-gear me-2"></i><%- t('nav.settings') %></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="/logout"><%- t('nav.logout') %></a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- COVER -->
+<div class="pf-cover" style="background-image: url('<%= coverImage %>'); margin-top: 60px;"></div>
+
+<!-- PROFILE HEADER -->
+<div class="pf-header">
+    <div class="pf-header__inner">
+        <img src="<%= profileUser.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+            class="pf-avatar" alt="<%= profileUser.Name %>"
+            onerror="this.src='/assets/images/default-avatar.jpg'">
+
+        <div class="pf-info">
+            <h1 class="pf-info__name"><%= profileUser.Name %></h1>
+            <div class="pf-info__username">@<%= profileUser.Username %></div>
+            <div class="pf-info__meta">
+                <% if (profileUser.Location) { %>
+                    <span><i class="fa-solid fa-location-dot"></i> <%= profileUser.Location %></span>
+                <% } %>
+                <span><i class="fa-regular fa-calendar"></i> Joined <%= joinDate %></span>
+            </div>
+            <p class="pf-info__bio">
+                <% if (profileUser.Bio) { %>
+                    <%= profileUser.Bio %>
+                <% } else { %>
+                    <em style="opacity:.5">No bio yet.</em>
+                <% } %>
+            </p>
+        </div>
+
+        <div class="pf-actions">
+            <% if (!isOwnProfile) { %>
+            <button id="followBtn" onclick="toggleFollow()"
+                class="pf-btn <%= isFollowing ? 'pf-btn--following' : 'pf-btn--follow' %>">
+                <i class="fa-solid <%= isFollowing ? 'fa-user-check' : 'fa-user-plus' %>"></i>
+                <span id="followBtnText"><%= isFollowing ? 'Following' : 'Follow' %></span>
+            </button>
+            <button class="pf-btn pf-btn--icon" onclick="window.location.href='/messages/<%= profileUser.Guid %>'">
+                <i class="fa-regular fa-paper-plane"></i>
+            </button>
+            <% } else { %>
+            <a href="/profile/edit" class="pf-btn pf-btn--outline">
+                <i class="fa-solid fa-gear"></i> Edit Profile
+            </a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="pf-main">
+
+    <!-- STATS -->
+    <div class="pf-stats">
+        <div class="pf-stat active">
+            <i class="fa-solid fa-images"></i>
+            <div class="pf-stat__value"><%= posts.length %></div>
+            <div class="pf-stat__label">Posts</div>
+        </div>
+        <div class="pf-stat <%= !isOwnProfile ? 'pf-stat--clickable' : '' %>" id="followersStatCard">
+            <i class="fa-solid fa-users"></i>
+            <div class="pf-stat__value" id="followersCount"><%= followers %></div>
+            <div class="pf-stat__label">Followers</div>
+        </div>
+        <div class="pf-stat">
+            <i class="fa-solid fa-user-check"></i>
+            <div class="pf-stat__value"><%= following %></div>
+            <div class="pf-stat__label">Following</div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="pf-tabs">
+        <a class="pf-tab active" href="#">
+            Posts <span class="pf-tab__count"><%= posts.length %></span>
+        </a>
+    </div>
+
+    <!-- POSTS -->
+    <% if (posts.length === 0) { %>
+        <div class="pf-empty">
+            <i class="fa-solid fa-images"></i>
+            <p>No posts yet.</p>
+        </div>
+    <% } else { %>
+        <div class="pf-grid">
+            <% posts.forEach(post => {
+                const photos = Array.isArray(post.PHOTOS_URLS) ? post.PHOTOS_URLS : (post.PHOTOS_URLS ? [post.PHOTOS_URLS] : []);
+                const cover  = photos[0] || null;
+            %>
+            <div class="pf-post"
+                data-post-id="<%= post.G_POST_ID %>"
+                data-photos='<%- JSON.stringify(photos) %>'
+                data-desc="<%= (post.T_DESC || '').replace(/"/g, '&quot;') %>"
+                data-likes="<%= post.N_LIKES || 0 %>"
+                data-comments="<%= post.N_COMMENTS || 0 %>"
+                data-roteiro="<%= post.T_NOME || '' %>"
+                data-destination="<%= post.DESTINATION || '' %>"
+                data-date="<%= post.D_CREATE_DATE ? new Date(post.D_CREATE_DATE).toLocaleDateString('pt-PT') : '' %>"
+                data-liked="<%= post.user_has_liked ? '1' : '0' %>"
+                data-avatar="<%= profileUser.Avatar_Url || '' %>"
+                data-username="<%= profileUser.Name %>"
+                onclick="openPostModal(this)">
+                <div class="pf-post__img-wrap">
+                    <% if (cover) { %>
+                        <img src="<%= cover %>" alt="post">
+                    <% } else { %>
+                        <div class="pf-post__img-placeholder"><i class="fa-solid fa-image"></i></div>
+                    <% } %>
+                    <% if (photos.length > 1) { %>
+                        <span class="pf-post__count"><i class="fa-solid fa-images"></i> <%= photos.length %></span>
+                    <% } %>
+                </div>
+                <div class="pf-post__body">
+                    <% if (post.T_NOME) { %>
+                        <div class="pf-post__route"><i class="fa-solid fa-route"></i> <%= post.T_NOME %></div>
+                    <% } %>
+                    <div class="pf-post__title">
+                        <%= post.T_DESC ? post.T_DESC.substring(0,65) + (post.T_DESC.length > 65 ? '…' : '') : 'No description' %>
+                    </div>
+                    <% if (post.DESTINATION) { %>
+                        <div class="pf-post__location"><i class="fa-solid fa-location-dot"></i> <%= post.DESTINATION %></div>
+                    <% } %>
+                    <div class="pf-post__footer">
+                        <div class="pf-post__stats">
+                            <span><i class="fa-solid fa-heart"></i> <%= post.N_LIKES || 0 %></span>
+                            <span><i class="fa-regular fa-comment"></i> <%= post.N_COMMENTS || 0 %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<footer class="pf-footer">&copy; 2024 Insight Travel. Made for explorers.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- POST DETAIL MODAL (reutiliza o mesmo da profile.ejs) -->
+<div class="modal fade" id="postDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:1100px; width:95vw;">
+    <div class="modal-content border-0" style="background:#1a1f2e; border-radius:14px; overflow:hidden;">
+      <div class="row g-0" style="min-height:640px; max-height:90vh;">
+        <div class="col-md-7 d-flex align-items-center justify-content-center" style="background:#0b0e14; position:relative; min-height:400px;">
+          <button onclick="prevPhoto()" id="btnPrev" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;width:40px;height:40px;border-radius:50%;display:none;cursor:pointer;z-index:10;align-items:center;justify-content:center;"><i class="fa-solid fa-chevron-left"></i></button>
+          <img id="modalPhoto" src="" alt="post" style="max-height:640px;width:100%;height:100%;object-fit:contain;">
+          <button onclick="nextPhoto()" id="btnNext" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;width:40px;height:40px;border-radius:50%;display:none;cursor:pointer;z-index:10;align-items:center;justify-content:center;"><i class="fa-solid fa-chevron-right"></i></button>
+          <span id="photoCounter" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:.75rem;padding:4px 12px;border-radius:20px;display:none;"></span>
+        </div>
+        <div class="col-md-5 d-flex flex-column" style="border-left:1px solid #2a2f3e; overflow:hidden;">
+          <div class="d-flex align-items-center justify-content-between p-3" style="border-bottom:1px solid #2a2f3e; flex-shrink:0;">
+            <div class="d-flex align-items-center gap-2">
+              <img id="modalAvatar" src="<%= profileUser.Avatar_Url || '/assets/images/default-avatar.jpg' %>" class="rounded-circle" width="40" height="40" style="object-fit:cover;">
+              <div>
+                <div class="fw-bold" style="font-size:.9rem;"><%= profileUser.Name %></div>
+                <div id="modalDestination" class="text-secondary" style="font-size:.75rem;"></div>
+              </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div id="modalRoteiroBox" style="display:none;background:#1e2535;padding:10px 16px;flex-shrink:0;border-bottom:1px solid #2a2f3e;">
+            <div style="color:#f59e0b;font-size:.8rem;font-weight:700;"><i class="fa-solid fa-route me-1"></i><span id="modalRoteiroName"></span></div>
+            <div id="modalRoteiroDestination" class="text-secondary" style="font-size:.75rem;margin-top:2px;"></div>
+          </div>
+          <div class="p-3" style="border-bottom:1px solid #2a2f3e;flex-shrink:0;">
+            <p id="modalDesc" class="mb-1" style="color:#e2e8f0;line-height:1.7;font-size:.88rem;"></p>
+            <div id="modalDate" class="text-secondary mt-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;"></div>
+          </div>
+          <div id="modalComments" class="p-3 overflow-auto flex-grow-1" style="min-height:0;"></div>
+          <div class="p-3" style="border-top:1px solid #2a2f3e;flex-shrink:0;">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <button id="modalLikeBtn" onclick="toggleLike()" style="background:none;border:none;padding:0;cursor:pointer;font-size:1.4rem;line-height:1;"><i class="fa-regular fa-heart text-secondary"></i></button>
+              <i class="fa-regular fa-comment text-secondary" style="font-size:1.3rem;cursor:pointer;" onclick="document.getElementById('modalCommentInput').focus()"></i>
+              <i class="fa-regular fa-bookmark text-secondary ms-auto" style="font-size:1.3rem;cursor:pointer;"></i>
+            </div>
+            <div id="modalLikesCount" class="fw-bold mb-2" style="font-size:.85rem;"></div>
+            <div class="d-flex gap-2 align-items-center" style="border-top:1px solid #2a2f3e;padding-top:10px;">
+              <input id="modalCommentInput" type="text" placeholder="Add a comment..." style="flex:1;background:transparent;border:none;outline:none;color:#e2e8f0;font-size:.85rem;" onkeydown="if(event.key==='Enter') submitComment()">
+              <button onclick="submitComment()" style="background:none;border:none;color:#f59e0b;font-weight:600;font-size:.85rem;cursor:pointer;">Post</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TARGET_USER_ID = '<%= profileUser.Guid %>';
+let currentPostId = null, currentPhotos = [], currentPhotoIdx = 0;
+
+// ── Follow toggle ──
+async function toggleFollow() {
+    const btn     = document.getElementById('followBtn');
+    const btnText = document.getElementById('followBtnText');
+    const icon    = btn.querySelector('i');
+    try {
+        const res  = await fetch(`/follow/${TARGET_USER_ID}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.following) {
+            btn.className = 'pf-btn pf-btn--following';
+            icon.className = 'fa-solid fa-user-check';
+            btnText.textContent = 'Following';
+        } else {
+            btn.className = 'pf-btn pf-btn--follow';
+            icon.className = 'fa-solid fa-user-plus';
+            btnText.textContent = 'Follow';
+        }
+        document.getElementById('followersCount').textContent = data.followers;
+    } catch(e) { console.error(e); }
+}
+
+// ── Post modal ──
+function openPostModal(card) {
+    currentPostId   = card.dataset.postId;
+    currentPhotos   = JSON.parse(card.dataset.photos || '[]');
+    currentPhotoIdx = 0;
+    updatePhoto();
+    const hasMult = currentPhotos.length > 1;
+    document.getElementById('btnPrev').style.display      = hasMult ? 'flex' : 'none';
+    document.getElementById('btnNext').style.display      = hasMult ? 'flex' : 'none';
+    document.getElementById('photoCounter').style.display = hasMult ? 'block' : 'none';
+    document.getElementById('modalDestination').textContent = card.dataset.destination || '';
+    const rBox = document.getElementById('modalRoteiroBox');
+    if (card.dataset.roteiro) {
+        rBox.style.display = 'block';
+        document.getElementById('modalRoteiroName').textContent        = card.dataset.roteiro;
+        document.getElementById('modalRoteiroDestination').textContent = card.dataset.destination || '';
+    } else { rBox.style.display = 'none'; }
+    document.getElementById('modalDesc').textContent       = card.dataset.desc || '';
+    document.getElementById('modalDate').textContent       = card.dataset.date || '';
+    document.getElementById('modalLikesCount').textContent = card.dataset.likes + ' likes';
+    document.getElementById('modalLikeBtn').querySelector('i').className =
+        card.dataset.liked === '1' ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart text-secondary';
+    loadComments(currentPostId);
+    new bootstrap.Modal(document.getElementById('postDetailModal')).show();
+}
+function updatePhoto() {
+    const img = document.getElementById('modalPhoto');
+    if (!currentPhotos.length) { img.src=''; img.style.display='none'; return; }
+    img.style.display='block'; img.src=currentPhotos[currentPhotoIdx];
+    document.getElementById('photoCounter').textContent=(currentPhotoIdx+1)+' / '+currentPhotos.length;
+}
+function prevPhoto() { currentPhotoIdx=(currentPhotoIdx-1+currentPhotos.length)%currentPhotos.length; updatePhoto(); }
+function nextPhoto() { currentPhotoIdx=(currentPhotoIdx+1)%currentPhotos.length; updatePhoto(); }
+async function loadComments(postId) {
+    const c=document.getElementById('modalComments');
+    c.innerHTML='<p class="text-secondary small text-center pt-4">Loading...</p>';
+    try {
+        const res=await fetch(`/dashboard/${postId}/comments`);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data=await res.json();
+        if(!data.length){c.innerHTML=`<div class="text-center pt-5"><i class="fa-regular fa-comment fa-2x text-secondary mb-2 d-block"></i><p class="text-secondary small">No comments yet.</p></div>`;return;}
+        c.innerHTML=data.map(x=>`<div class="d-flex gap-2 mb-3 align-items-start"><img src="${x.Avatar_Url||'/assets/images/default-avatar.jpg'}" class="rounded-circle flex-shrink-0" width="30" height="30" style="object-fit:cover;margin-top:2px;"><div style="background:#0f1421;border-radius:10px;padding:8px 12px;flex:1;"><span style="font-size:.82rem;color:#f59e0b;font-weight:700;">${x.First_Name}</span><p class="mb-0 mt-1" style="font-size:.83rem;color:#cbd5e1;line-height:1.5;">${x.S_COMMENT}</p></div></div>`).join('');
+        c.scrollTop=c.scrollHeight;
+    } catch(e){c.innerHTML='<p class="text-danger small text-center pt-3">Error loading comments.</p>';}
+}
+async function toggleLike() {
+    if(!currentPostId) return;
+    const icon=document.getElementById('modalLikeBtn').querySelector('i');
+    const res=await fetch(`/dashboard/${currentPostId}/like`,{method:'POST'});
+    const data=await res.json();
+    icon.className=data.liked?'fa-solid fa-heart text-danger':'fa-regular fa-heart text-secondary';
+    const el=document.getElementById('modalLikesCount');
+    const n=parseInt(el.textContent)||0;
+    el.textContent=(data.liked?n+1:Math.max(0,n-1))+' likes';
+}
+async function submitComment() {
+    const input=document.getElementById('modalCommentInput');
+    const text=input.value.trim();
+    if(!text||!currentPostId) return;
+    await fetch(`/dashboard/${currentPostId}/comment`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({commentText:text})});
+    input.value=''; loadComments(currentPostId);
+}
+document.addEventListener('keydown',e=>{
+    if(!document.getElementById('postDetailModal').classList.contains('show')) return;
+    if(e.key==='ArrowLeft') prevPhoto();
+    if(e.key==='ArrowRight') nextPhoto();
+});
+</script>
+<script src="/js/theme.js"></script>
+</body>
+</html>

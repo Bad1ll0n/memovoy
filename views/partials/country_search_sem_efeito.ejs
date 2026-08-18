@@ -1,0 +1,100 @@
+<div class="form-container">
+  <form id="searchForm">
+    <label for="searchInput">Destination</label>
+    <div class="search-box">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search for countries or cities..."
+        oninput="debounceSearch()"
+      />
+      <div class="results" id="results"></div> <!-- Lista posicionada aqui -->
+    </div>
+
+    <label for="departureDate">Departure Date</label>
+    <input type="date" id="departureDate" required />
+
+    <label for="returnDate">Return Date</label>
+    <input type="date" id="returnDate" required />
+
+    <button type="button" id="manualsearchButton">Manual</button>
+    <button type="button" id="automaticsearchButton">Automatic</button>
+  </form>
+</div>
+
+<style>
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+#searchForm {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.search-box {
+  position: relative;
+  width: 100%; /* ou 100% se preferir responsivo */
+  display: flex;
+  flex-direction: column;
+}
+
+#searchInput {
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  border: 1px solid #ccc; /* Borda total */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Suavidade */
+  border-radius: 4px;
+  z-index: 100;
+  display: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.results.active {
+  display: block;
+}
+
+.city-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.city-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+  color: #333;
+}
+
+.city-item:last-child {
+  border-bottom: none;
+}
+
+.city-item:hover {
+  background-color: #f5f5f5;
+}
+
+input,
+button {
+  padding: 8px;
+  font-size: 16px;
+}
+</style>
+  

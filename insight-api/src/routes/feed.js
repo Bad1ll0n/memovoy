@@ -1,0 +1,116 @@
+import { query } from '../db/pool.js'
+
+export async function feedRoutes(app) {
+  // GET /feed?cursor=
+  app.get('/', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const cursor  = request.query.cursor
+    const limit   = 10
+    const userId  = request.user.id
+    const t0      = Date.now()
+
+    const { rows } = await query(
+      `SELECT
+        p.*,
+        u.username, u.display_name, u.avatar_url, u.is_verified,
+        COUNT(DISTINCT pl.user_id)  AS likes_count,
+        COUNT(DISTINCT pc.id)       AS comments_count,
+        EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1)  AS viewer_liked,
+        EXISTS(SELECT 1 FROM bookmarks  WHERE post_id = p.id AND user_id = $1)  AS viewer_saved,
+        EXISTS(SELECT 1 FROM follows    WHERE follower_id = $1 AND following_id = p.user_id) AS is_following,
+        i.id          AS iti_id,
+        i.title       AS iti_title,
+        i.destination AS iti_destination,
+        i.start_date  AS iti_start_date,
+        i.end_date    AS iti_end_date,
+        i.cover_url   AS iti_cover_url,
+        COALESCE(jsonb_array_length(i.data->'days'), 0) AS iti_days_count
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+       LEFT JOIN post_likes    pl ON pl.post_id = p.id
+       LEFT JOIN post_comments pc ON pc.post_id = p.id
+       LEFT JOIN itineraries   i  ON i.id = p.itinerary_id
+       WHERE (
+         p.user_id = $1
+         OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = $1)
+       )
+       AND ($2::uuid IS NULL OR p.created_at < (SELECT created_at FROM posts WHERE id = $2))
+       GROUP BY p.id, u.id, i.id
+       ORDER BY p.created_at DESC
+       LIMIT $3`,
+      [userId, cursor ?? null, limit + 1],
+    )
+
+    const hasMore = rows.length > limit
+    let posts     = rows.slice(0, limit)
+
+    // Empty feed — return top public posts as curated content
+    let isCurated = false
+    if (posts.length === 0 && !cursor) {
+      const { rows: topRows } = await query(
+        `SELECT
+          p.*,
+          u.username, u.display_name, u.avatar_url, u.is_verified,
+          COUNT(DISTINCT pl.user_id)  AS likes_count,
+          COUNT(DISTINCT pc.id)       AS comments_count,
+          EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1) AS viewer_liked,
+          EXISTS(SELECT 1 FROM bookmarks  WHERE post_id = p.id AND user_id = $1) AS viewer_saved,
+          FALSE AS is_following,
+          i.id          AS iti_id,
+          i.title       AS iti_title,
+          i.destination AS iti_destination,
+          i.start_date  AS iti_start_date,
+          i.end_date    AS iti_end_date,
+          i.cover_url   AS iti_cover_url,
+          COALESCE(jsonb_array_length(i.data->'days'), 0) AS iti_days_count
+         FROM posts p
+         JOIN users u ON u.id = p.user_id
+         LEFT JOIN post_likes    pl ON pl.post_id = p.id
+         LEFT JOIN post_comments pc ON pc.post_id = p.id
+         LEFT JOIN itineraries   i  ON i.id = p.itinerary_id
+         WHERE p.user_id <> $1
+         GROUP BY p.id, u.id, i.id
+         ORDER BY COUNT(DISTINCT pl.user_id) DESC, p.created_at DESC
+         LIMIT $2`,
+        [userId, limit],
+      )
+      posts = topRows
+      isCurated = true
+    }
+
+    function postDto(row) {
+      return {
+        id:            row.id,
+        userId:        row.user_id,
+        username:      row.username,
+        displayName:   row.display_name ?? row.username,
+        avatarUrl:     row.avatar_url,
+        isVerified:    row.is_verified,
+        caption:       row.caption,
+        images:        row.images ?? [],
+        destination:   row.destination,
+        likesCount:    Number(row.likes_count),
+        commentsCount: Number(row.comments_count),
+        viewerLiked:   row.viewer_liked,
+        viewerSaved:   row.viewer_saved,
+        isFollowing:   row.is_following,
+        createdAt:     row.created_at,
+        itineraryLinked: row.iti_id ? {
+          id:          row.iti_id,
+          title:       row.iti_title,
+          destination: row.iti_destination,
+          startDate:   row.iti_start_date,
+          endDate:     row.iti_end_date,
+          coverUrl:    row.iti_cover_url,
+          daysCount:   Number(row.iti_days_count ?? 0),
+        } : null,
+      }
+    }
+
+    reply.header('Server-Timing', `db;dur=${Date.now() - t0}`)
+    reply.send({
+      posts:      posts.map(postDto),
+      nextCursor: hasMore ? posts[posts.length - 1].id : null,
+      isCurated,
+    })
+  })
+}

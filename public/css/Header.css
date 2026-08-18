@@ -1,0 +1,36 @@
+/* Importação da fonte moderna (Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+.navbar {
+    background-color: #0a2141 !important; /* Cor azul escura da imagem */
+    padding: 0rem 0;
+    font-family: 'Inter', sans-serif; /* Aplica a letra simplista */
+}
+
+.nav-link, .btn-reset {
+    color: #ffffff !important;
+    font-size: 0.95rem;
+    font-weight: 500; /* Peso da letra igual ao da imagem "Home" */
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre o ícone e o texto */
+    transition: opacity 0.2s;
+}
+
+.nav-link:hover {
+    opacity: 0.8;
+}
+
+.navbar-brand img {
+    height: 60px; /* Tamanho do logo melhorado */
+    width: auto;
+}
+
+/* Ajuste para os botões que abrem modais */
+.btn-reset {
+    border: none;
+    background: none;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+}

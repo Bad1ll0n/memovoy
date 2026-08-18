@@ -1,0 +1,100 @@
+/* shareModal.css */
+
+.upload-area-dark {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #161b22; border: 2px dashed #30363d; border-radius: 12px;
+    padding: 24px; cursor: pointer; transition: all .2s; text-align: center;
+}
+.upload-area-dark:hover { border-color: #fca311; }
+
+#photoCount { font-size: .75rem; color: #8b949e; margin-top: 8px; min-height: 18px; }
+
+#photoPreview {
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+#photoPreview.show { display: grid !important; }
+
+.thumb {
+    position: relative;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1c2128;
+}
+.thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.thumb:hover img { filter: brightness(.5); }
+
+.thumb-x {
+    display: none;
+    position: absolute; top: 5px; right: 5px;
+    width: 22px; height: 22px;
+    background: rgba(0,0,0,.85); border: none; color: #fff;
+    border-radius: 50%; cursor: pointer; font-size: 12px;
+    align-items: center; justify-content: center; z-index: 2;
+}
+.thumb:hover .thumb-x { display: flex; }
+.thumb-x:hover { background: #e53e3e; }
+
+.thumb-n {
+    position: absolute; bottom: 5px; left: 6px;
+    background: rgba(0,0,0,.7); color: #fff;
+    font-size: 10px; border-radius: 3px; padding: 1px 5px; z-index: 2;
+}
+
+.thumb-add {
+    height: 120px; border-radius: 8px;
+    background: #1c2128; border: 2px dashed #30363d; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 4px; color: #8b949e;
+    font-size: .7rem; transition: all .15s;
+}
+.thumb-add:hover { border-color: #fca311; color: #fca311; }
+
+/* Edit button on thumb */
+.thumb-edit {
+    display: none;
+    position: absolute; top: 5px; left: 5px;
+    width: 22px; height: 22px;
+    background: rgba(0,0,0,.85); border: none; color: #fff;
+    border-radius: 50%; cursor: pointer; font-size: 11px;
+    align-items: center; justify-content: center; z-index: 2;
+}
+.thumb:hover .thumb-edit { display: flex; }
+.thumb-edit:hover { background: #fca311; color: #000; }
+
+/* Edited badge */
+.thumb-edited {
+    position: absolute; bottom: 5px; right: 6px;
+    background: #fca311; color: #000;
+    font-size: 9px; font-weight: 700; border-radius: 3px;
+    padding: 1px 5px; z-index: 2; letter-spacing: .3px;
+}
+
+/* Editor tool buttons */
+.editor-tool-btn {
+    background: var(--surface2, #1c2128);
+    border: 1px solid var(--border, #30363d);
+    color: var(--text-primary, #fff);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: .82rem;
+    transition: all .15s;
+}
+.editor-tool-btn:hover { background: #fca311; color: #000; border-color: #fca311; }
+
+/* Range sliders in editor */
+#photoEditorPanel input[type="range"] {
+    accent-color: #fca311;
+    height: 4px;
+}

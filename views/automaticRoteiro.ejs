@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>Dashboard</title>
+    <%- include('./partials/head'); %>
+  </head>
+  <body class="container-fluid">
+    
+    <header>
+      <%- include('./partials/header'); %> 
+    </header>
+
+    <h1>Flight Search Results</h1>
+    <p id="flightDetails"></p>
+  
+    <script>
+      // Obtém os parâmetros da URL
+      const params = new URLSearchParams(window.location.search);
+      const departureDate = params.get("departureDate");
+      const returnDate = params.get("returnDate");
+      const selectedCity = params.get("selectedCity");
+  
+      // Mostra os dados na página
+      if (departureDate && returnDate && selectedCity) {
+        document.getElementById("flightDetails").innerText = `
+          Departure Date: ${departureDate}
+          Return Date: ${returnDate}
+          Destination: ${selectedCity}
+        `;
+      } else {
+        document.getElementById("flightDetails").innerText = "Invalid search details.";
+      }
+    </script>
+
+    <footer>
+      <%- include('./partials/footer'); %>
+    </footer>
+  </body>
+</html>

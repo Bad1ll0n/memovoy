@@ -1,28 +1,45 @@
-# Dependências
+# ─── Dependências ────────────────────────────────────────────────────────────
 node_modules/
-.gradle/
-build/
-.build/
-DerivedData/
 
-# Next.js
+# ─── Segredos ────────────────────────────────────────────────────────────────
+# Nunca commitar ficheiros de ambiente. Os .example são a documentação.
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# ─── Builds e caches ─────────────────────────────────────────────────────────
 .next/
 out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
 
-# Ambiente — NUNCA commitar secrets
-memovoy-api/.env
-memovoy-web/.env.local
-*.env.local
+# ─── Dados de runtime (conteúdo de utilizador, não código) ───────────────────
+uploads/
 
-# Logs
+# ─── Artefactos de testes e ferramentas ──────────────────────────────────────
+screenshots/
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# ─── Worktrees e estado local de agentes ─────────────────────────────────────
+.claude/worktrees/
+.claude/settings.local.json
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
 *.log
-/tmp/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# OS
+# ─── Sistema operativo / editor ──────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-
-# IDE
+*.pem
 .idea/
-.vscode/settings.json
-*.xcworkspace/xcuserdata/
+.vscode/

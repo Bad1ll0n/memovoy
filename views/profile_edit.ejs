@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var t=localStorage.getItem('insight-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- t('profileEdit.title') %> | Insight</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/profile_edit.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="pf-nav">
+    <a class="pf-nav__brand" href="/dashboard">
+        <i class="fa-solid fa-compass"></i> INSIGHT
+    </a>
+    <div class="pf-nav__links">
+        <a href="/dashboard"><i class="fa-solid fa-house-chimney"></i> Home</a>
+        <a href="#"><i class="fa-solid fa-plus"></i> New Trip</a>
+        <a href="#"><i class="fa-regular fa-image"></i> New Post</a>
+        <a href="/profile_trips" class="pf-nav__link--accent">
+            <i class="fa-solid fa-heart"></i> My Trips
+        </a>
+    </div>
+    <div class="pf-nav__right">
+        <i class="fa-regular fa-bell pf-nav__bell"></i>
+        <div class="dropdown">
+            <img src="<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                class="pf-nav__avatar" role="button" data-bs-toggle="dropdown">
+            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                <li><a class="dropdown-item" href="/profile"><%- t('nav.profile') %></a></li>
+                <li><a class="dropdown-item active" href="/profile/edit"><%- t('nav.editProfile') %></a></li>
+                <li><a class="dropdown-item" href="/settings"><i class="fa-solid fa-gear me-2"></i><%- t('nav.settings') %></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="/logout"><%- t('nav.logout') %></a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="pe-wrapper">
+
+    <!-- Title -->
+    <div class="pe-title-row">
+        <a href="/profile" class="pe-back"><i class="fa-solid fa-arrow-left fa-sm"></i></a>
+        <h4><%- t('profileEdit.title') %></h4>
+    </div>
+
+    <form action="/profile/edit" method="POST" enctype="multipart/form-data">
+
+        <!-- COVER + AVATAR CARD -->
+        <div class="pe-card">
+            <!-- Cover -->
+            <div class="pe-cover-wrap" id="coverTrigger">
+                <img id="preview-cover"
+                    src="<%= user.Header_Url || '/assets/images/default-cover.jpg' %>"
+                    alt="Capa">
+                <div class="pe-cover-overlay">
+                    <span><i class="fa-solid fa-camera"></i> <%- t('profileEdit.changeCover') %></span>
+                </div>
+            </div>
+            <input type="file" id="input-cover" name="cover" accept="image/*" style="display:none;">
+
+            <!-- Avatar -->
+            <div class="pe-avatar-row">
+                <div class="pe-avatar-wrap" id="avatarTrigger">
+                    <img id="preview-avatar"
+                        src="<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                        alt="Avatar">
+                    <div class="pe-avatar-edit"><i class="fa-solid fa-camera"></i></div>
+                </div>
+                <p class="pe-avatar-hint"><%- t('profileEdit.clickToChange') %></p>
+            </div>
+            <input type="file" id="input-avatar" name="avatar" accept="image/*" style="display:none;">
+        </div>
+
+        <!-- INFORMAÇÕES BÁSICAS -->
+        <div class="pe-card">
+            <div class="pe-card__body">
+                <p class="pe-card__title"><%- t('profileEdit.basicInfo') %></p>
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="pe-label"><%- t('profileEdit.name') %></label>
+                        <div class="pe-input-group">
+                            <span class="pe-input-group__icon"><i class="fa-regular fa-user"></i></span>
+                            <input type="text" name="name" value="<%= user.First_Name || '' %>" placeholder="<%- t('profileEdit.namePlaceholder') %>">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="pe-label">Username</label>
+                        <div class="pe-input-group">
+                            <span class="pe-input-group__icon"><i class="fa-solid fa-at"></i></span>
+                            <input type="text" name="username" value="<%= user.Username || '' %>" placeholder="username">
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="pe-label"><%- t('profileEdit.location') %></label>
+                        <div class="pe-input-group">
+                            <span class="pe-input-group__icon"><i class="fa-solid fa-location-dot"></i></span>
+                            <input type="text" name="location" value="<%= user.Location || '' %>" placeholder="<%- t('profileEdit.locationPlaceholder') %>">
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="pe-label"><%- t('profileEdit.bio') %></label>
+                        <div class="pe-textarea-wrap">
+                            <textarea name="bio" id="bioInput" maxlength="300"
+                                placeholder="<%- t('profileEdit.bioPlaceholder') %>"><%= user.Bio || '' %></textarea>
+                            <div class="pe-char-count"><span id="bioCount">0</span>/300 <%- t('profileEdit.bioChars') %></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- REDES SOCIAIS -->
+        <div class="pe-card">
+            <div class="pe-card__body">
+                <p class="pe-card__title"><%- t('profileEdit.socialNetworks') %></p>
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label class="pe-label">Website</label>
+                        <div class="pe-input-group">
+                            <span class="pe-input-group__icon"><i class="fa-solid fa-globe"></i></span>
+                            <input type="text" name="website" value="<%= user.Website || '' %>" placeholder="<%- t('profileEdit.websitePlaceholder') %>">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="pe-label">Instagram</label>
+                        <div class="pe-input-group">
+                            <span class="pe-input-group__icon"><i class="fa-brands fa-instagram"></i></span>
+                            <input type="text" name="instagram" value="<%= user.Instagram || '' %>" placeholder="@username">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="pe-label">Twitter / X</label>
+                        <div class="pe-input-group">
+                            <span class="pe-input-group__icon"><i class="fa-brands fa-x-twitter"></i></span>
+                            <input type="text" name="twitter" value="<%= user.Twitter || '' %>" placeholder="@username">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="pe-actions">
+            <a href="/profile" class="pe-btn pe-btn--cancel"><%- t('profileEdit.cancel') %></a>
+            <button type="submit" class="pe-btn pe-btn--save">
+                <i class="fa-solid fa-floppy-disk"></i> <%- t('profileEdit.saveChanges') %>
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Cover preview
+document.getElementById('coverTrigger').addEventListener('click', () => {
+    document.getElementById('input-cover').click();
+});
+document.getElementById('input-cover').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        document.getElementById('preview-cover').src = URL.createObjectURL(this.files[0]);
+    }
+});
+
+// Avatar preview
+document.getElementById('avatarTrigger').addEventListener('click', () => {
+    document.getElementById('input-avatar').click();
+});
+document.getElementById('input-avatar').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        document.getElementById('preview-avatar').src = URL.createObjectURL(this.files[0]);
+    }
+});
+
+// Bio counter
+const bioInput = document.getElementById('bioInput');
+const bioCount = document.getElementById('bioCount');
+function updateCount() {
+    const n = bioInput.value.length;
+    bioCount.textContent = n;
+    bioCount.parentElement.className = 'pe-char-count' + (n > 270 ? ' warn' : '');
+}
+bioInput.addEventListener('input', updateCount);
+updateCount();
+</script>
+<script src="/js/theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var t=localStorage.getItem('insight-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- t('messages.title') %> | Insight</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/messages.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+
+<div class="msg-layout">
+
+    <!-- SIDEBAR ESQUERDA — lista de conversas -->
+    <div class="msg-sidebar">
+        <div class="msg-sidebar__header">
+            <a href="/dashboard" class="msg-back-btn" title="<%- t('messages.backToFeed') %>">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h2 class="msg-sidebar__title"><%- t('messages.title') %></h2>
+            <a href="/users" class="msg-sidebar__compose" title="<%- t('messages.newMessage') %>">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </a>
+        </div>
+
+        <div class="msg-sidebar__search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="<%- t('messages.searchPlaceholder') %>" id="convSearch">
+        </div>
+
+        <div class="msg-conv-list" id="convList">
+            <% if (!conversations || conversations.length === 0) { %>
+                <div class="msg-conv-empty">
+                    <i class="fa-regular fa-comment-dots"></i>
+                    <p><%- t('messages.noConversations') %></p>
+                    <a href="/users"><%- t('messages.findUsers') %></a>
+                </div>
+            <% } else { %>
+                <% conversations.forEach(function(conv) { %>
+                    <a href="/messages/<%= conv.other_id %>"
+                        class="msg-conv-item <%= (typeof activeConv !== 'undefined' && activeConv.otherUser.Guid === conv.other_id) ? 'active' : '' %>">
+                        <div class="msg-conv-item__avatar-wrap">
+                            <img src="<%= conv.other_avatar || '/assets/images/default-avatar.jpg' %>"
+                                onerror="this.src='/assets/images/default-avatar.jpg'">
+                            <span class="msg-online-dot"></span>
+                        </div>
+                        <div class="msg-conv-item__info">
+                            <div class="msg-conv-item__name"><%= conv.other_name %></div>
+                            <div class="msg-conv-item__preview">
+                                <% if (conv.last_message) { %>
+                                    <%= conv.last_message.length > 35 ? conv.last_message.substring(0,35) + '…' : conv.last_message %>
+                                <% } else { %>
+                                    <em><%- t('messages.startConversation') %></em>
+                                <% } %>
+                            </div>
+                        </div>
+                        <% if (parseInt(conv.unread) > 0) { %>
+                            <span class="msg-unread-badge"><%= conv.unread %></span>
+                        <% } %>
+                    </a>
+                <% }) %>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- ÁREA PRINCIPAL -->
+    <div class="msg-main">
+        <% if (typeof activeConv !== 'undefined') { %>
+
+            <!-- Header da conversa -->
+            <div class="msg-main__header">
+                <a href="/messages" class="msg-back"><i class="fa-solid fa-arrow-left"></i></a>
+                <a href="/u/<%= activeConv.otherUser.Guid %>" class="msg-main__user">
+                    <img src="<%= activeConv.otherUser.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                        onerror="this.src='/assets/images/default-avatar.jpg'">
+                    <div>
+                        <div class="msg-main__user-name"><%= activeConv.otherUser.Name %></div>
+                        <div class="msg-main__user-status">@<%= activeConv.otherUser.Username %></div>
+                    </div>
+                </a>
+                <a href="/u/<%= activeConv.otherUser.Guid %>" class="msg-main__action" title="<%- t('messages.viewProfile') %>">
+                    <i class="fa-solid fa-user"></i>
+                </a>
+            </div>
+
+            <!-- Mensagens -->
+            <div class="msg-messages" id="msgContainer">
+                <% if (activeConv.messages.length === 0) { %>
+                    <div class="msg-empty-conv">
+                        <img src="<%= activeConv.otherUser.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                            onerror="this.src='/assets/images/default-avatar.jpg'">
+                        <h4><%= activeConv.otherUser.Name %></h4>
+                        <p>@<%= activeConv.otherUser.Username %></p>
+                        <small><%- t('messages.sendFirstMessage') %></small>
+                    </div>
+                <% } else { %>
+                    <% var lastDate = ''; %>
+                    <% activeConv.messages.forEach(function(msg) { %>
+                        <%
+                        var msgDate = new Date(msg.created_at).toLocaleDateString('pt-PT', {day:'2-digit', month:'long', year:'numeric'});
+                        var isMe = msg.sender_id === user.Guid;
+                        %>
+                        <% if (msgDate !== lastDate) { lastDate = msgDate; %>
+                            <div class="msg-date-divider"><span><%= msgDate %></span></div>
+                        <% } %>
+                        <div class="msg-bubble-wrap <%= isMe ? 'me' : 'them' %>">
+                            <% if (!isMe) { %>
+                                <img src="<%= msg.sender_avatar || '/assets/images/default-avatar.jpg' %>"
+                                    class="msg-bubble-avatar" onerror="this.src='/assets/images/default-avatar.jpg'">
+                            <% } %>
+                            <div class="msg-bubble">
+                                <%= msg.content %>
+                                <span class="msg-time">
+                                    <%= new Date(msg.created_at).toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'}) %>
+                                </span>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </div>
+
+            <!-- Input -->
+            <div class="msg-input-bar">
+                <input type="text" id="msgInput" placeholder="<%- t('messages.typePlaceholder') %>"
+                    autocomplete="off" maxlength="1000">
+                <button id="sendBtn" onclick="sendMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+
+        <% } else { %>
+            <!-- Estado vazio -->
+            <div class="msg-no-conv">
+                <i class="fa-regular fa-comment-dots"></i>
+                <h3><%- t('messages.yourMessages') %></h3>
+                <p><%- t('messages.selectOrNew') %></p>
+                <a href="/users" class="msg-no-conv__btn">
+                    <i class="fa-solid fa-pen-to-square"></i> <%- t('messages.newMessage') %>
+                </a>
+            </div>
+        <% } %>
+    </div>
+
+</div>
+
+<div id="conv-data" style="display:none"
+    data-conv-id="<%= typeof activeConv !== 'undefined' ? activeConv.id : '' %>"
+    data-other-id="<%= typeof activeConv !== 'undefined' ? activeConv.otherUser.Guid : '' %>">
+</div>
+
+<script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const MY_ID    = '<%= user.Guid %>';
+const convData = document.getElementById('conv-data');
+let CONV_ID    = (convData && convData.dataset.convId)   ? convData.dataset.convId   : null;
+let OTHER_ID   = (convData && convData.dataset.otherId)  ? convData.dataset.otherId  : null;
+
+const socket = io();
+
+// Entrar nas salas
+socket.emit('join_conversation', CONV_ID);
+
+// Receber mensagens
+socket.on('new_message', function(msg) {
+    appendMessage(msg, msg.sender_id === MY_ID);
+    if (msg.sender_id !== MY_ID && CONV_ID) {
+        socket.emit('mark_read', CONV_ID);
+    }
+    // Atualiza preview da conversa na lista lateral
+    updateConvPreview(msg);
+});
+
+// Recebe update de mensagens não lidas (quando está noutras páginas)
+socket.on('unread_messages', function(data) {
+    // Atualiza badge na lista de conversas se existir
+    var badges = document.querySelectorAll('.msg-unread-badge');
+    badges.forEach(function(b) { b.remove(); });
+});
+
+function updateConvPreview(msg) {
+    var convLink = document.querySelector('.msg-conv-item[href="/messages/' + (msg.sender_id === MY_ID ? OTHER_ID : msg.sender_id) + '"]');
+    if (!convLink) return;
+    var preview = convLink.querySelector('.msg-conv-item__preview');
+    if (preview) preview.textContent = msg.content.length > 35 ? msg.content.substring(0,35) + '…' : msg.content;
+    // Remove badge se é o remetente a ver
+    if (msg.sender_id !== MY_ID) {
+        var badge = convLink.querySelector('.msg-unread-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'msg-unread-badge';
+            convLink.appendChild(badge);
+        }
+        badge.textContent = '•';
+    }
+}
+
+function sendMessage() {
+    const input   = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if (!content || !CONV_ID) return;
+    socket.emit('send_message', { conversationId: CONV_ID, content: content });
+    input.value = '';
+}
+
+function appendMessage(msg, isMe) {
+    const container = document.getElementById('msgContainer');
+    if (!container) return;
+
+    // Remove estado vazio se existir
+    var empty = container.querySelector('.msg-empty-conv');
+    if (empty) empty.remove();
+
+    const time = new Date(msg.created_at).toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'});
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-bubble-wrap ' + (isMe ? 'me' : 'them');
+    wrap.innerHTML = (isMe ? '' :
+        '<img src="' + (msg.sender_avatar || '/assets/images/default-avatar.jpg') + '" class="msg-bubble-avatar">') +
+        '<div class="msg-bubble">' + escapeHtml(msg.content) +
+        '<span class="msg-time">' + time + '</span></div>';
+    container.appendChild(wrap);
+    container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Enter para enviar
+document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('msgInput');
+    if (input) {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+        // Scroll ao fundo
+        var container = document.getElementById('msgContainer');
+        if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    // Pesquisa de conversas
+    var search = document.getElementById('convSearch');
+    if (search) {
+        search.addEventListener('input', function() {
+            var q = this.value.toLowerCase();
+            document.querySelectorAll('.msg-conv-item').forEach(function(item) {
+                var name = item.querySelector('.msg-conv-item__name').textContent.toLowerCase();
+                item.style.display = name.includes(q) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+<script src="/js/theme.js"></script>
+</body>
+</html>

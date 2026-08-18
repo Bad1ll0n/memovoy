@@ -1,0 +1,91 @@
+/* ── SEARCH BAR ──────────────────────────────────── */
+.pf-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.pf-search__input-wrap {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,.07);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0 14px;
+    gap: 8px;
+    transition: background .2s, border-color .2s, width .3s;
+    width: 200px;
+}
+.pf-search__input-wrap:focus-within {
+    background: rgba(255,255,255,.1);
+    border-color: var(--accent);
+    width: 280px;
+}
+.pf-search__input-wrap i {
+    color: var(--muted);
+    font-size: .8rem;
+    flex-shrink: 0;
+}
+.pf-search__input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: .82rem;
+    font-family: 'Inter', sans-serif;
+    padding: 7px 0;
+    width: 100%;
+}
+.pf-search__input::placeholder { color: var(--muted); }
+
+/* Dropdown */
+.pf-search__dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    z-index: 200;
+    display: none;
+}
+.pf-search__dropdown.open { display: block; }
+
+.pf-search__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: var(--text);
+    transition: background .15s;
+    cursor: pointer;
+}
+.pf-search__item:hover { background: var(--surface2); color: var(--text); }
+.pf-search__item img {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+.pf-search__item__info { flex: 1; min-width: 0; }
+.pf-search__item__name {
+    font-size: .84rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pf-search__item__username {
+    font-size: .73rem;
+    color: var(--muted);
+}
+.pf-search__empty {
+    padding: 14px;
+    text-align: center;
+    font-size: .82rem;
+    color: var(--muted);
+}

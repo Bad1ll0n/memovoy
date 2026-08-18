@@ -1,0 +1,475 @@
+warning: in the working copy of 'memovoy-web/src/app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'memovoy-web/tailwind.config.ts', LF will be replaced by CRLF the next time Git touches it
+diff --git a/memovoy-web/src/app/globals.css b/memovoy-web/src/app/globals.css
+index 5a4d80c..65fe5cc 100644
+--- a/memovoy-web/src/app/globals.css
++++ b/memovoy-web/src/app/globals.css
+@@ -1,124 +1,295 @@
+-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700&display=swap');
++/*
++ * ============================================================
++ * VARIAÇÃO 2 — ALTITUDE
++ * ============================================================
++ * Inspiração: fotografia aérea, terminais de aeroporto premium,
++ * mapas de satélite nocturno, ecrãs de radar. Precisão
++ * geométrica, espaço branco generoso, tipo condensado e
++ * funcional — como o painel de uma companhia aérea premium.
++ *
++ * PALETA — DARK MODE (céu antes do amanhecer)
++ *   --surface-subtle  8  13  23   #080D17  corpo da página
++ *   --surface        15  22  36   #0F1624  card surface
++ *   --surface-muted  26  37  56   #1A2538  bordas e divisores
++ *   --ink           196 212 232   #C4D4E8  platina (texto primário)
++ *   --ink-secondary 140 165 190   #8CA5BE  aço (texto secundário, 7.1:1)
++ *   --ink-tertiary  106 132 158   #6A849E  ardósia (texto muted, 4.7:1)
++ *   --ink-disabled   40  58  80   #284052  desactivado
++ *   --accent          0 201 232   #00C9E8  ciano radar
++ *   --prestige      200 168  75   #C8A84B  dourado (prestígio)
++ *
++ * PALETA — LIGHT MODE (acima das nuvens)
++ *   --surface-subtle 240 244 250  #F0F4FA  névoa azul-branca
++ *   --surface        255 255 255  #FFFFFF  branco puro
++ *   --surface-muted  208 220 240  #D0DCF0  divisores frios
++ *   --ink              7  24  40  #071828  azul-noturno escuro
++ *   --ink-secondary   61  90 120  #3D5A78  aço-azul
++ *   --ink-tertiary    74 100 128  #4A6480  ardósia
++ *   --ink-disabled   140 165 190  #8CA5BE  desactivado
++ *   --accent           0 107 179  #006BB3  safira
++ *   --prestige       176 140  56  #B08C38  dourado
++ *
++ * TIPOGRAFIA
++ *   Display:  Barlow Condensed 600–700 — painel de partidas aéreas
++ *   Body:     DM Sans 400–600 — funcional, arejado
++ *   Mono:     JetBrains Mono 400–500 — coordenadas e dados
++ *
++ * ASSINATURA — RADAR GLOW
++ *   :focus-visible usa anéis concêntricos com glow difuso do
++ *   acento. Simula a targetização de um ecrã de radar.
++ *   Em dark mode (ciano): anel vivo + halo suave no fundo escuro.
++ *   Em light mode (safira): discreto mas presente.
++ * ============================================================
++ */
++
++@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
+ 
+ @tailwind base;
+ @tailwind components;
+ @tailwind utilities;
+ 
+ @layer base {
++  /* ------------------------------------------------------------------
++   * TOKENS CSS — LIGHT MODE (default)
++   * ------------------------------------------------------------------ */
+   :root {
+-    --brand-blue:   #185FA5;
+-    --brand-green:  #0F6E50;
+-    --brand-amber:  #EF9F27;
+-    --brand-purple: #7B1FA2;
+-    --font-display: 'Playfair Display';
+-    --font-body:    'Inter';
++    /* Superfícies */
++    --surface:        255 255 255;   /* #FFFFFF */
++    --surface-subtle: 240 244 250;   /* #F0F4FA */
++    --surface-muted:  208 220 240;   /* #D0DCF0 */
++
++    /* Texto */
++    --ink:            7   24  40;    /* #071828 */
++    --ink-secondary:  61  90  120;   /* #3D5A78 */
++    --ink-tertiary:   74  100 128;   /* #4A6480 */
++    --ink-disabled:   140 165 190;   /* #8CA5BE */
++
++    /* Acento — safira profunda */
++    --accent:         0   107 179;   /* #006BB3 */
++
++    /* Prestígio — dourado */
++    --prestige:       176 140 56;    /* #B08C38 */
++
++    /* Botão primário: texto branco sobre safira */
++    --btn-fg:         255 255 255;   /* white */
++
++    /* Tipografia */
++    --font-display:   'Barlow Condensed';
++    --font-body:      'DM Sans';
++    --font-mono:      'JetBrains Mono';
+   }
+ 
+-  * { box-sizing: border-box; }
++  /* ------------------------------------------------------------------
++   * TOKENS CSS — DARK MODE
++   * ------------------------------------------------------------------ */
++  .dark {
++    /* Superfícies */
++    --surface:        15  22  36;    /* #0F1624 */
++    --surface-subtle: 8   13  23;    /* #080D17 */
++    --surface-muted:  26  37  56;    /* #1A2538 */
++
++    /* Texto */
++    --ink:            196 212 232;   /* #C4D4E8 — platina */
++    --ink-secondary:  140 165 190;   /* #8CA5BE — aço (7.1:1 vs surface) */
++    --ink-tertiary:   106 132 158;   /* #6A849E — ardósia (4.7:1 vs surface) */
++    --ink-disabled:   40  58  80;    /* #284052 */
++
++    /* Acento — ciano eléctrico radar */
++    --accent:         0   201 232;   /* #00C9E8 */
+ 
++    /* Prestígio — dourado */
++    --prestige:       200 168 75;    /* #C8A84B */
++
++    /*
++     * Botão primário: texto escuro (azul-noturno) sobre ciano.
++     * Branco sobre ciano (#00C9E8) dá apenas 1.9:1 — falha WCAG AA.
++     * Azul-noturno sobre ciano dá ~10:1 — WCAG AAA.
++     * Este é o risco estético deliberado: o readout escuro no
++     * indicador luminoso, como num cockpit ou radar.
++     */
++    --btn-fg:         8   13  23;    /* #080D17 */
++  }
++
++  /* Resets base */
++  * { box-sizing: border-box; }
+   html { scroll-behavior: smooth; }
+ 
+-  /* Foco visível para acessibilidade */
++  /* ------------------------------------------------------------------
++   * ASSINATURA — RADAR GLOW
++   * Anéis concêntricos com halo difuso do acento.
++   * Em dark/ciano: visível e dramático. Em light/safira: discreto.
++   * ------------------------------------------------------------------ */
+   :focus-visible {
+-    outline: 2px solid var(--brand-blue);
+-    outline-offset: 2px;
+-    border-radius: 4px;
++    outline: none;
++    box-shadow:
++      0 0 0 1px  rgb(var(--accent) / 0.90),
++      0 0 0 3px  rgb(var(--accent) / 0.18),
++      0 0 12px   rgb(var(--accent) / 0.10);
+   }
+ 
+   /* Reduced motion */
+   @media (prefers-reduced-motion: reduce) {
+     *, *::before, *::after {
+-      animation-duration:   0.01ms !important;
+-      transition-duration:  0.01ms !important;
++      animation-duration:  0.01ms !important;
++      transition-duration: 0.01ms !important;
+     }
+   }
+ }
+ 
+ @layer components {
+-  /* Skeleton shimmer reutilizável */
++  /* ------------------------------------------------------------------
++   * SKELETON — shimmer com CSS vars (evita theme() + <alpha-value>)
++   * ------------------------------------------------------------------ */
+   .skeleton {
+-    @apply bg-surface-muted rounded-md overflow-hidden relative;
++    @apply rounded overflow-hidden relative;
+     background: linear-gradient(
+       90deg,
+-      theme('colors.surface.muted') 25%,
+-      theme('colors.surface.subtle') 50%,
+-      theme('colors.surface.muted') 75%
++      rgb(var(--surface-muted))       25%,
++      rgb(var(--surface-muted) / 0.5) 50%,
++      rgb(var(--surface-muted))       75%
+     );
+     background-size: 200% 100%;
+     animation: shimmer 1.8s linear infinite;
+   }
+ 
+-  /* Card base */
++  /* ------------------------------------------------------------------
++   * CARD — borda fina em vez de sombra difusa.
++   * Em dark mode, a borda define a superfície; em light, discreta.
++   * ------------------------------------------------------------------ */
+   .card {
+-    @apply bg-surface rounded-xl shadow-card;
++    @apply rounded-md overflow-hidden;
++    background-color: rgb(var(--surface));
++    border: 1px solid rgb(var(--surface-muted));
+   }
+ 
+-  /* Input base */
++  /* ------------------------------------------------------------------
++   * INPUT — tipografia mono, borda limpa, sem bg opaco
++   * ------------------------------------------------------------------ */
+   .input {
+-    @apply w-full px-4 py-3 rounded-lg border border-surface-muted
+-           bg-surface text-ink placeholder-ink-tertiary
+-           focus:outline-none focus:ring-2 focus:ring-blue/30 focus:border-blue
++    @apply w-full px-3 py-2.5 rounded-sm text-sm
+            transition-colors duration-150;
++    font-family: var(--font-mono);
++    letter-spacing: 0.01em;
++    background-color: rgb(var(--surface-subtle));
++    color:            rgb(var(--ink));
++    border:           1px solid rgb(var(--surface-muted));
++  }
++  .input::placeholder {
++    color: rgb(var(--ink-disabled));
++  }
++  .input:focus {
++    outline: none;
++    border-color: rgb(var(--accent) / 0.60);
++    box-shadow:   0 0 0 2px rgb(var(--accent) / 0.12);
+   }
+ 
+-  /* Botão primário */
++  /* ------------------------------------------------------------------
++   * BOTÕES
++   * ------------------------------------------------------------------ */
++
++  /* Primário — acento sólido; texto escuro em dark (radar readout) */
+   .btn-primary {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-blue text-white
+-           font-body font-semibold text-sm
+-           hover:bg-blue-700 active:bg-blue-800
+-           disabled:opacity-50 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++           px-5 py-2.5 rounded-sm font-medium text-sm
++           disabled:opacity-40 disabled:cursor-not-allowed
++           transition-all duration-150;
++    font-family:      var(--font-body);
++    letter-spacing:   0.05em;
++    background-color: rgb(var(--accent));
++    color:            rgb(var(--btn-fg));
+   }
++  .btn-primary:not(:disabled):hover  { background-color: rgb(var(--accent) / 0.84); }
++  .btn-primary:not(:disabled):active { background-color: rgb(var(--accent) / 0.70); }
+ 
+-  /* Botão secundário */
++  /* Secundário — contorno fino, transparente */
+   .btn-secondary {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg border border-surface-muted
+-           bg-surface text-ink font-body font-semibold text-sm
+-           hover:bg-surface-subtle active:bg-surface-muted
+-           disabled:opacity-50 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++           px-5 py-2.5 rounded-sm font-medium text-sm
++           disabled:opacity-40 disabled:cursor-not-allowed
++           transition-all duration-150;
++    font-family:    var(--font-body);
++    letter-spacing: 0.05em;
++    background-color: transparent;
++    color:            rgb(var(--ink));
++    border:           1px solid rgb(var(--surface-muted));
++  }
++  .btn-secondary:not(:disabled):hover {
++    border-color:     rgb(var(--accent) / 0.45);
++    color:            rgb(var(--accent));
++    background-color: rgb(var(--accent) / 0.06);
++  }
++  .btn-secondary:not(:disabled):active {
++    background-color: rgb(var(--accent) / 0.10);
+   }
+ 
+-  /* Botão ghost */
++  /* Ghost — sem borda, sem bg */
+   .btn-ghost {
+     @apply inline-flex items-center justify-center gap-2
+-           px-3 py-2 rounded-lg text-ink-secondary font-body font-medium text-sm
+-           hover:bg-surface-subtle hover:text-ink
++           px-3 py-2 rounded-sm font-medium text-sm
+            transition-colors duration-150;
++    font-family:    var(--font-body);
++    letter-spacing: 0.03em;
++    color:          rgb(var(--ink-secondary));
+   }
+-
+-  /* Badge de level — usa CSS var injectada pelo JS via style={{ '--lv': color }} */
+-  .level-badge {
+-    @apply inline-flex items-center px-2 py-0.5
+-           rounded-full text-2xs font-semibold;
+-    background-color: var(--lv, theme('colors.ink.secondary'));
++  .btn-ghost:hover {
++    color:            rgb(var(--ink));
++    background-color: rgb(var(--surface-muted) / 0.40);
+   }
+ 
+-  /* Botão primário em superfície colorida (fundo azul/escuro) */
++  /*
++   * Invertido — branco sobre fundo colorido (secção CTA).
++   * Sempre texto escuro (#071828) sobre branco para garantir
++   * contraste tanto com safira (light) como com ciano (dark).
++   */
+   .btn-primary-inverted {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-white text-blue
+-           font-body font-semibold text-sm
+-           hover:bg-blue-50 active:bg-blue-100
+-           disabled:opacity-50 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++           px-5 py-3 rounded-sm font-medium text-sm
++           disabled:opacity-40 disabled:cursor-not-allowed
++           transition-all duration-150;
++    font-family:      var(--font-body);
++    letter-spacing:   0.05em;
++    background-color: rgba(255, 255, 255, 0.96);
++    color:            #071828;
+   }
++  .btn-primary-inverted:not(:disabled):hover  { background-color: rgba(255, 255, 255, 0.82); }
++  .btn-primary-inverted:not(:disabled):active { background-color: rgba(255, 255, 255, 0.70); }
+ 
+-  /* Botão de acção destrutiva */
++  /* Destrutivo */
+   .btn-danger {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-red-600 text-white
+-           font-body font-semibold text-sm
+-           hover:bg-red-700 active:bg-red-800
++           px-5 py-2.5 rounded-sm font-medium text-sm
+            disabled:opacity-40 disabled:cursor-not-allowed
+            transition-colors duration-150;
++    font-family:      var(--font-body);
++    letter-spacing:   0.05em;
++    background-color: #DC2626;
++    color:            #ffffff;
++  }
++  .btn-danger:not(:disabled):hover  { background-color: #B91C1C; }
++  .btn-danger:not(:disabled):active { background-color: #991B1B; }
++
++  /* ------------------------------------------------------------------
++   * LEVEL BADGE
++   * ------------------------------------------------------------------ */
++  .level-badge {
++    @apply inline-flex items-center px-2 py-0.5
++           rounded-full text-2xs font-semibold;
++    font-family:      var(--font-mono);
++    letter-spacing:   0.06em;
++    background-color: var(--lv, rgb(var(--prestige)));
++    color:            #071828;
+   }
+ 
+-  /* Card com borda de perigo */
++  /* ------------------------------------------------------------------
++   * CARD PERIGO
++   * ------------------------------------------------------------------ */
+   .card-danger {
+-    @apply card border border-red-200;
++    @apply card;
++    border-color: #FECACA;
++  }
++  .dark .card-danger {
++    border-color: rgba(220, 38, 38, 0.35);
++    background-color: rgba(220, 38, 38, 0.06);
+   }
+ }
+ 
+@@ -127,7 +298,7 @@
+   .scrollbar-hide::-webkit-scrollbar { display: none; }
+   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+ 
+-  /* Linha de texto truncada com fade */
++  /* Fade de texto em clamp */
+   .text-fade {
+     -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+     mask-image:         linear-gradient(to bottom, black 60%, transparent 100%);
+diff --git a/memovoy-web/tailwind.config.ts b/memovoy-web/tailwind.config.ts
+index 20d0a0e..68b8455 100644
+--- a/memovoy-web/tailwind.config.ts
++++ b/memovoy-web/tailwind.config.ts
+@@ -6,9 +6,10 @@ const config: Config = {
+   theme: {
+     extend: {
+       colors: {
+-        // Cores primárias — idênticas às apps nativas
++        // Cores primárias — mantidas para compatibilidade com shades específicas
+         blue: {
+-          DEFAULT: '#185FA5',
++          // DEFAULT ligado ao CSS var --accent (sapphire em light, cyan em dark)
++          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+           50:  '#EEF4FB',
+           100: '#D6E6F5',
+           200: '#AACCEA',
+@@ -46,7 +47,6 @@ const config: Config = {
+           800: '#7C4C09',
+           900: '#503106',
+         },
+-        // Cor do nível "nomad" — sem equivalente nas paletas base
+         purple: {
+           DEFAULT: '#7B1FA2',
+           50:  '#F5E8FB',
+@@ -60,32 +60,32 @@ const config: Config = {
+           800: '#491261',
+           900: '#300C40',
+         },
+-        // Token semântico de perigo (mapeado para red Tailwind)
++        // Token de perigo
+         danger: {
+           DEFAULT: '#DC2626',
+           subtle:  '#FEF2F2',
+           border:  '#FECACA',
+         },
+-        // Neutros
++        // Neutros — ligados aos CSS vars; suportam opacity modifier (bg-surface/50)
+         surface: {
+-          DEFAULT: '#FFFFFF',
+-          subtle: '#F7F7F5',
+-          muted:  '#EDEDEA',
++          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
++          subtle:  'rgb(var(--surface-subtle) / <alpha-value>)',
++          muted:   'rgb(var(--surface-muted) / <alpha-value>)',
+         },
+         ink: {
+-          DEFAULT: '#1A1A1A',
+-          secondary: '#5C5C5C',
+-          tertiary:  '#9C9C9C',
+-          disabled:  '#BDBDBD',
++          DEFAULT:   'rgb(var(--ink) / <alpha-value>)',
++          secondary: 'rgb(var(--ink-secondary) / <alpha-value>)',
++          tertiary:  'rgb(var(--ink-tertiary) / <alpha-value>)',
++          disabled:  'rgb(var(--ink-disabled) / <alpha-value>)',
+         },
+       },
+       fontFamily: {
+-        // Display: personalidade e hierarquia
+-        display: ['var(--font-display)', 'Georgia', 'serif'],
+-        // Body: leitura longa e UI
++        // Barlow Condensed — painel de partidas, sem serifa, ultra-condensado
++        display: ['var(--font-display)', 'Arial Narrow', 'sans-serif'],
++        // DM Sans — funcional, arejado, mais distinto que Inter
+         body:    ['var(--font-body)',    'system-ui', 'sans-serif'],
+-        // Mono: dados, coords, timestamps
+-        mono:    ['var(--font-mono)',    'ui-monospace', 'monospace'],
++        // JetBrains Mono — coordenadas, distâncias, timestamps
++        mono:    ['var(--font-mono)',    'Menlo', 'monospace'],
+       },
+       fontSize: {
+         '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
+@@ -100,20 +100,22 @@ const config: Config = {
+         '5xl': ['3rem',     { lineHeight: '1.1'      }],
+         '6xl': ['3.75rem',  { lineHeight: '1.05'     }],
+       },
++      // Raios mais apertados — instrumento de precisão, painel de aviação
+       borderRadius: {
+-        'sm':  '6px',
+-        'md':  '10px',
+-        'lg':  '14px',
+-        'xl':  '18px',
+-        '2xl': '24px',
+-        '3xl': '32px',
+-        'full':'9999px',
++        'sm':   '2px',
++        'md':   '4px',
++        'lg':   '6px',
++        'xl':   '8px',
++        '2xl':  '12px',
++        '3xl':  '18px',
++        'full': '9999px',
+       },
++      // Sombras reforçadas (mais visíveis em fundo escuro) + variante com borda subtil
+       boxShadow: {
+-        'card':   '0 1px 4px 0 rgb(0 0 0 / 0.06), 0 4px 12px 0 rgb(0 0 0 / 0.04)',
+-        'card-md':'0 2px 8px 0 rgb(0 0 0 / 0.08), 0 8px 24px 0 rgb(0 0 0 / 0.06)',
+-        'card-lg':'0 4px 16px 0 rgb(0 0 0 / 0.10), 0 16px 40px 0 rgb(0 0 0 / 0.08)',
+-        'nav':    '0 -1px 0 0 rgb(0 0 0 / 0.06)',
++        'card':    '0 1px 3px 0 rgb(0 0 0 / 0.20)',
++        'card-md': '0 4px 14px 0 rgb(0 0 0 / 0.30), 0 0 0 1px rgb(0 0 0 / 0.08)',
++        'card-lg': '0 8px 28px 0 rgb(0 0 0 / 0.40)',
++        'nav':     '0 1px 0 0 rgb(0 0 0 / 0.12)',
+       },
+       keyframes: {
+         'shimmer': {

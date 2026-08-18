@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favoritos | Insight</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/favorites.css">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#" style="color: var(--accent-color)">
+                <i class="fa-solid fa-compass me-2"></i>INSIGHT
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav mx-auto">
+                    <a class="nav-link px-3 active" href="/dashboard"><i
+                            class="fa-solid fa-house-chimney me-2"></i>Home</a>
+                    <a class="nav-link px-3" href="#"><i class="fa-solid fa-map-location-dot me-2"
+                            data-bs-target="#createItineraryModal"></i>New Trip</a>
+                    <a class="nav-link px-3" href="#"><i class="fa-solid fa-plus-square me-2"
+                            data-bs-target="#sharePhotoModal"></i>New Post</a>
+                    <a class="nav-link px-3 text-danger" href="/profile_trips"><i
+                            class="fa-solid fa-heart-pulse me-2"></i>My
+                        Trips</a>
+                </div>
+            </div>
+            <div class="d-flex align-items-center d-none d-lg-flex">
+                <i class="fa-regular fa-bell me-4" style="cursor:pointer"></i>
+                <div class="dropdown">
+                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                            class="rounded-circle border border-secondary" width="38" height="38"
+                            style="object-fit: cover;" alt="<%= user.Name %>">
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="#">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="favorites-container">
+        <div class="page-title-area">
+            <a href="/dashboard" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h2 class="h4 mb-0 fw-bold"><i class="fas fa-heart heart-header-icon"></i>Favoritos</h2>
+                <p class="text-muted small mb-0">
+                    <%= favoritos.length %> publicações que gostaste
+                </p>
+            </div>
+        </div>
+
+        <div class="fav-grid">
+            <% favoritos.forEach(fav=> { %>
+                <div class="fav-card" onclick="openModal(this)"
+                    data-img="<%= fav.imagem || '/images/default-trip.jpg' %>"
+                    data-avatar="<%= fav.autor_avatar || '/images/default-avatar.png' %>"
+                    data-name="<%= fav.autor_nome %>" data-location="<%= fav.titulo || 'Local desconhecido' %>"
+                    data-caption="<%= fav.descricao || 'Sem descrição.' %>" data-likes="2847"
+                    data-time="<%= fav.tempo_atras %>"> <img src="<%= fav.imagem || '/images/default-trip.jpg' %>"
+                        class="fav-img">
+
+                    <div class="card-overlay">
+                        <i class="fas fa-heart mini-heart"></i>
+                        <div class="author-info">
+                            <img src="<%= fav.autor_avatar || '/images/default-avatar.png' %>">
+                            <div>
+                                <span>
+                                    <%= fav.autor_nome %>
+                                </span>
+                                <small><i class="fas fa-location-dot"></i>
+                                    <%= fav.titulo || 'Local desconhecido' %>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+        </div>
+    </main>
+
+    <div id="postModalOverlay" class="modal-overlay">
+        <div class="post-modal-content">
+
+            <div class="modal-header-post">
+                <div class="modal-user-profile">
+                    <img id="mAvatar" src="" class="modal-avatar">
+                    <div>
+                        <div class="modal-username">
+                            <span id="mName">Nome</span>
+                            <i class="fas fa-check-circle verified-badge"></i>
+                        </div>
+                        <span id="mLocation" class="modal-location">Localização</span>
+                    </div>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-image-container">
+                <img id="mImage" src="" class="modal-main-image">
+            </div>
+
+            <div class="modal-footer-post">
+                <div class="action-icons">
+                    <div class="left-actions">
+                        <i class="far fa-heart"></i> <i class="far fa-comment"></i>
+                        <i class="far fa-paper-plane"></i>
+                    </div>
+                    <div class="right-actions">
+                        <i class="far fa-bookmark"></i>
+                    </div>
+                </div>
+
+                <span class="likes-count" id="mLikes">0 gostos</span>
+
+                <div class="caption-text">
+                    <span id="mNameCaption" class="caption-username">Nome</span>
+                    <span id="mCaption">Descrição da publicação...</span>
+                </div>
+
+                <span class="post-hashtags">#santorini #greece #sunset #travel</span>
+                <span id="mTime" class="post-time">HÁ 3 HORAS</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/favorites_openup.js"></script>
+</body>
+
+</html>

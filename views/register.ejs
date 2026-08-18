@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insight - Criar Conta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/register.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="brand-header">
+            <div class="logo-circle">
+                <i class="fa-solid fa-compass"></i>
+            </div>
+            <h1 class="brand-name">INSIGHT</h1>
+            <p class="brand-slogan">A tua rede social de viagens</p>
+        </div>
+
+        <div class="card">
+
+            <% if (typeof errors !='undefined' ) { %>
+                <div class="error-container">
+                    <% errors.forEach(error=> { %>
+                        <div class="error-msg">
+                            <%= error.message %>
+                        </div>
+                        <% }) %>
+                </div>
+                <% } %>
+
+                    <div class="card-header">
+                        <h2>Criar conta</h2>
+                        <p>Junta-te à comunidade de viajantes.</p>
+                    </div>
+
+                    <form action="/users/register" method="POST" class="form-register">
+
+                        <div class="row-group">
+                            <div class="input-group">
+                                <label for="firstName">Primeiro Nome</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="firstName" name="firstName" placeholder="Ex: João"
+                                        autocomplete="given-name" required />
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="lastName">Apelido</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="lastName" name="lastName" placeholder="Ex: Silva"
+                                        autocomplete="family-name" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="fullName">Nome Completo</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-id-card input-icon"></i>
+                                <input type="text" id="fullName" name="fullName" placeholder="O teu nome completo"
+                                    autocomplete="name" required />
+                            </div>
+                        </div>
+
+                        <div class="row-group">
+                            <div class="input-group">
+                                <label for="username">Username</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-at input-icon"></i>
+                                    <input type="text" id="username" name="username" placeholder="viajante123"
+                                        autocomplete="username" required />
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="location">Localização</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-map-marker-alt input-icon"></i>
+                                    <input type="text" id="location" name="location" placeholder="Cidade, País"
+                                        autocomplete="address-level2" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="email">Email</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="email" name="email" placeholder="o.teu@email.com"
+                                    autocomplete="email" required />
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="password" name="password" placeholder="........"
+                                    autocomplete="new-password" required />
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="password2">Confirmar password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="password2" name="password2" placeholder="........"
+                                    autocomplete="new-password" required />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            Criar conta <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <div class="card-footer">
+                        <p>Já tens uma conta? <a href="/users/login">Iniciar sessão</a></p>
+                    </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

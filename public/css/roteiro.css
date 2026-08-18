@@ -1,0 +1,64 @@
+.my-trips-container {
+  max-width: 700px;
+  margin: 40px auto;
+  font-family: Arial, sans-serif;
+}
+
+.trips-list {
+  margin-top: 20px;
+}
+
+.trip {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.trip-header {
+  padding: 14px 18px;
+  background-color: #f7f7f7;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trip-header:hover {
+  background-color: #ececec;
+}
+
+.trip-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.trip-header span {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.trip.open .trip-header span {
+  transform: rotate(90deg);
+}
+
+.trip-content {
+  display: none;
+  padding: 16px 20px;
+  background-color: #fff;
+}
+
+.trip-content h4 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: #555;
+}
+
+.trip-content ul {
+  margin: 0 0 10px 16px;
+}
+
+.trip-content li {
+  font-size: 14px;
+  margin-bottom: 4px;
+}

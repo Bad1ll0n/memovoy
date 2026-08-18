@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="utf-8">
+    <script>(function(){var t=localStorage.getItem('insight-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;300;400;500;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <title>Home</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" href="/css/fontawesome.css">
+    <link rel="stylesheet" href="/css/templatemo-572-designer.css">
+    <link rel="stylesheet" href="/css/owl.css">
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="/css/countrySearch.css" />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+    <link rel="stylesheet" href="/css/shareModal.css" />
+    <link rel="stylesheet" href="/css/theme.css" />
+
+</head>
+
+<body>
+
+    <div class="loader">
+        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0px" y="0px" width="34px" height="40px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50;"
+            xml:space="preserve">
+            <rect x="0" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
+                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.8s" repeatCount="indefinite" />
+            </rect>
+            <rect x="8" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
+                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.8s" repeatCount="indefinite" />
+            </rect>
+            <rect x="16" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
+                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.8s" repeatCount="indefinite" />
+            </rect>
+        </svg>
+    </div>
+
+    <div class="container-fluid px-4">
+        <div class="row justify-content-center">
+
+            <div class="col-lg-2 d-none d-lg-block">
+
+                <a href="/dashboard" class="sidebar-brand">
+                    <i class="fa-solid fa-compass"></i> INSIGHT
+                </a>
+
+                <div class="sidebar-title"><%- t('sidebar.discover') %></div>
+                <a href="#" class="menu-item active">
+                    <i class="fa-regular fa-compass"></i> <%- t('nav.feed') %>
+                </a>
+                <a class="menu-item" href="#" data-bs-toggle="modal" data-bs-target="#createItineraryModal">
+                    <i class="fa-solid fa-plus me-1"></i> <%- t('nav.newTrip') %>
+                </a>
+                <a class="menu-item" href="#" data-bs-toggle="modal" data-bs-target="#sharePhotoModal">
+                    <i class="fa-solid fa-camera me-1"></i> <%- t('nav.newPost') %>
+                </a>
+                <a class="menu-item" href="/profile_trips"><i class="fa-solid fa-heart me-1"></i> <%- t('nav.myTrips') %></a>
+                <a href="#" class="menu-item"><i class="fa-solid fa-arrow-trend-up"></i> <%- t('nav.trending') %></a>
+                <a href="#" class="menu-item" id="openWorldMapBtn"><i class="fa-regular fa-map"></i> <%- t('nav.map') %></a>
+
+                <div class="sidebar-title"><%- t('sidebar.personal') %></div>
+
+                <a href="/users" class="menu-item"><i class="fa-solid fa-magnifying-glass"></i> <%- t('nav.search') %></a>
+                <a href="/notifications" class="menu-item">
+                    <i class="fa-regular fa-bell"></i> <%- t('nav.notifications') %>
+                    <% if (locals.unreadNotifications && unreadNotifications > 0) { %>
+                        <span class="badge-custom"><%= unreadNotifications %></span>
+                    <% } %>
+                </a>
+                <a href="/messages" class="menu-item">
+                    <i class="fa-regular fa-envelope"></i> <%- t('nav.messages') %>
+                    <% if (locals.unreadMessages && unreadMessages > 0) { %>
+                        <span class="badge-custom"><%= unreadMessages %></span>
+                    <% } %>
+                </a>
+
+                <div class="sidebar-title"><%- t('sidebar.other') %></div>
+                <a href="#" class="menu-item"><i class="fa-solid fa-users"></i> <%- t('nav.community') %></a>
+                <a href="/settings" class="menu-item"><i class="fa-solid fa-gear"></i> <%- t('nav.settings') %></a>
+
+                <div class="menu-item">
+                    <a href="/profile" class="menu-item-username d-flex align-items-center text-decoration-none" style="gap: 12px;">
+                        <img src="<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                            class="rounded-circle border border-secondary" width="38" height="38"
+                            style="object-fit: cover;" alt="<%= user.Name %>">
+                        <span style="color: inherit; font-size: inherit;"><%= user.Name %></span>
+                    </a>
+                </div>
+
+                <div class="summary-card text-center">
+                    <h6 class="mb-3 text-start"><%- t('sidebar.quickSummary') %></h6>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="stat-number">23</div>
+                            <div class="stat-label"><%- t('sidebar.countries') %></div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-number">156</div>
+                            <div class="stat-label"><%- t('dashboard.posts') %></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-number">2.4k</div>
+                            <div class="stat-label"><%- t('dashboard.followers') %></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-number">890</div>
+                            <div class="stat-label"><%- t('dashboard.likes') %></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-6 col-md-9 mx-auto mt-5" style="max-width:620px;">
+
+                <% if (locals.posts && posts.length > 0) { %>
+                    <% posts.forEach((post, index) => { %>
+
+                        <div class="feed-card shadow-sm <%= post.is_following ? 'feed-card--following' : '' %>">
+                            <div class="feed-header">
+                                <a href="/u/<%= post.poster_id %>" style="text-decoration:none;flex-shrink:0;">
+                                    <img src="<%= post.Avatar_Url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y&s=40' %>"
+                                        class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
+                                </a>
+                                <div>
+                                    <h6 class="mb-0 fw-bold text-white">
+                                        <a href="/u/<%= post.poster_id %>" style="text-decoration:none;color:inherit;">
+                                            <%= post.First_Name %>
+                                        </a>
+                                        <i class="fa-solid fa-circle-check text-warning ms-1 small"></i>
+                                        <% if (post.is_following) { %>
+                                            <span class="following-badge"><%- t('dashboard.following') %></span>
+                                        <% } %>
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="fa-solid fa-location-dot small me-1"></i>
+                                        <% if (post.G_ROTEIRO_ID) { %>
+                                            <a href="/itinerary/<%= post.G_ROTEIRO_ID %>" style="color:inherit;text-decoration:none;" class="itinerary-link">
+                                                <%= post.T_NOME || 'N/A' %>
+                                            </a>
+                                        <% } else { %>
+                                            <%= post.T_NOME || 'N/A' %>
+                                        <% } %>
+                                    </small>
+                                </div>
+                                <div class="ms-auto text-muted"><i class="fa-solid fa-ellipsis"></i></div>
+                            </div>
+
+                            <% if (post.PHOTOS_URLS) { const photos = Array.isArray(post.PHOTOS_URLS) ? post.PHOTOS_URLS : post.PHOTOS_URLS.split(','); %>
+                                <div id="carousel-<%= index %>" class="carousel slide" data-bs-ride="false">
+                                    <div class="carousel-inner">
+                                        <% photos.forEach((photo, i) => { %>
+                                            <div class="carousel-item <%= i === 0 ? 'active' : '' %>">
+                                                <div class="feed-img-wrapper">
+                                                    <img src="<%= photo.trim() %>" class="feed-img" alt="Post Image">
+                                                </div>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                    <% if (photos.length > 1) { %>
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel-<%= index %>" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carousel-<%= index %>" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        </button>
+                                        <div class="carousel-indicators" style="bottom: 10px;">
+                                            <% photos.forEach((_, i) => { %>
+                                                <button type="button" data-bs-target="#carousel-<%= index %>"
+                                                    data-bs-slide-to="<%= i %>" class="<%= i === 0 ? 'active' : '' %>"></button>
+                                            <% }) %>
+                                        </div>
+                                    <% } %>
+                                </div>
+                            <% } %>
+
+                            <div class="feed-actions d-flex align-items-center">
+                                <button class="btn btn-link p-0 text-decoration-none me-4 text-white like-btn" data-post-id="<%= post.G_POST_ID %>">
+                                    <i class="fa-heart <%= post.user_has_liked ? 'fa-solid text-danger' : 'fa-regular' %> fa-lg"></i>
+                                </button>
+                                <button class="btn btn-link p-0 text-decoration-none me-4 text-white">
+                                    <i class="fa-regular fa-comment fa-lg"></i>
+                                </button>
+                                <button class="btn btn-link p-0 text-decoration-none text-white">
+                                    <i class="fa-regular fa-paper-plane fa-lg"></i>
+                                </button>
+                                <div class="ms-auto text-muted">
+                                    <i class="fa-regular fa-bookmark fa-lg"></i>
+                                </div>
+                            </div>
+
+                            <div class="feed-content">
+                                <div class="fw-bold text-white mb-2"><%= post.N_LIKES || 0 %> <%- t('dashboard.likes') %></div>
+
+                                <% if (post.T_DESC) { %>
+                                    <div class="mb-2 text-white">
+                                        <span class="fw-bold me-1"><%= post.First_Name %></span>
+                                        <%= post.T_DESC %>
+                                    </div>
+                                <% } %>
+
+                                <div class="mt-2 text-hashtag">#santorini #greece #sunset #travel</div>
+                                <small class="text-muted d-block mt-2" style="font-size: 0.7rem; text-transform: uppercase;">
+                                    <%= post.tempo_atras %>
+                                </small>
+
+                                <div id="comments-list-<%= post.G_POST_ID %>" class="mt-3 pt-3 border-top border-secondary border-opacity-25">
+                                    <% if (post.recent_comments && post.recent_comments.length > 0) { %>
+                                        <% post.recent_comments.reverse().forEach(comment => { %>
+                                            <div class="small mb-2 d-flex align-items-center gap-2" style="color: var(--text-muted, #888);">
+                                                <a href="/u/<%= comment.commenter_id %>" style="flex-shrink:0;">
+                                                    <img src="<%= comment.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                                                        class="rounded-circle" style="width:22px;height:22px;object-fit:cover;"
+                                                        onerror="this.src='/assets/images/default-avatar.jpg'">
+                                                </a>
+                                                <span>
+                                                    <a href="/u/<%= comment.commenter_id %>" class="fw-bold" style="color: var(--text-primary, var(--text)); text-decoration:none;"><%= comment.First_Name %></a>
+                                                    <%= comment.S_COMMENT %>
+                                                </span>
+                                            </div>
+                                        <% }) %>
+                                    <% } %>
+                                </div>
+
+                                <div class="comment-input-row mt-3">
+                                    <img src="<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                                        class="comment-avatar" onerror="this.src='/assets/images/default-avatar.jpg'">
+                                    <input type="text"
+                                        class="comment-input-field"
+                                        id="input-<%= post.G_POST_ID %>"
+                                        placeholder="<%- t('dashboard.addComment') %>"
+                                        onkeydown="if(event.key==='Enter') handleComment('<%= post.G_POST_ID %>', this.nextElementSibling)">
+                                    <button class="comment-submit-btn"
+                                        onclick="handleComment('<%= post.G_POST_ID %>', this)">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    <% }) %>
+                <% } else { %>
+                    <p class="text-center mt-5 text-muted"><%- t('dashboard.noPublications') %></p>
+                <% } %>
+            </div>
+
+            <div class="col-lg-3 d-none d-lg-block mt-5" style="margin-left:-40px;">
+
+                <div class="right-card">
+                    <h5 class="text-white mb-4 fw-bold"><i class="fa-solid fa-trophy text-warning me-2"></i><%- t('dashboard.topTravellers') %></h5>
+                    <div class="rank-item">
+                        <span class="rank-number rank-1">1</span>
+                        <img src="https://i.pravatar.cc/150?u=1" class="rounded-circle user-avatar me-2" width="40" height="40">
+                        <div style="flex-grow:1; line-height: 1.2;">
+                            <div class="text-white fw-bold small">Marco Polo Jr <i class="fa-solid fa-crown text-warning" style="font-size: 0.7rem;"></i></div>
+                            <small class="text-muted" style="font-size: 0.75rem;">89 <%- t('dashboard.countries') %></small>
+                        </div>
+                    </div>
+                    <div class="rank-item">
+                        <span class="rank-number rank-2">2</span>
+                        <img src="https://i.pravatar.cc/150?u=2" class="rounded-circle user-avatar me-2" width="40" height="40">
+                        <div style="flex-grow:1; line-height: 1.2;">
+                            <div class="text-white fw-bold small">Luna Explorer</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">76 <%- t('dashboard.countries') %></small>
+                        </div>
+                    </div>
+                    <div class="rank-item">
+                        <span class="rank-number rank-3">3</span>
+                        <img src="https://i.pravatar.cc/150?u=3" class="rounded-circle user-avatar me-2" width="40" height="40">
+                        <div style="flex-grow:1; line-height: 1.2;">
+                            <div class="text-white fw-bold small">Atlas Nomad</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">68 <%- t('dashboard.countries') %></small>
+                        </div>
+                    </div>
+                    <div class="rank-item">
+                        <span class="rank-number">4</span>
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2 text-white small" style="width:40px; height:40px;">W</div>
+                        <div style="flex-grow:1; line-height: 1.2;">
+                            <div class="text-white fw-bold small">Wanderlust Sam</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">54 <%- t('dashboard.countries') %></small>
+                        </div>
+                    </div>
+                    <div class="rank-item">
+                        <span class="rank-number">5</span>
+                        <img src="https://i.pravatar.cc/150?u=5" class="rounded-circle user-avatar me-2" width="40" height="40">
+                        <div style="flex-grow:1; line-height: 1.2;">
+                            <div class="text-white fw-bold small">Globe Trotter</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">47 <%- t('dashboard.countries') %></small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <a href="#" class="small text-warning text-decoration-none"><%- t('dashboard.rankingFull') %></a>
+                    </div>
+                </div>
+
+                <div class="right-card">
+                    <h6 class="text-white mb-3 fw-bold"><i class="fa-solid fa-fire text-danger me-2"></i><%- t('dashboard.trendingDestinations') %></h6>
+                    <% if (locals.trendingDestinations && trendingDestinations.length > 0) { %>
+                        <% trendingDestinations.forEach((dest, i) => { %>
+                            <div class="trend-item">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-dark text-muted me-2 border border-secondary border-opacity-25"><%= i + 1 %></span>
+                                    <div>
+                                        <div class="text-white small fw-bold"><i class="fa-solid fa-location-dot text-danger me-1"></i> <%= dest.city %></div>
+                                        <small class="text-muted" style="font-size:0.7rem;"><%= dest.country || '—' %></small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <% if (dest.pct === null || dest.pct === 0) { %>
+                                        <div style="color:#6b7280;font-size:.75rem;">— 0%</div>
+                                    <% } else if (dest.pct > 0) { %>
+                                        <div class="trend-up"><i class="fa-solid fa-arrow-trend-up"></i> +<%= dest.pct %>%</div>
+                                    <% } else { %>
+                                        <div style="color:#ef4444;font-size:.75rem;"><i class="fa-solid fa-arrow-trend-down"></i> <%= dest.pct %>%</div>
+                                    <% } %>
+                                    <small class="text-muted" style="font-size:0.7rem;"><%= dest.post_count %> posts</small>
+                                </div>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <small class="text-muted"><%- t('common.noData') %></small>
+                    <% } %>
+                </div>
+
+                <div class="right-card">
+                    <h6 class="text-white mb-3 fw-bold"><%- t('dashboard.suggestedToFollow') %></h6>
+                    <% if (locals.suggestedUsers && suggestedUsers.length > 0) { %>
+                        <% suggestedUsers.forEach(function(su, i) { %>
+                            <div class="d-flex align-items-center <%= i < suggestedUsers.length - 1 ? 'mb-3' : '' %>">
+                                <a href="/u/<%= su.Guid %>">
+                                    <img src="<%= su.Avatar_Url || '/assets/images/default-avatar.jpg' %>"
+                                        class="rounded-circle user-avatar me-2" width="35" height="35"
+                                        style="object-fit:cover;"
+                                        onerror="this.src='/assets/images/default-avatar.jpg'">
+                                </a>
+                                <div class="lh-1 flex-grow-1">
+                                    <div class="text-white small fw-bold"><%= su.Name %></div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">@<%= su.Username %></small>
+                                </div>
+                                <button class="follow-btn" onclick="followUser('<%= su.Guid %>', this)"><%- t('dashboard.follow') %></button>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <p class="text-muted small text-center mb-0"><%- t('dashboard.noSuggestions') %></p>
+                    <% } %>
+                    <div class="text-center mt-3">
+                        <a href="/users" class="small text-warning text-decoration-none"><%- t('dashboard.seeMore') %></a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- MODAL: NOVA VIAGEM — substituído pelo Wizard IA              -->
+    <!-- ============================================================ -->
+    <div class="modal fade" id="createItineraryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content p-1">
+
+                <div class="modal-header border-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="wizardTitle"><%- t('wizard.title') %></h5>
+                        <small id="wizardSubtitle"><%- t('wizard.subtitle') %></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-4">
+
+                    <!-- Progress bar (oculta no step 0) -->
+                    <div class="wizard-progress" id="wizardProgress" style="display:none;">
+                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
+
+                    <!-- STEP 0 — Destino + Datas + escolha Manual/IA (idêntico ao original) -->
+                    <div class="wizard-step active" id="wiz-step-0">
+                        <div class="row mb-4">
+                            <div class="col-12 position-relative">
+                                <label class="form-label fw-bold text-secondary small text-uppercase"><%- t('wizard.whereTo') %></label>
+                                <div class="search-input-wrapper">
+                                    <input type="text" id="searchInput" class="form-control form-control-search"
+                                        placeholder="<%- t('wizard.whereTo') %>" oninput="search()" autocomplete="off" />
+                                    <div class="results-dropdown" id="results"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-5">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" id="departureDate" class="form-control" required />
+                                    <label for="departureDate"><%- t('wizard.departureDateLabel') %></label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" id="returnDate" class="form-control" required />
+                                    <label for="returnDate"><%- t('wizard.returnDateLabel') %></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <button class="btn btn-manual action-btn w-100" type="button" id="manualsearchButton"><%- t('wizard.manual') %></button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-auto action-btn w-100" type="button" id="automaticsearchButton">
+                                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> <%- t('wizard.auto') %>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 1 — Estilo de viagem -->
+                    <div class="wizard-step" id="wiz-step-1">
+                        <label class="form-label-wiz"><%- t('wizard.travelStyle') %></label>
+                        <div class="opt-grid" id="styleGrid">
+                            <div class="opt-card" data-val="aventura"><div class="opt-icon">🧗</div><div class="opt-label"><%- t('wizard.styleAdventure') %></div></div>
+                            <div class="opt-card" data-val="cultura"><div class="opt-icon">🏛️</div><div class="opt-label"><%- t('wizard.styleCulture') %></div></div>
+                            <div class="opt-card" data-val="gastronomia"><div class="opt-icon">🍜</div><div class="opt-label"><%- t('wizard.styleGastronomy') %></div></div>
+                            <div class="opt-card" data-val="relax"><div class="opt-icon">🏖️</div><div class="opt-label"><%- t('wizard.styleRelax') %></div></div>
+                            <div class="opt-card" data-val="noturno"><div class="opt-icon">🌙</div><div class="opt-label"><%- t('wizard.styleNightlife') %></div></div>
+                            <div class="opt-card" data-val="natureza"><div class="opt-icon">🌿</div><div class="opt-label"><%- t('wizard.styleNature') %></div></div>
+                            <div class="opt-card" data-val="compras"><div class="opt-icon">🛍️</div><div class="opt-label"><%- t('wizard.styleShopping') %></div></div>
+                            <div class="opt-card" data-val="romantico"><div class="opt-icon">💑</div><div class="opt-label"><%- t('wizard.styleRomantic') %></div></div>
+                        </div>
+                        <small class="text-muted d-block mt-2" style="font-size:.72rem;"><%- t('wizard.canChooseMultiple') %></small>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" id="nextStep1" onclick="wizGo(2)" disabled><%- t('wizard.continue') %></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2 — Grupo -->
+                    <div class="wizard-step" id="wiz-step-2">
+                        <label class="form-label-wiz"><%- t('wizard.withWhom') %></label>
+                        <div class="opt-grid" id="groupGrid">
+                            <div class="opt-card" data-val="sozinho"><div class="opt-icon">🧍</div><div class="opt-label"><%- t('wizard.alone') %></div></div>
+                            <div class="opt-card" data-val="casal"><div class="opt-icon">👫</div><div class="opt-label"><%- t('wizard.couple') %></div></div>
+                            <div class="opt-card" data-val="amigos"><div class="opt-icon">👯</div><div class="opt-label"><%- t('wizard.friends') %></div></div>
+                            <div class="opt-card" data-val="familia"><div class="opt-icon">👨‍👩‍👧</div><div class="opt-label"><%- t('wizard.family') %></div></div>
+                        </div>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" id="nextStep2" onclick="wizGo(3)" disabled><%- t('wizard.continue') %></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3 — Orçamento -->
+                    <div class="wizard-step" id="wiz-step-3">
+                        <label class="form-label-wiz"><%- t('wizard.dailyBudget') %></label>
+                        <input type="range" class="budget-slider" id="budgetSlider"
+                            min="20" max="500" step="10" value="150"
+                            oninput="wizUpdateBudget(this.value)">
+                        <div class="budget-value" id="budgetDisplay">€150 / dia</div>
+                        <div class="d-flex justify-content-between mt-1" style="font-size:.7rem; color:#8b949e;">
+                            <span><%- t('wizard.budgetEconomic') %></span><span><%- t('wizard.budgetMedium') %></span><span><%- t('wizard.budgetLuxury') %></span>
+                        </div>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" onclick="wizGo(4)"><%- t('wizard.continue') %></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4 — Horário -->
+                    <div class="wizard-step" id="wiz-step-4">
+                        <label class="form-label-wiz">Horário do dia</label>
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="flex-fill">
+                                <label class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Início</label>
+                                <input type="time" id="dayStartTime" class="form-control mt-1" value="09:00">
+                            </div>
+                            <div style="font-size:1.2rem;color:#8b949e;padding-top:20px;">→</div>
+                            <div class="flex-fill">
+                                <label class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Fim</label>
+                                <input type="time" id="dayEndTime" class="form-control mt-1" value="21:00">
+                            </div>
+                        </div>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" onclick="wizGo(5)"><%- t('wizard.continue') %></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 5 — Refeições -->
+                    <div class="wizard-step" id="wiz-step-5">
+                        <label class="form-label-wiz">Refeições incluídas</label>
+                        <div class="opt-grid" id="mealsGrid">
+                            <div class="opt-card" data-val="nenhuma"><div class="opt-icon">🚫</div><div class="opt-label">Nenhuma</div></div>
+                            <div class="opt-card" data-val="almoco"><div class="opt-icon">☀️</div><div class="opt-label">Só Almoço</div></div>
+                            <div class="opt-card" data-val="jantar"><div class="opt-icon">🌙</div><div class="opt-label">Só Jantar</div></div>
+                            <div class="opt-card" data-val="ambos"><div class="opt-icon">🍽️</div><div class="opt-label">Almoço e Jantar</div></div>
+                        </div>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" id="nextStep5" onclick="wizGo(6)" disabled><%- t('wizard.continue') %></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 6 — Transporte -->
+                    <div class="wizard-step" id="wiz-step-6">
+                        <label class="form-label-wiz">Modo de deslocação</label>
+                        <div class="opt-grid" id="transportGrid">
+                            <div class="opt-card" data-val="pe"><div class="opt-icon">🚶</div><div class="opt-label">A pé</div></div>
+                            <div class="opt-card" data-val="transporte"><div class="opt-icon">🚇</div><div class="opt-label">Transportes públicos</div></div>
+                            <div class="opt-card" data-val="carro"><div class="opt-icon">🚗</div><div class="opt-label">Carro</div></div>
+                        </div>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" id="nextStep6" onclick="wizGo(7)" disabled><%- t('wizard.continue') %></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 7 — Preferências extra -->
+                    <div class="wizard-step" id="wiz-step-7">
+                        <label class="form-label-wiz"><%- t('wizard.extraPrefs') %></label>
+                        <div class="opt-grid" id="extrasGrid">
+                            <div class="opt-card" data-val="vegetariano"><div class="opt-icon">🥗</div><div class="opt-label"><%- t('wizard.prefVegetarian') %></div></div>
+                            <div class="opt-card" data-val="acessivel"><div class="opt-icon">♿</div><div class="opt-label"><%- t('wizard.prefAccessible') %></div></div>
+                            <div class="opt-card" data-val="pet_friendly"><div class="opt-icon">🐾</div><div class="opt-label"><%- t('wizard.prefPetFriendly') %></div></div>
+                            <div class="opt-card" data-val="instagram"><div class="opt-icon">📸</div><div class="opt-label"><%- t('wizard.prefInstagrammable') %></div></div>
+                            <div class="opt-card" data-val="museus"><div class="opt-icon">🎨</div><div class="opt-label"><%- t('wizard.prefMuseums') %></div></div>
+                            <div class="opt-card" data-val="praias"><div class="opt-icon">🌊</div><div class="opt-label"><%- t('wizard.prefBeaches') %></div></div>
+                        </div>
+                        <div class="wiz-nav">
+                            <button class="btn-wiz-back" onclick="wizBack()"><%- t('wizard.back') %></button>
+                            <button class="btn-wiz-next" onclick="wizGenerate()">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <%- t('wizard.generateItinerary') %>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 8 — A gerar -->
+                    <div class="wizard-step" id="wiz-step-8">
+                        <div class="gen-wrap">
+                            <div class="gen-spinner"></div>
+                            <p style="color:#e6edf3; font-weight:600; margin-bottom:4px;"><%- t('wizard.generatingItinerary') %></p>
+                            <p style="color:#8b949e; font-size:.83rem; margin-bottom:18px;"><%- t('wizard.aiWorking') %></p>
+                            <ul class="gen-steps" id="genStepsList">
+                                <li id="gs1"><span class="step-dot"></span> <%- t('wizard.gs1') %></li>
+                                <li id="gs2"><span class="step-dot"></span> <%- t('wizard.gs2') %></li>
+                                <li id="gs3"><span class="step-dot"></span> <%- t('wizard.gs3') %></li>
+                                <li id="gs4"><span class="step-dot"></span> <%- t('wizard.gs4') %></li>
+                                <li id="gs5"><span class="step-dot"></span> <%- t('wizard.gs5') %></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div><!-- /modal-body -->
+            </div>
+        </div>
+    </div>
+    <!-- ============================================================ -->
+
+
+    <!-- sharePhotoModal -->
+    <div class="modal fade" id="sharePhotoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-custom-dark">
+            <div class="modal-content" style="position:relative;overflow:hidden;">
+
+                <div class="modal-header pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold"><%- t('shareModal.title') %></h5>
+                        <small style="color: #8b949e;"><%- t('shareModal.subtitle') %></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-4">
+                    <form id="share-form">
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label"><%- t('shareModal.itinerary') %></label>
+                                <select class="form-select" id="roteiroSelect" name="roteiro_id" required>
+                                    <option value="" selected disabled><%- t('shareModal.selectItinerary') %></option>
+                                    <% if (typeof userItineraries !== 'undefined' && userItineraries.length > 0) { %>
+                                        <% userItineraries.forEach(function(it) { %>
+                                            <option value="<%= it.id %>"><%= it.title || it.destination %></option>
+                                        <% }) %>
+                                    <% } %>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><%- t('shareModal.photos') %></label>
+                                <div class="upload-area-dark">
+                                    <input type="file" class="upload-input" id="photoUpload" name="fotos" accept="image/*" multiple>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#8b949e" class="bi bi-upload mb-2" viewBox="0 0 16 16">
+                                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                                    </svg>
+                                    <small style="color: #8b949e;"><%- t('shareModal.dragPhotos') %></small>
+                                </div>
+                                <div class="photo-preview-grid mt-2" id="photoPreview"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label"><%- t('shareModal.description') %></label>
+                                <textarea class="form-control" id="description" name="descricao" rows="4"
+                                    placeholder="<%- t('shareModal.descPlaceholder') %>"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer pt-2 pb-4 px-4">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal"><%- t('shareModal.cancel') %></button>
+                    <button type="submit" form="share-form" class="btn btn-share rounded-pill shadow-sm"><%- t('shareModal.share') %></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Editor Overlay (position:fixed, sem Bootstrap modal) -->
+    <div id="photoEditorOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:16px;">
+        <div style="background:var(--bg-card,#161d28);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;">
+            <h5 style="margin:0;font-weight:600;color:var(--text-primary,#fff);">Editar foto</h5>
+
+            <!-- Imagem preview -->
+            <div style="width:100%;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                <img id="editorImg" style="max-width:100%;max-height:100%;object-fit:contain;transition:transform .2s,filter .2s;">
+            </div>
+
+            <!-- Toolbar -->
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <button type="button" class="editor-tool-btn" id="edRotateL"><i class="fa-solid fa-rotate-left"></i> Rodar esq.</button>
+                <button type="button" class="editor-tool-btn" id="edRotateR"><i class="fa-solid fa-rotate-right"></i> Rodar dir.</button>
+                <button type="button" class="editor-tool-btn" id="edFlipH"><i class="fa-solid fa-left-right"></i> Espelhar H</button>
+                <button type="button" class="editor-tool-btn" id="edFlipV"><i class="fa-solid fa-up-down"></i> Espelhar V</button>
+                <button type="button" class="editor-tool-btn" id="edReset">Repor</button>
+            </div>
+
+            <!-- Sliders -->
+            <div style="display:grid;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <label style="width:80px;font-size:.78rem;color:var(--text-secondary,#aaa);">Brilho</label>
+                    <input type="range" id="edBrightness" min="0" max="200" value="100" style="flex:1;accent-color:#fca311;">
+                    <span id="edBrightnessVal" style="width:32px;font-size:.78rem;text-align:right;color:var(--text-secondary,#aaa);">100</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <label style="width:80px;font-size:.78rem;color:var(--text-secondary,#aaa);">Contraste</label>
+                    <input type="range" id="edContrast" min="0" max="200" value="100" style="flex:1;accent-color:#fca311;">
+                    <span id="edContrastVal" style="width:32px;font-size:.78rem;text-align:right;color:var(--text-secondary,#aaa);">100</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <label style="width:80px;font-size:.78rem;color:var(--text-secondary,#aaa);">Saturação</label>
+                    <input type="range" id="edSaturation" min="0" max="200" value="100" style="flex:1;accent-color:#fca311;">
+                    <span id="edSaturationVal" style="width:32px;font-size:.78rem;text-align:right;color:var(--text-secondary,#aaa);">100</span>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button type="button" id="cancelEditorBtn" class="btn btn-cancel">Cancelar</button>
+                <button type="button" id="applyEditorBtn" class="btn btn-share rounded-pill">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- World Map Modal -->
+    <div id="worldMapOverlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--bg-card,#1d212b);border-radius:16px;width:100%;max-width:1000px;height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border,#2a2f3e);">
+                <div>
+                    <h5 style="margin:0;font-weight:700;color:var(--text-primary,#fff);"><i class="fa-solid fa-earth-europe me-2" style="color:#fca311;"></i>O Meu Mapa de Viagens</h5>
+                    <small style="color:var(--text-secondary,#888);">Destinos visitados com base nos teus roteiros partilhados</small>
+                </div>
+                <button id="closeWorldMapBtn" style="background:none;border:none;color:var(--text-primary,#fff);font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+            </div>
+            <div style="flex:1;position:relative;">
+                <div id="worldMapEl" style="width:100%;height:100%;"></div>
+                <div id="worldMapLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:10;">
+                    <div style="text-align:center;color:#fff;">
+                        <div class="gen-spinner" style="margin:0 auto 12px;"></div>
+                        <p style="margin:0;font-size:.9rem;">A carregar destinos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>window._currentUserAvatar = "<%= user.Avatar_Url || '/assets/images/default-avatar.jpg' %>";</script>
+    <!-- Scripts originais — inalterados -->
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/js/isotope.min.js"></script>
+    <script src="/js/owl-carousel.js"></script>
+    <script src="/js/tabs.js"></script>
+    <script src="/js/popup.js"></script>
+    <script src="/js/custom.js"></script>
+    <script src="/js/countrySearch.js"></script>
+    <script src="/js/sharePhoto.js"></script>
+    <script src="/js/handleLike.js"></script>
+    <script src="/js/handleComment.js"></script>
+    <script src="/js/loader.js"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications-rt.js"></script>
+    <!-- Wizard IA gerido por /js/countrySearch.js (Helmet CSP) -->
+    <script>
+    async function followUser(userId, btn) {
+        try {
+            const res  = await fetch('/follow/' + userId, { method: 'POST' });
+            const data = await res.json();
+            if (data.following) {
+                btn.textContent = '<%- t("dashboard.following") %>';
+                btn.style.opacity = '0.5';
+                btn.disabled = true;
+                setTimeout(function() {
+                    var card = btn.closest('.d-flex');
+                    card.style.transition = 'opacity .3s';
+                    card.style.opacity = '0';
+                    setTimeout(function() { card.remove(); }, 300);
+                }, 600);
+            }
+        } catch(e) { console.error(e); }
+    }
+    </script>
+    <script src="/js/theme.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/worldMap.js"></script>
+</body>
+
+</html>

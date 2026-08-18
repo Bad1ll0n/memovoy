@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var t=localStorage.getItem('insight-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- t('myTrips.title') %> | Insight</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/myTrips.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="pf-nav">
+    <a class="pf-nav__brand" href="/dashboard">
+        <i class="fa-solid fa-compass"></i> INSIGHT
+    </a>
+    <div class="pf-nav__links">
+        <a href="/dashboard"><i class="fa-solid fa-house-chimney"></i> Home</a>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#createItineraryModal">
+            <i class="fa-solid fa-plus"></i> New Trip
+        </a>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#sharePhotoModal">
+            <i class="fa-regular fa-image"></i> New Post
+        </a>
+        <a href="/profile_trips" class="pf-nav__link--accent">
+            <i class="fa-solid fa-heart"></i> My Trips
+        </a>
+    </div>
+    <div class="pf-nav__right">
+        <i class="fa-regular fa-bell pf-nav__bell"></i>
+        <div class="dropdown">
+            <img src="<%= typeof user !== 'undefined' && user.Avatar_Url ? user.Avatar_Url : '/assets/images/default-avatar.jpg' %>"
+                class="pf-nav__avatar" role="button" data-bs-toggle="dropdown">
+            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                <li><a class="dropdown-item" href="/profile"><%- t('nav.profile') %></a></li>
+                <li><a class="dropdown-item" href="/profile/edit"><%- t('nav.editProfile') %></a></li>
+                <li><a class="dropdown-item" href="/settings"><i class="fa-solid fa-gear me-2"></i><%- t('nav.settings') %></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="/logout"><%- t('nav.logout') %></a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="mt-wrapper">
+
+    <!-- Title row -->
+    <div class="mt-title-row">
+        <a href="/profile" class="mt-back"><i class="fa-solid fa-arrow-left fa-sm"></i></a>
+        <span class="mt-title-icon"><i class="fa-solid fa-bookmark"></i></span>
+        <div class="mt-title-text">
+            <h1><%- t('myTrips.title') %></h1>
+            <p id="tripsSubtitle"><%- t('myTrips.loading') %></p>
+        </div>
+    </div>
+
+
+    <!-- Trip list -->
+    <div id="myTrips" class="mt-list">
+        <div class="mt-loading">
+            <i class="fa-solid fa-circle-notch"></i>
+            <%- t('myTrips.loadingTrips') %>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/vendor/jquery/jquery.min.js"></script>
+<script>
+const _i18n = {
+    noTrips: '<%- t("myTrips.noTripsMsg") %>',
+    createFirst: '<%- t("myTrips.createFirst") %>',
+    tripSingular: '<%- t("myTrips.tripSingular") %>',
+    tripPlural: '<%- t("myTrips.tripPlural") %>',
+    savedSingular: '<%- t("myTrips.savedSingular") %>',
+    savedPlural: '<%- t("myTrips.savedPlural") %>',
+    days: '<%- t("myTrips.days") %>',
+    stops: '<%- t("myTrips.stops") %>',
+    confirmDelete: '<%- t("myTrips.confirmDelete") %>',
+    errorLoading: '<%- t("myTrips.errorLoading") %>',
+    errorDeleting: '<%- t("myTrips.errorDeleting") %>',
+    noSaved: '0 <%- t("myTrips.tripPlural") %> <%- t("myTrips.savedPlural") %>'
+};
+
+// Renderiza os cards no novo formato
+function renderTrips(trips) {
+    const container = document.getElementById('myTrips');
+    const subtitle  = document.getElementById('tripsSubtitle');
+
+    if (!trips || trips.length === 0) {
+        subtitle.textContent = _i18n.noSaved;
+        container.innerHTML = `
+            <div class="mt-empty">
+                <i class="fa-solid fa-route"></i>
+                <p>${_i18n.noTrips}</p>
+                <a href="#" class="mt-empty__btn" data-bs-toggle="modal" data-bs-target="#createItineraryModal">
+                    <i class="fa-solid fa-plus"></i> ${_i18n.createFirst}
+                </a>
+            </div>`;
+        return;
+    }
+
+    subtitle.textContent = `${trips.length} ${trips.length !== 1 ? _i18n.tripPlural : _i18n.tripSingular} ${trips.length !== 1 ? _i18n.savedPlural : _i18n.savedSingular}`;
+
+    container.innerHTML = trips.map(trip => {
+        const dep    = trip.departure_date ? new Date(trip.departure_date) : null;
+        const ret    = trip.return_date    ? new Date(trip.return_date)    : null;
+        const fmtOpt = { day: '2-digit', month: 'short', year: 'numeric' };
+        const datePt = dep && ret
+            ? `${dep.toLocaleDateString('pt-PT', fmtOpt)} - ${ret.toLocaleDateString('pt-PT', fmtOpt)}`
+            : (dep ? dep.toLocaleDateString('pt-PT', fmtOpt) : '—');
+
+        const days  = trip.days_count || '—';
+        const stops = trip.data && Array.isArray(trip.data.days)
+            ? trip.data.days.reduce((acc, d) => acc + (d.activities ? d.activities.length : 0), 0)
+            : '—';
+        const budget = trip.data && trip.data.budget
+            ? `€${Number(trip.data.budget).toLocaleString('pt-PT')}`
+            : null;
+
+        return `
+        <div class="trip-card" id="trip-${trip.id}">
+            <a href="/itinerary/${trip.id}" class="trip-card__link">
+                <div class="trip-card__body">
+                    <div class="trip-card__title">${trip.title || trip.destination || '<%- t("myTrips.title") %>'}</div>
+                    <div class="trip-card__meta">
+                        <span><i class="fa-regular fa-calendar"></i> ${datePt}</span>
+                        <span><i class="fa-regular fa-clock"></i> ${days} ${_i18n.days}</span>
+                        ${stops !== '—' ? `<span><i class="fa-solid fa-location-dot"></i> ${stops} ${_i18n.stops}</span>` : ''}
+                        ${budget ? `<span><i class="fa-solid fa-euro-sign"></i> ${budget}</span>` : ''}
+                    </div>
+                </div>
+            </a>
+            <div class="trip-card__actions">
+                <button class="trip-card__delete" onclick="deleteTrip('${trip.id}')" title="Apagar roteiro">
+                    <i class="fa-regular fa-trash-can"></i>
+                </button>
+                <i class="fa-solid fa-chevron-right trip-card__chevron"></i>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Carrega os roteiros do utilizador
+async function loadTrips() {
+    try {
+        const res  = await fetch('/myTrips');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        console.log('myTrips response:', data);
+        const trips = Array.isArray(data) ? data : (data.rows || data.itineraries || []);
+        renderTrips(trips);
+    } catch(e) {
+        console.error('Erro ao carregar roteiros:', e);
+        document.getElementById('myTrips').innerHTML =
+            '<p class="text-center text-danger py-4" style="font-size:.85rem;">' + _i18n.errorLoading + '</p>';
+    }
+}
+
+async function deleteTrip(id) {
+    if (!confirm(_i18n.confirmDelete)) return;
+    const card = document.getElementById('trip-' + id);
+    try {
+        const res = await fetch('/delete-roteiro?roteiroId=' + id, { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        card.style.transition = 'opacity .3s, transform .3s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+            card.remove();
+            const remaining = document.querySelectorAll('.trip-card').length;
+            document.getElementById('tripsSubtitle').textContent =
+                remaining + ' ' + (remaining !== 1 ? _i18n.tripPlural : _i18n.tripSingular) + ' ' + (remaining !== 1 ? _i18n.savedPlural : _i18n.savedSingular);
+            if (remaining === 0) renderTrips([]);
+        }, 300);
+    } catch(e) {
+        console.error('Erro ao apagar:', e);
+        alert(_i18n.errorDeleting);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadTrips);
+</script>
+<script src="/js/theme.js"></script>
+</body>
+</html>

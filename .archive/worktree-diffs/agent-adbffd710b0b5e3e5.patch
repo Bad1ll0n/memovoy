@@ -1,0 +1,494 @@
+warning: in the working copy of 'memovoy-web/src/app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'memovoy-web/tailwind.config.ts', LF will be replaced by CRLF the next time Git touches it
+diff --git a/memovoy-web/src/app/globals.css b/memovoy-web/src/app/globals.css
+index 5a4d80c..44642ed 100644
+--- a/memovoy-web/src/app/globals.css
++++ b/memovoy-web/src/app/globals.css
+@@ -1,4 +1,35 @@
+-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700&display=swap');
++/*
++╔══════════════════════════════════════════════════════════════════════════╗
++║  Memovoy — Variação 1: Terra & Horizonte                               ║
++║  Inspiração: diários de viagem físicos, mapas topográficos,            ║
++║  encadernações em couro, carimbos de passaporte, redes ferroviárias.   ║
++║                                                                         ║
++║  PALETA                                                                 ║
++║  Light: body #F4EDD8 · surface #EDE4CA · border #D4C4A0               ║
++║         accent #7A5015 (bronze profundo)                                ║
++║         ink #1C1208 · secondary #6B5038 (5.2:1 ✓) · muted #7A5A38 (4.5:1 ✓) ║
++║  Dark:  body #1A1208 · surface #241808 · border #4A3218               ║
++║         accent #C8922A (latão de bússola)                               ║
++║         ink #F0E4CC · secondary #C4A878 (7.1:1 ✓) · muted #A89068 (5.4:1 ✓) ║
++║                                                                         ║
++║  TIPOGRAFIA                                                             ║
++║  Display: Playfair Display — drama de diário de viagem, pesos 400–700  ║
++║  Body:    Inter — clareza moderna                                       ║
++║                                                                         ║
++║  CONTRASTE btn-primary verificado:                                      ║
++║  Light: #fff em #7A5015 → 6.8:1 ✓                                     ║
++║  Dark:  #000 em #C8922A → 8.0:1 ✓                                     ║
++║                                                                         ║
++║  RISCO ESTÉTICO: border-radius reduzido sistemicamente                  ║
++║  (rounded-xl: 18px → 10px, componentes: 8px e 4px)                    ║
++║  Estrutura de encadernação em couro vs "bubble" moderno.               ║
++║  Ajustado tanto no tailwind.config.ts como aqui nos componentes.       ║
++╚══════════════════════════════════════════════════════════════════════════╝
++*/
++
++/* Playfair Display: serif dramático, ideal para diário de viagem
++   Inter: sans moderno e legível — contraste tipográfico intencional */
++@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap');
+ 
+ @tailwind base;
+ @tailwind components;
+@@ -6,26 +37,71 @@
+ 
+ @layer base {
+   :root {
+-    --brand-blue:   #185FA5;
+-    --brand-green:  #0F6E50;
+-    --brand-amber:  #EF9F27;
+-    --brand-purple: #7B1FA2;
+     --font-display: 'Playfair Display';
+     --font-body:    'Inter';
++
++    /* Brand */
++    --brand-amber:  #C8922A;
++    --brand-green:  #2D4A2D;
++    --brand-purple: #7B1FA2;
++
++    /* ─── Terra & Horizonte — Light Mode ─── */
++    --th-body:           #F4EDD8;
++    --th-surface:        #EDE4CA;
++    --th-surface-raised: #FAF5E9;
++    --th-border:         #D4C4A0;
++    --th-ink:            #1C1208;
++    --th-ink-secondary:  #6B5038;
++    --th-ink-muted:      #7A5A38;
++    --th-accent:         #7A5015;
++    --th-accent-hover:   #603D0E;
++    --th-accent-subtle:  rgba(122, 80, 21, 0.10);
++    --th-accent-border:  rgba(122, 80, 21, 0.30);
++    /* btn-primary text: #fff em #7A5015 → 6.8:1 ✓ */
++    --th-btn-text:       #ffffff;
++    --th-danger:         #DC2626;
++    --th-success:        #2D6A2D;
++  }
++
++  /* Dark mode — activado pela classe .dark em <html> */
++  .dark {
++    --th-body:           #1A1208;
++    --th-surface:        #241808;
++    --th-surface-raised: #301F0A;
++    --th-border:         #4A3218;
++    --th-ink:            #F0E4CC;
++    --th-ink-secondary:  #C4A878;
++    --th-ink-muted:      #A89068;
++    --th-accent:         #C8922A;
++    --th-accent-hover:   #B07820;
++    --th-accent-subtle:  rgba(200, 146, 42, 0.12);
++    --th-accent-border:  rgba(200, 146, 42, 0.35);
++    /* btn-primary text: #000 em #C8922A → 8.0:1 ✓ */
++    --th-btn-text:       #000000;
++    --th-danger:         #F87171;
++    --th-success:        #4ADE80;
+   }
+ 
+   * { box-sizing: border-box; }
+ 
+-  html { scroll-behavior: smooth; }
++  html {
++    scroll-behavior: smooth;
++    background-color: var(--th-body);
++  }
++
++  body {
++    background-color: var(--th-body);
++    color: var(--th-ink);
++    font-family: var(--font-body, 'Inter', system-ui, sans-serif);
++  }
+ 
+-  /* Foco visível para acessibilidade */
++  /* Foco visível — anel em bronze/latão conforme modo */
+   :focus-visible {
+-    outline: 2px solid var(--brand-blue);
++    outline: 2px solid var(--th-accent);
+     outline-offset: 2px;
+-    border-radius: 4px;
++    border-radius: 3px;
+   }
+ 
+-  /* Reduced motion */
+   @media (prefers-reduced-motion: reduce) {
+     *, *::before, *::after {
+       animation-duration:   0.01ms !important;
+@@ -34,92 +110,157 @@
+   }
+ }
+ 
++/*
++ * Keyframe declarado fora de @layer para garantir injeção
++ * independente de se algum elemento usa animate-shimmer.
++ */
++@keyframes shimmer {
++  0%   { background-position: -200% 0; }
++  100% { background-position:  200% 0; }
++}
++
+ @layer components {
+-  /* Skeleton shimmer reutilizável */
++
++  /* ─── Skeleton shimmer — gradiente quente Terra & Horizonte ─── */
+   .skeleton {
+-    @apply bg-surface-muted rounded-md overflow-hidden relative;
+     background: linear-gradient(
+       90deg,
+-      theme('colors.surface.muted') 25%,
+-      theme('colors.surface.subtle') 50%,
+-      theme('colors.surface.muted') 75%
++      var(--th-surface)        25%,
++      var(--th-surface-raised) 50%,
++      var(--th-surface)        75%
+     );
+     background-size: 200% 100%;
++    border-radius: 4px;
+     animation: shimmer 1.8s linear infinite;
++    overflow: hidden;
++    position: relative;
+   }
+ 
+-  /* Card base */
++  /* ─── Card ─── */
+   .card {
+-    @apply bg-surface rounded-xl shadow-card;
++    background-color: var(--th-surface);
++    border: 1px solid var(--th-border);
++    /* Terra & Horizonte: 8px em vez de rounded-xl=18px */
++    border-radius: 8px;
++    box-shadow: 0 1px 4px 0 rgb(60 30 0 / 0.07), 0 4px 12px 0 rgb(60 30 0 / 0.05);
+   }
+ 
+-  /* Input base */
++  /* ─── Input ─── */
+   .input {
+-    @apply w-full px-4 py-3 rounded-lg border border-surface-muted
+-           bg-surface text-ink placeholder-ink-tertiary
+-           focus:outline-none focus:ring-2 focus:ring-blue/30 focus:border-blue
+-           transition-colors duration-150;
++    @apply w-full px-4 py-3 border transition-colors duration-150;
++    background-color: var(--th-surface-raised);
++    border-color: var(--th-border);
++    border-radius: 4px;
++    color: var(--th-ink);
++    outline: none;
++  }
++  .input:focus {
++    border-color: var(--th-accent);
++    /* Ring em bronze/latão sem depender das variáveis internas do Tailwind */
++    box-shadow: 0 0 0 2px var(--th-accent-subtle);
++    outline: none;
++  }
++  .input::placeholder {
++    color: var(--th-ink-muted);
+   }
+ 
+-  /* Botão primário */
++  /* ─── Botão primário ─── */
+   .btn-primary {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-blue text-white
+-           font-body font-semibold text-sm
+-           hover:bg-blue-700 active:bg-blue-800
++           px-5 py-3 font-body font-semibold text-sm
+            disabled:opacity-50 disabled:cursor-not-allowed
+            transition-colors duration-150;
++    background-color: var(--th-accent);
++    /*
++     * Light: #fff em #7A5015 → 6.8:1 ✓
++     * Dark:  #000 em #C8922A → 8.0:1 ✓
++     * --th-btn-text muda com o modo.
++     */
++    color: var(--th-btn-text);
++    border-radius: 4px;
++    border: none;
++  }
++  .btn-primary:hover:not(:disabled) {
++    background-color: var(--th-accent-hover);
+   }
+ 
+-  /* Botão secundário */
++  /* ─── Botão secundário ─── */
+   .btn-secondary {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg border border-surface-muted
+-           bg-surface text-ink font-body font-semibold text-sm
+-           hover:bg-surface-subtle active:bg-surface-muted
++           px-5 py-3 font-body font-semibold text-sm
+            disabled:opacity-50 disabled:cursor-not-allowed
+            transition-colors duration-150;
++    background-color: transparent;
++    color: var(--th-ink);
++    border: 1px solid var(--th-border);
++    border-radius: 4px;
++  }
++  .btn-secondary:hover:not(:disabled) {
++    background-color: var(--th-accent-subtle);
+   }
+ 
+-  /* Botão ghost */
++  /* ─── Botão ghost ─── */
+   .btn-ghost {
+     @apply inline-flex items-center justify-center gap-2
+-           px-3 py-2 rounded-lg text-ink-secondary font-body font-medium text-sm
+-           hover:bg-surface-subtle hover:text-ink
++           px-3 py-2 font-body font-medium text-sm
+            transition-colors duration-150;
++    color: var(--th-ink-secondary);
++    border-radius: 4px;
++    background-color: transparent;
++    border: none;
+   }
+-
+-  /* Badge de level — usa CSS var injectada pelo JS via style={{ '--lv': color }} */
+-  .level-badge {
+-    @apply inline-flex items-center px-2 py-0.5
+-           rounded-full text-2xs font-semibold;
+-    background-color: var(--lv, theme('colors.ink.secondary'));
++  .btn-ghost:hover {
++    background-color: var(--th-accent-subtle);
++    color: var(--th-ink);
+   }
+ 
+-  /* Botão primário em superfície colorida (fundo azul/escuro) */
++  /* ─── Botão primário invertido (sobre fundo colorido) ─── */
+   .btn-primary-inverted {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-white text-blue
+-           font-body font-semibold text-sm
+-           hover:bg-blue-50 active:bg-blue-100
++           px-5 py-3 font-body font-semibold text-sm
+            disabled:opacity-50 disabled:cursor-not-allowed
+            transition-colors duration-150;
++    background-color: var(--th-body);
++    /* th-accent em th-body: #7A5015 em #F4EDD8 → 5.8:1 ✓ */
++    color: var(--th-accent);
++    border-radius: 4px;
++    border: none;
++  }
++  .btn-primary-inverted:hover:not(:disabled) {
++    background-color: var(--th-surface-raised);
+   }
+ 
+-  /* Botão de acção destrutiva */
++  /* ─── Botão destrutivo ─── */
+   .btn-danger {
+     @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-red-600 text-white
+-           font-body font-semibold text-sm
+-           hover:bg-red-700 active:bg-red-800
++           px-5 py-3 font-body font-semibold text-sm
+            disabled:opacity-40 disabled:cursor-not-allowed
+            transition-colors duration-150;
++    background-color: #DC2626;
++    color: #ffffff;
++    border-radius: 4px;
++    border: none;
++  }
++  .btn-danger:hover:not(:disabled) {
++    background-color: #B91C1C;
+   }
+ 
+-  /* Card com borda de perigo */
++  /* ─── Card com borda de perigo ─── */
+   .card-danger {
+-    @apply card border border-red-200;
++    background-color: var(--th-surface);
++    border: 1px solid #FECACA;
++    border-radius: 8px;
++    box-shadow: 0 1px 4px 0 rgb(60 30 0 / 0.07), 0 4px 12px 0 rgb(60 30 0 / 0.05);
+   }
++
++  /* ─── Level badge ─── */
++  .level-badge {
++    @apply inline-flex items-center px-2 py-0.5
++           rounded-full text-2xs font-semibold;
++    background-color: var(--lv, var(--th-ink-secondary));
++    color: #fff;
++  }
++
+ }
+ 
+ @layer utilities {
+diff --git a/memovoy-web/tailwind.config.ts b/memovoy-web/tailwind.config.ts
+index 20d0a0e..6d9cf10 100644
+--- a/memovoy-web/tailwind.config.ts
++++ b/memovoy-web/tailwind.config.ts
+@@ -1,52 +1,60 @@
+ import type { Config } from 'tailwindcss'
+ 
++/*
++ * Memovoy — Tailwind config: Variação 1 "Terra & Horizonte"
++ * Tokens de light-mode compilados em utilitários.
++ * Dark-mode gerido via CSS variables + classe .dark (ver globals.css).
++ */
++
+ const config: Config = {
+   content: ['./src/**/*.{ts,tsx}'],
+   darkMode: 'class',
+   theme: {
+     extend: {
+       colors: {
+-        // Cores primárias — idênticas às apps nativas
++        // "blue" reaproveitado como bronze profundo (acento luz)
++        // — componentes que usam bg-blue/text-blue passam a terra & horizonte
+         blue: {
+-          DEFAULT: '#185FA5',
+-          50:  '#EEF4FB',
+-          100: '#D6E6F5',
+-          200: '#AACCEA',
+-          300: '#7DB3DF',
+-          400: '#4F99D4',
+-          500: '#2580C9',
+-          600: '#185FA5',
+-          700: '#134D87',
+-          800: '#0E3B69',
+-          900: '#09294B',
++          DEFAULT: '#7A5015',
++          50:  '#FDF7EE',
++          100: '#F8E9CF',
++          200: '#F0D29F',
++          300: '#E8BB6E',
++          400: '#E0A33D',
++          500: '#C8922A',  // latão de bússola
++          600: '#7A5015',  // bronze profundo = DEFAULT (light mode accent)
++          700: '#603D0E',
++          800: '#48300A',
++          900: '#302007',
+         },
++        // Verde-floresta profundo como cor secundária
+         green: {
+-          DEFAULT: '#0F6E50',
+-          50:  '#ECF7F4',
+-          100: '#C9EDE4',
+-          200: '#93DBC9',
+-          300: '#5DC8AE',
+-          400: '#30B593',
+-          500: '#1A9A79',
+-          600: '#0F6E50',
+-          700: '#0C5841',
+-          800: '#094232',
+-          900: '#062C22',
++          DEFAULT: '#2D4A2D',
++          50:  '#EEF3EE',
++          100: '#D0E2D0',
++          200: '#A1C5A1',
++          300: '#72A872',
++          400: '#4E8A4E',
++          500: '#3A6B3A',
++          600: '#2D4A2D',
++          700: '#233A23',
++          800: '#1A2B1A',
++          900: '#111C11',
+         },
++        // Âmbar = latão de bússola (dark mode accent + destaques)
+         amber: {
+-          DEFAULT: '#EF9F27',
+-          50:  '#FEF8EC',
+-          100: '#FCEECE',
+-          200: '#F9DD9D',
+-          300: '#F6CC6C',
+-          400: '#F3BB3B',
+-          500: '#EF9F27',
+-          600: '#D4850F',
+-          700: '#A8680C',
+-          800: '#7C4C09',
+-          900: '#503106',
++          DEFAULT: '#C8922A',
++          50:  '#FDF6EC',
++          100: '#F9E7C8',
++          200: '#F2CE91',
++          300: '#EBB55A',
++          400: '#E49D2A',
++          500: '#C8922A',
++          600: '#A07220',
++          700: '#7A5216',
++          800: '#5A3C10',
++          900: '#3A270A',
+         },
+-        // Cor do nível "nomad" — sem equivalente nas paletas base
+         purple: {
+           DEFAULT: '#7B1FA2',
+           50:  '#F5E8FB',
+@@ -60,31 +68,28 @@ const config: Config = {
+           800: '#491261',
+           900: '#300C40',
+         },
+-        // Token semântico de perigo (mapeado para red Tailwind)
+         danger: {
+           DEFAULT: '#DC2626',
+-          subtle:  '#FEF2F2',
++          subtle:  '#FFF0F0',
+           border:  '#FECACA',
+         },
+-        // Neutros
++        // Superfícies — papel envelhecido / pergaminho (light mode)
+         surface: {
+-          DEFAULT: '#FFFFFF',
+-          subtle: '#F7F7F5',
+-          muted:  '#EDEDEA',
++          DEFAULT: '#EDE4CA',  // cartão pergaminho
++          subtle:  '#F4EDD8',  // fundo papel envelhecido
++          muted:   '#D4C4A0',  // borda areia quente
+         },
++        // Tinta — castanho quente escuro (light mode)
+         ink: {
+-          DEFAULT: '#1A1A1A',
+-          secondary: '#5C5C5C',
+-          tertiary:  '#9C9C9C',
+-          disabled:  '#BDBDBD',
++          DEFAULT:   '#1C1208',  // castanho-tabaco escuro
++          secondary: '#6B5038',  // castanho médio — 5.2:1 em #EDE4CA ✓
++          tertiary:  '#7A5A38',  // castanho claro  — 4.5:1 em #EDE4CA ✓
++          disabled:  '#A89068',  // areia acastanhada
+         },
+       },
+       fontFamily: {
+-        // Display: personalidade e hierarquia
+         display: ['var(--font-display)', 'Georgia', 'serif'],
+-        // Body: leitura longa e UI
+         body:    ['var(--font-body)',    'system-ui', 'sans-serif'],
+-        // Mono: dados, coords, timestamps
+         mono:    ['var(--font-mono)',    'ui-monospace', 'monospace'],
+       },
+       fontSize: {
+@@ -101,19 +106,20 @@ const config: Config = {
+         '6xl': ['3.75rem',  { lineHeight: '1.05'     }],
+       },
+       borderRadius: {
+-        'sm':  '6px',
+-        'md':  '10px',
+-        'lg':  '14px',
+-        'xl':  '18px',
+-        '2xl': '24px',
+-        '3xl': '32px',
++        'sm':  '4px',
++        'md':  '6px',
++        'lg':  '8px',
++        'xl':  '10px',   // Terra & Horizonte: reduzido de 18px → 10px (encadernação)
++        '2xl': '14px',
++        '3xl': '20px',
+         'full':'9999px',
+       },
+       boxShadow: {
+-        'card':   '0 1px 4px 0 rgb(0 0 0 / 0.06), 0 4px 12px 0 rgb(0 0 0 / 0.04)',
+-        'card-md':'0 2px 8px 0 rgb(0 0 0 / 0.08), 0 8px 24px 0 rgb(0 0 0 / 0.06)',
+-        'card-lg':'0 4px 16px 0 rgb(0 0 0 / 0.10), 0 16px 40px 0 rgb(0 0 0 / 0.08)',
+-        'nav':    '0 -1px 0 0 rgb(0 0 0 / 0.06)',
++        // Sombras com tint quente — papel e couro
++        'card':   '0 1px 4px 0 rgb(60 30 0 / 0.07), 0 4px 12px 0 rgb(60 30 0 / 0.05)',
++        'card-md':'0 2px 8px 0 rgb(60 30 0 / 0.09), 0 8px 24px 0 rgb(60 30 0 / 0.07)',
++        'card-lg':'0 4px 16px 0 rgb(60 30 0 / 0.11), 0 16px 40px 0 rgb(60 30 0 / 0.09)',
++        'nav':    '0 -1px 0 0 rgb(60 30 0 / 0.08)',
+       },
+       keyframes: {
+         'shimmer': {

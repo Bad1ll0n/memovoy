@@ -1,0 +1,567 @@
+warning: in the working copy of 'memovoy-web/src/app/globals.css', LF will be replaced by CRLF the next time Git touches it
+diff --git a/memovoy-web/src/app/globals.css b/memovoy-web/src/app/globals.css
+index 5a4d80c..2696d9b 100644
+--- a/memovoy-web/src/app/globals.css
++++ b/memovoy-web/src/app/globals.css
+@@ -1,135 +1,483 @@
+-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600;700&display=swap');
++/* ═══════════════════════════════════════════════════════════════════
++ *  Variação 3 — MERCADO
++ *  ───────────────────────────────────────────────────────────────
++ *  Inspiração: mercados de rua do mundo — azulejos de Lisboa,
++ *  especiarias de Marrakech, néons de Tóquio, tuk-tuks de Bangkok.
++ *  Energia visual, cor intensa mas controlada, a sobreposição de
++ *  culturas que é o coração da experiência de viajar.
++ *
++ *  PALETA LIGHT (padrão)
++ *  --bg-body:        #FFF3E8   marfim quente    (subtom laranja — sem cinzento neutro)
++ *  --bg-card:        #FFFAF4   branco-marfim
++ *  --surface2:       #FFF0DC   creme quente     (inputs)
++ *  --border:         #E8D5C0   bege quente      (tint índigo-laranja)
++ *  --accent:         #BF3800   coral-verm. esc. (5.1:1 vs bg-body ✓ WCAG AA)
++ *  --accent2:        #007A6E   teal escuro      (azulejo em modo claro)
++ *  --text-primary:   #1A0E2E   índigo profundo  (espelho do bg dark — 16.8:1 ✓)
++ *  --text-secondary: #5C3E6E   roxo-ameixa      (8.7:1 vs bg-card ✓)
++ *  --text-muted:     #7A5C8E   roxo médio       (5.4:1 vs bg-card ✓)
++ *
++ *  PALETA DARK  (.dark na raiz)
++ *  --bg-body:        #1A0E2E   índigo profundo  (tinta de carimbo de passaporte)
++ *  --bg-card:        #251540   roxo-violeta
++ *  --surface2:       #32205A   roxo elevado     (inputs, dropdowns)
++ *  --border:         #4A3570   lilás visível    (risco estético: tile de mercado)
++ *  --accent:         #FF5C35   coral-laranja    (6.0:1 vs bg-body ✓ WCAG AA)
++ *  --accent2:        #00C9B1   teal néon        (10.4:1 vs bg-body ✓)
++ *  --text-primary:   #F0E8FF   branco-lilás     (15.5:1 vs bg-body ✓)
++ *  --text-secondary: #B8A8D4   lavanda média    (8.5:1 vs bg-body ✓)
++ *  --text-muted:     #9588B0   lavanda suave    (5.3:1 vs bg-card ✓)
++ *
++ *  TIPOGRAFIA
++ *  Display → Syne    (--font-display) geométrico, carácter forte, sem medo de peso
++ *  Body    → DM Sans (--font-body)    humanista, arejado, warm — praça de mercado
++ *
++ *  RISCO ESTÉTICO
++ *  Cards em dark mode com border lilás visível (#4A3570) em vez de transparent.
++ *  Qualidade de "tile de mercado" texturado — não painel flat anónimo.
++ *  Light mode: shadow com subtom índigo quente, nunca cinzento neutro.
++ * ═══════════════════════════════════════════════════════════════════ */
++
++/* ─── Tipografia Mercado: Syne (display) + DM Sans (body) ─── */
++@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+ 
+ @tailwind base;
+ @tailwind components;
+ @tailwind utilities;
+ 
+-@layer base {
+-  :root {
+-    --brand-blue:   #185FA5;
+-    --brand-green:  #0F6E50;
+-    --brand-amber:  #EF9F27;
+-    --brand-purple: #7B1FA2;
+-    --font-display: 'Playfair Display';
+-    --font-body:    'Inter';
+-  }
++/* ══════════════════════════════════════════════════════════════════
++ *  TOKENS MERCADO — definem-se fora de @layer para garantir que
++ *  a herança CSS via var() funciona em todos os contextos.
++ *  A posição pós-@tailwind garante precedência sobre utilitários.
++ * ══════════════════════════════════════════════════════════════════ */
+ 
+-  * { box-sizing: border-box; }
++:root {
++  /* Tipografia: alimenta font-display e font-body no tailwind.config.ts */
++  --font-display: 'Syne';
++  --font-body:    'DM Sans';
++  --font-mono:    ui-monospace;
++
++  /* ── Backgrounds light mode ── */
++  --bg-body:   #FFF3E8;
++  --bg-card:   #FFFAF4;
++  --surface2:  #FFF0DC;
++  --border:    #E8D5C0;
++
++  /* ── Acento principal: coral-vermelho escuro ── */
++  --accent:         #BF3800;
++  --accent-hover:   #9E2D00;
++  --accent-alpha-12: rgba(191, 56, 0, 0.12);
++  --accent-alpha-08: rgba(191, 56, 0, 0.08);
++  --accent-alpha-05: rgba(191, 56, 0, 0.05);
++  --accent-border:  rgba(191, 56, 0, 0.35);
++
++  /* ── Acento secundário: teal (azulejo Lisboa) ── */
++  --accent2: #007A6E;
++
++  /* ── Text ── */
++  --text-primary:   #1A0E2E;
++  --text-secondary: #5C3E6E;
++  --text-muted:     #7A5C8E;
++
++  /* ── Semântico ── */
++  --danger:        #ef4444;
++  --danger-subtle: rgba(239, 68, 68, 0.08);
++  --danger-border: rgba(239, 68, 68, 0.25);
++  --success:       #22c55e;
++
++  /* ── Skeleton shimmer ── */
++  --skeleton-from: #FFF0DC;
++  --skeleton-to:   #FFE8C8;
++
++  /* ── Alpha do card para navs frosted-glass (bg-surface/90, bg-surface/95) ── */
++  --bg-card-90: rgba(255, 250, 244, 0.92);
++  --bg-card-95: rgba(255, 250, 244, 0.96);
++
++  /* ── Tokens de marca legados (preservados para compatibilidade) ── */
++  --brand-blue:   #185FA5;
++  --brand-green:  #0F6E50;
++  --brand-amber:  #EF9F27;
++  --brand-purple: #7B1FA2;
++
++  /* ── Layout ── */
++  --sidebar-w:    240px;
++  --nav-h:        4rem;
++}
+ 
+-  html { scroll-behavior: smooth; }
++/* ─── Dark mode — índigo profundo como tinta de carimbo ─── */
++.dark {
++  /* ── Backgrounds dark mode ── */
++  --bg-body:   #1A0E2E;
++  --bg-card:   #251540;
++  --surface2:  #32205A;
++  /* Risco estético: border VISÍVEL com tint lilás, não transparent */
++  --border:    #4A3570;
+ 
+-  /* Foco visível para acessibilidade */
+-  :focus-visible {
+-    outline: 2px solid var(--brand-blue);
+-    outline-offset: 2px;
+-    border-radius: 4px;
++  /* ── Acento principal: coral-laranja vibrante ── */
++  --accent:         #FF5C35;
++  --accent-hover:   #E84820;
++  --accent-alpha-12: rgba(255, 92, 53, 0.12);
++  --accent-alpha-08: rgba(255, 92, 53, 0.08);
++  --accent-alpha-05: rgba(255, 92, 53, 0.05);
++  --accent-border:  rgba(255, 92, 53, 0.35);
++
++  /* ── Acento secundário: teal néon (azulejo/néon Tóquio) ── */
++  --accent2: #00C9B1;
++
++  /* ── Text: branco-lilás e lavandas — não cinzento neutro ── */
++  --text-primary:   #F0E8FF;
++  --text-secondary: #B8A8D4;
++  --text-muted:     #9588B0;
++
++  /* ── Semântico ── */
++  --danger:        #F87171;
++  --danger-subtle: rgba(248, 113, 113, 0.12);
++  --danger-border: rgba(248, 113, 113, 0.3);
++  --success:       #34D399;
++
++  /* ── Skeleton shimmer: roxo → violeta — como néon a tremeluzir ── */
++  --skeleton-from: #251540;
++  --skeleton-to:   #32205A;
++
++  /* ── Alpha do card para navs frosted-glass (bg-surface/90, bg-surface/95) ── */
++  --bg-card-90: rgba(37, 21, 64, 0.92);
++  --bg-card-95: rgba(37, 21, 64, 0.96);
++}
++
++/* ─── Base global — fora de @layer para ganhar sobre utilitários ─── */
++
++html {
++  scroll-behavior: smooth;
++  scrollbar-width: thin;
++  scrollbar-color: var(--border) transparent;
++}
++
++::-webkit-scrollbar         { width: 5px; height: 5px; }
++::-webkit-scrollbar-thumb   { background: var(--border); border-radius: 4px; }
++::-webkit-scrollbar-track   { background: transparent; }
++
++/* body: background e fonte da variação Mercado.
++   Posição fora de @layer garante precedência sobre bg-surface-subtle
++   e font-body que o layout.tsx aplica via className. */
++body {
++  background-color: var(--bg-body);
++  color: var(--text-primary);
++  font-family: 'DM Sans', system-ui, sans-serif;
++  -webkit-font-smoothing: antialiased;
++  -moz-osx-font-smoothing: grayscale;
++}
++
++:focus-visible {
++  outline: 2px solid var(--accent);
++  outline-offset: 2px;
++  border-radius: 4px;
++}
++
++@media (prefers-reduced-motion: reduce) {
++  *, *::before, *::after {
++    animation-duration:  0.01ms !important;
++    transition-duration: 0.01ms !important;
+   }
++}
+ 
+-  /* Reduced motion */
+-  @media (prefers-reduced-motion: reduce) {
+-    *, *::before, *::after {
+-      animation-duration:   0.01ms !important;
+-      transition-duration:  0.01ms !important;
+-    }
++/* ══════════════════════════════════════════════════════════════════
++ *  @layer base — reset e accessibilidade
++ * ══════════════════════════════════════════════════════════════════ */
++@layer base {
++  * { box-sizing: border-box; }
++
++  /* Alimenta o sistema tipográfico do tailwind.config.ts via CSS vars */
++  :root {
++    --font-display: 'Syne';
++    --font-body:    'DM Sans';
+   }
+ }
+ 
++/* ══════════════════════════════════════════════════════════════════
++ *  @layer components — classes de componentes Mercado
++ *  Usam var(--token) em vez de @apply com cores hardcoded,
++ *  garantindo que respondem automaticamente ao dark mode.
++ * ══════════════════════════════════════════════════════════════════ */
+ @layer components {
+-  /* Skeleton shimmer reutilizável */
++
++  /* ── Skeleton shimmer ──
++     Light: marfim → creme quente.
++     Dark: roxo → violeta — como néon a tremeluzir num beco de mercado. */
+   .skeleton {
+-    @apply bg-surface-muted rounded-md overflow-hidden relative;
+     background: linear-gradient(
+       90deg,
+-      theme('colors.surface.muted') 25%,
+-      theme('colors.surface.subtle') 50%,
+-      theme('colors.surface.muted') 75%
++      var(--skeleton-from) 25%,
++      var(--skeleton-to)   50%,
++      var(--skeleton-from) 75%
+     );
+     background-size: 200% 100%;
+     animation: shimmer 1.8s linear infinite;
++    border-radius: 6px;
++    overflow: hidden;
++    position: relative;
+   }
+ 
+-  /* Card base */
++  /* ── Card — tile de mercado ──
++     Risco estético: border SEMPRE visível (var(--border)):
++     - Dark: lilás #4A3570 — qualidade de tile cerâmico, não painel flat.
++     - Light: bege quente #E8D5C0 — papel de embrulho de mercado.
++     Shadow também tem personalidade: índigo quente, não cinzento.       */
+   .card {
+-    @apply bg-surface rounded-xl shadow-card;
++    background-color: var(--bg-card);
++    border: 1px solid var(--border);
++    border-radius: 14px;
++    /* Light: sombra com subtom índigo */
++    box-shadow: 0 1px 6px rgba(26, 14, 46, 0.08);
++  }
++  .dark .card {
++    /* Dark: highlight interno — reflexo de neon no tile */
++    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04),
++                0 4px 20px rgba(0, 0, 0, 0.35);
+   }
+ 
+-  /* Input base */
++  /* ── Input Mercado ── */
+   .input {
+-    @apply w-full px-4 py-3 rounded-lg border border-surface-muted
+-           bg-surface text-ink placeholder-ink-tertiary
+-           focus:outline-none focus:ring-2 focus:ring-blue/30 focus:border-blue
+-           transition-colors duration-150;
++    width: 100%;
++    padding: 0.75rem 1rem;
++    border-radius: 10px;
++    border: 1px solid var(--border);
++    background-color: var(--surface2);
++    color: var(--text-primary);
++    font-family: 'DM Sans', system-ui, sans-serif;
++    font-size: 0.875rem;
++    line-height: 1.5;
++    transition: border-color 0.15s;
++    outline: none;
+   }
++  .input::placeholder { color: var(--text-muted); }
++  .input:focus        { border-color: var(--accent); }
+ 
+-  /* Botão primário */
++  /* ── Botão primário — coral Mercado ──
++     Dark: coral #FF5C35 + preto (#000) → 6.9:1 ✓
++     Light: coral-escuro #BF3800 + branco (#fff) → 5.5:1 ✓           */
+   .btn-primary {
+-    @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-blue text-white
+-           font-body font-semibold text-sm
+-           hover:bg-blue-700 active:bg-blue-800
+-           disabled:opacity-50 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 0.5rem;
++    padding: 0.625rem 1.25rem;
++    border-radius: 10px;
++    background-color: var(--accent);
++    color: #000; /* dark mode: coral claro + preto ✓ */
++    font-family: 'DM Sans', system-ui, sans-serif;
++    font-weight: 600;
++    font-size: 0.875rem;
++    line-height: 1.25;
++    border: none;
++    cursor: pointer;
++    white-space: nowrap;
++    text-decoration: none;
++    transition: background-color 0.15s;
+   }
++  .btn-primary:hover:not(:disabled)  { background-color: var(--accent-hover); }
++  .btn-primary:disabled              { opacity: 0.5; cursor: not-allowed; }
++  /* Light mode: coral escuro + branco */
++  :root:not(.dark) .btn-primary { color: #fff; }
+ 
+-  /* Botão secundário */
++  /* ── Botão secundário ── */
+   .btn-secondary {
+-    @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg border border-surface-muted
+-           bg-surface text-ink font-body font-semibold text-sm
+-           hover:bg-surface-subtle active:bg-surface-muted
+-           disabled:opacity-50 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 0.5rem;
++    padding: 0.625rem 1.25rem;
++    border-radius: 10px;
++    border: 1px solid var(--border);
++    background-color: var(--bg-card);
++    color: var(--text-primary);
++    font-family: 'DM Sans', system-ui, sans-serif;
++    font-weight: 600;
++    font-size: 0.875rem;
++    line-height: 1.25;
++    cursor: pointer;
++    white-space: nowrap;
++    text-decoration: none;
++    transition: background-color 0.15s, border-color 0.15s;
+   }
++  .btn-secondary:hover:not(:disabled)  { background-color: var(--surface2); border-color: var(--text-muted); }
++  .btn-secondary:disabled              { opacity: 0.5; cursor: not-allowed; }
+ 
+-  /* Botão ghost */
++  /* ── Botão ghost ── */
+   .btn-ghost {
+-    @apply inline-flex items-center justify-center gap-2
+-           px-3 py-2 rounded-lg text-ink-secondary font-body font-medium text-sm
+-           hover:bg-surface-subtle hover:text-ink
+-           transition-colors duration-150;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 0.5rem;
++    padding: 0.5rem 0.75rem;
++    border-radius: 10px;
++    background-color: transparent;
++    color: var(--text-secondary);
++    font-family: 'DM Sans', system-ui, sans-serif;
++    font-weight: 500;
++    font-size: 0.875rem;
++    line-height: 1.25;
++    cursor: pointer;
++    border: none;
++    text-decoration: none;
++    transition: background-color 0.15s, color 0.15s;
+   }
+-
+-  /* Badge de level — usa CSS var injectada pelo JS via style={{ '--lv': color }} */
+-  .level-badge {
+-    @apply inline-flex items-center px-2 py-0.5
+-           rounded-full text-2xs font-semibold;
+-    background-color: var(--lv, theme('colors.ink.secondary'));
++  .btn-ghost:hover:not(:disabled) {
++    background-color: var(--accent-alpha-08);
++    color: var(--text-primary);
+   }
++  .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+ 
+-  /* Botão primário em superfície colorida (fundo azul/escuro) */
++  /* ── Botão invertido (sobre fundo colorido/escuro) ── */
+   .btn-primary-inverted {
+-    @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-white text-blue
+-           font-body font-semibold text-sm
+-           hover:bg-blue-50 active:bg-blue-100
+-           disabled:opacity-50 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 0.5rem;
++    padding: 0.625rem 1.25rem;
++    border-radius: 10px;
++    background-color: rgba(255, 255, 255, 0.95);
++    color: var(--accent);
++    font-family: 'DM Sans', system-ui, sans-serif;
++    font-weight: 600;
++    font-size: 0.875rem;
++    border: none;
++    cursor: pointer;
++    white-space: nowrap;
++    text-decoration: none;
++    transition: background-color 0.15s;
+   }
++  .btn-primary-inverted:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.80); }
++  .btn-primary-inverted:disabled             { opacity: 0.5; cursor: not-allowed; }
+ 
+-  /* Botão de acção destrutiva */
++  /* ── Botão destrutivo ── */
+   .btn-danger {
+-    @apply inline-flex items-center justify-center gap-2
+-           px-5 py-3 rounded-lg bg-red-600 text-white
+-           font-body font-semibold text-sm
+-           hover:bg-red-700 active:bg-red-800
+-           disabled:opacity-40 disabled:cursor-not-allowed
+-           transition-colors duration-150;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 0.5rem;
++    padding: 0.625rem 1.25rem;
++    border-radius: 10px;
++    background-color: var(--danger);
++    color: #fff;
++    font-family: 'DM Sans', system-ui, sans-serif;
++    font-weight: 600;
++    font-size: 0.875rem;
++    border: none;
++    cursor: pointer;
++    white-space: nowrap;
++    text-decoration: none;
++    transition: opacity 0.15s;
+   }
++  .btn-danger:hover:not(:disabled) { opacity: 0.88; }
++  .btn-danger:disabled             { opacity: 0.4; cursor: not-allowed; }
+ 
+-  /* Card com borda de perigo */
++  /* ── Card com borda de perigo ── */
+   .card-danger {
+-    @apply card border border-red-200;
++    background-color: var(--bg-card);
++    border: 1px solid var(--danger-border);
++    border-radius: 14px;
++  }
++
++  /* ── Badge de nível (gamificação) ── */
++  .level-badge {
++    display: inline-flex;
++    align-items: center;
++    padding: 0.125rem 0.5rem;
++    border-radius: 9999px;
++    font-size: 0.625rem;
++    font-weight: 600;
++    background-color: var(--lv, var(--accent));
++    color: #fff;
++    white-space: nowrap;
+   }
+ }
+ 
++/* ══════════════════════════════════════════════════════════════════
++ *  @layer utilities — utilitários próprios + overrides de cores
++ *
++ *  ESTRATÉGIA: ao declarar .bg-surface, .text-ink, etc. DENTRO de
++ *  @layer utilities mas DEPOIS de @tailwind utilities, estas
++ *  definições ganham pelo princípio "last wins" (mesma especificidade,
++ *  última declaração vence). As vars CSS respondem ao .dark automática-
++ *  mente via herança — uma única declaração cobre ambos os temas.
++ * ══════════════════════════════════════════════════════════════════ */
+ @layer utilities {
+-  /* Scroll horizontal sem scrollbar visível */
++
++  /* ── Utilitários de scrollbar e texto (preexistentes) ── */
+   .scrollbar-hide::-webkit-scrollbar { display: none; }
+   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+ 
+-  /* Linha de texto truncada com fade */
+   .text-fade {
+     -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+     mask-image:         linear-gradient(to bottom, black 60%, transparent 100%);
+   }
++
++  /* ── Overrides de cores Tailwind → tokens Mercado ──
++     Estas classes são geradas por tailwind.config.ts com valores
++     hardcoded. As declarações abaixo substituem esses valores pelos
++     tokens dinâmicos do Mercado que respondem ao dark mode.          */
++
++  /* Backgrounds */
++  .bg-surface        { background-color: var(--bg-card); }
++  .bg-surface-subtle { background-color: var(--bg-body); }
++  .bg-surface-muted  { background-color: var(--surface2); }
++
++  /* Text */
++  .text-ink          { color: var(--text-primary); }
++  .text-ink-secondary { color: var(--text-secondary); }
++  .text-ink-tertiary  { color: var(--text-muted); }
++  .text-ink-disabled  { color: var(--text-muted); opacity: 0.5; }
++
++  /* Borders */
++  .border-surface-muted { border-color: var(--border); }
++  .border-surface       { border-color: var(--border); }
++
++  /* Accent (blue → coral Mercado) */
++  .text-blue    { color: var(--accent); }
++  .border-blue  { border-color: var(--accent); }
++  .bg-blue      { background-color: var(--accent); }
++
++  /* Opacity variants do accent (Tailwind gera bg-blue/8, bg-blue/10 etc.) */
++  .bg-blue\/8  { background-color: var(--accent-alpha-08); }
++  .bg-blue\/10 { background-color: var(--accent-alpha-12); }
++  .bg-blue\/5  { background-color: var(--accent-alpha-05); }
++
++  /* Ring / outline de foco — substitui ring-blue */
++  .ring-blue\/30 { --tw-ring-color: var(--accent-border); }
++  .focus\:ring-blue\/30:focus { --tw-ring-color: var(--accent-border); }
++  .focus\:border-blue:focus   { border-color: var(--accent); }
++
++  /* Placeholder */
++  .placeholder-ink-tertiary::placeholder { color: var(--text-muted); }
++
++  /* ── Overrides hover para NavBar e dropdowns ──
++     Selectors com :hover precisam de ser declarados explicitamente
++     porque têm especificidade diferente dos utilitários base.       */
++  .hover\:bg-surface-subtle:hover { background-color: var(--accent-alpha-05); }
++  .hover\:text-ink:hover          { color: var(--text-primary); }
++
++  /* ── Shadows Mercado ──
++     shadow-card e shadow-card-md: subtom índigo em vez de cinzento. */
++  .shadow-card    {
++    --tw-shadow: 0 1px 4px rgba(26,14,46,0.07), 0 4px 12px rgba(26,14,46,0.05);
++    box-shadow: var(--tw-ring-offset-shadow,0 0 #0000),
++                var(--tw-ring-shadow,0 0 #0000),
++                var(--tw-shadow);
++  }
++  .shadow-card-md {
++    --tw-shadow: 0 2px 8px rgba(26,14,46,0.09), 0 8px 24px rgba(26,14,46,0.07);
++    box-shadow: var(--tw-ring-offset-shadow,0 0 #0000),
++                var(--tw-ring-shadow,0 0 #0000),
++                var(--tw-shadow);
++  }
++
++  /* ── Hover variants do accent ── */
++  .hover\:text-blue:hover  { color: var(--accent); }
++  .hover\:bg-blue:hover    { background-color: var(--accent); }
++
++  /* ── Frosted-glass nav bars (bg-surface/90, bg-surface/95) ──
++     Tailwind gera estes como background-color estático com --tw-bg-opacity.
++     Overrides aqui garantem que a nav usa o tom Mercado correcto.        */
++  .bg-surface\/90  { background-color: var(--bg-card-90); }
++  .bg-surface\/95  { background-color: var(--bg-card-95); }
+ }
