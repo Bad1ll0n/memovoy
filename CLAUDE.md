@@ -89,6 +89,16 @@ Os agentes de IA testam-se com `definirClienteLlm()` de `aiAgent.js`, que
 substitui o cliente da Groq por um duplo. O cliente é construído a pedido, não
 no import — por isso carregar o módulo não exige `GROQ_API_KEY`.
 
+`npm run e2e` em `memovoy-web` corre 6 percursos com Playwright, levantando os
+dois servidores sozinho. **Não está no CI de propósito** — dois servidores e um
+browser tornam o job lento, e uma suite instável acaba ignorada. Aponta para
+`memovoy_test`, não para a BD de desenvolvimento.
+
+O `next dev` reescreve o bloco `nextjs-agent-rules` em `memovoy-web/AGENTS.md`
+sempre que corre — o gerador é
+`node_modules/next/dist/server/lib/generate-agent-files.js`. Se aparecer como
+alteração não commitada, é isso; commita-a com o resto em vez de a reverter.
+
 O lint **bloqueia no CI** e está limpo: zero erros, zero avisos. Manter assim —
 se um aviso novo aparecer, resolvê-lo em vez de o deixar acumular.
 

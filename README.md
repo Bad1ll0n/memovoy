@@ -88,6 +88,27 @@ autorização — quem pode ler e escrever o quê:
 `DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente
 sobre o `--env-file`.
 
+### Smoke test end-to-end
+
+```bash
+cd memovoy-web
+npx playwright install chromium   # uma vez
+npm run e2e                       # 6 percursos
+```
+
+Levanta a API e o frontend sozinho e conduz um browser: a página de login
+carrega, o registo cria conta e entra, o login funciona com as credenciais
+criadas e recusa a password errada, o feed carrega sem erros de consola, e uma
+rota protegida manda para o login sem sessão.
+
+Aponta para a base de dados `memovoy_test`, não para a de desenvolvimento — o
+registo cria utilizadores a sério. Localmente, define `DATABASE_URL` no
+ambiente com a password do teu Postgres.
+
+**Fica fora do CI de propósito.** Dois servidores e um browser tornam o job
+lento, e uma suite end-to-end instável acaba por ser ignorada. Corre-se à mão
+antes de um deploy.
+
 ### O que não está coberto
 
 A maioria dos componentes React. Estão cobertos o `Lightbox`, o `Avatar`, o

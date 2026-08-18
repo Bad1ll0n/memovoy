@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Poppins, Syne, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { ServiceWorkerRegistrar } from '@/components/ui/ServiceWorkerRegistrar'
@@ -30,8 +30,13 @@ export const metadata: Metadata = {
   description: 'Descobre, partilha e planeia viagens com a tua comunidade.',
   icons: { icon: '/favicon.ico' },
   manifest: '/manifest.json',
-  themeColor: '#C9F31D',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Memovoy' },
+}
+
+// themeColor pertence ao export viewport, nao ao metadata. No metadata o Next 16
+// ignora-o e avisa em cada pagina renderizada.
+export const viewport: Viewport = {
+  themeColor: '#C9F31D',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
