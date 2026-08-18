@@ -59,20 +59,20 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 
 ```bash
 cd insight-api && npm test    # 58 testes (node:test)
-cd insight-web && npm test    # 33 testes (vitest)
+cd insight-web && npm test    # 40 testes (vitest)
 ```
 
-91 testes ao todo, a correr em cerca de um segundo. Nenhum precisa de
+98 testes ao todo, a correr em cerca de um segundo. Nenhum precisa de
 PostgreSQL, Redis ou chaves de API — cobrem lógica pura: sanitização das
 saídas de IA, TOTP contra os vectores do RFC 6238, validação de magic bytes
 nos uploads, hashing de passwords, configuração de JWT, o cliente HTTP com o
 refresh em 401, e as stores.
 
-Não há testes de componentes React nem end-to-end. Aí a rede de segurança é
-o `tsc --noEmit` e o `next build`.
+A cobertura de componentes é mínima — só o hook `useTheme`. Não há testes
+end-to-end. Aí a rede de segurança é o `tsc --noEmit` e o `next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo isto. O lint corre em modo
-informativo — tem 15 erros por resolver e por isso ainda não bloqueia.
+informativo — tem 12 erros por resolver e por isso ainda não bloqueia.
 
 ### Rotas da API
 
@@ -103,4 +103,4 @@ alimentaram esta base de dados.
   histórica: descreve uma arquitectura planeada (Kubernetes, Kafka,
   Elasticsearch, TimescaleDB, Flyway, UUID v7) que **não** corresponde ao que
   está construído.
-- O lint do frontend tem 15 erros por resolver; o CI corre-o sem bloquear.
+- O lint do frontend tem 12 erros por resolver; o CI corre-o sem bloquear.
