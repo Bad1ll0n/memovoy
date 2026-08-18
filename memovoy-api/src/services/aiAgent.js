@@ -22,12 +22,12 @@ export function sanitizeOutput(obj) {
   return sanitizeText(obj)
 }
 
-// Cliente construído a pedido, não no import.
+// Client built on demand, not at import time.
 //
-// Duas razões. Uma: importar este módulo deixa de exigir GROQ_API_KEY, o que
-// tornava impossível carregá-lo em testes sem uma chave falsa. Outra: permite
-// substituí-lo por um duplo, que é a única forma de testar os agentes sem
-// chamar a API a sério.
+// Two reasons. One: importing this module no longer requires GROQ_API_KEY,
+// which made it impossible to load in tests without a fake key. Two: it allows
+// swapping in a double, the only way to test the agents without calling the
+// real API.
 let clienteLlm = null
 
 function obterCliente() {
@@ -43,8 +43,8 @@ function obterCliente() {
 }
 
 /**
- * Substitui o cliente do LLM. Passar null repõe o real na próxima chamada.
- * Existe para os testes; não usar em código de produção.
+ * Replaces the LLM client. Passing null restores the real one on the next call.
+ * Exists for tests; do not use in production code.
  * @param {{ chat: { completions: { create: Function } } } | null} cliente
  */
 export function definirClienteLlm(cliente) {

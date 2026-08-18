@@ -51,7 +51,7 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 ### Unitários — rápidos, sem dependências
 
 ```bash
-cd memovoy-api && npm test    # 58 testes (node:test)
+cd memovoy-api && npm test    # 65 testes (node:test)
 cd memovoy-web && npm test    # 95 testes (vitest)
 ```
 
@@ -66,7 +66,7 @@ HTTP com o refresh em 401, e as stores.
 cd memovoy-api
 createdb memovoy_test
 npm run test:integration:setup   # aplica as migrations
-npm run test:integration         # 162 testes
+npm run test:integration         # 171 testes
 ```
 
 Exercitam as rotas de ponta a ponta via `app.inject()`, com o foco em
@@ -83,6 +83,8 @@ autorização — quem pode ler e escrever o quê:
 - **despesas e notificações** — despesas só do próprio, notificações privadas
 - **agentes de IA** — com um duplo do cliente da Groq: cache, saídas
   malformadas do modelo, e a retentativa em erros 5xx
+- **base de dados em baixo** — que a app arranca à mesma, que `/health` responde,
+  e que os erros 5xx não revelam host, porta nem credenciais da ligação
 
 `test/integration.env` traz as credenciais que o CI usa. Localmente, define
 `DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente

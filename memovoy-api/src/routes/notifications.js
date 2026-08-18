@@ -4,9 +4,9 @@ import { getVapidPublicKey } from '../services/webPush.js'
 
 const PREFS_POR_OMISSAO = { likes: true, comments: true, follows: true, messages: true }
 
-// Campos opcionais: e um PATCH, faz o que o verbo promete. Antes exigia os
-// quatro, o que obrigava o cliente a reenviar tudo para mudar um. .strict()
-// para um campo mal escrito dar erro em vez de ser silenciosamente ignorado.
+// Optional fields: it is a PATCH, so it does what the verb promises. It used to
+// require all four, forcing the client to resend everything to change one.
+// .strict() so a misspelled field errors instead of being silently ignored.
 const notifPrefsSchema = z.object({
   likes:    z.boolean().optional(),
   comments: z.boolean().optional(),

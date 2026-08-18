@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
 
-// Comentários, reacções e linhagem de roteiros. Separado de itineraries.js, que
-// tinha 1483 linhas: este bloco só depende de query e zod, o que o torna a
-// divisão mais segura de fazer.
+// Itinerary comments, reactions and lineage. Split out of itineraries.js, which
+// had grown to 1483 lines: this block only depends on query and zod, which made
+// it the safest cut to make.
 //
-// Registado sob o mesmo prefixo /itineraries em app.js — para quem consome a
-// API nada muda.
+// Registered under the same /itineraries prefix in app.js — nothing changes for
+// API consumers.
 
 export async function itinerariesSocialRoutes(app) {
   app.get('/:id/comments', async (request, reply) => {

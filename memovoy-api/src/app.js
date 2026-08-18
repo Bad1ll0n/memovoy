@@ -31,16 +31,16 @@ import { groupsRoutes }        from './routes/groups.js'
 import { reportsRoutes }       from './routes/reports.js'
 
 /**
- * Remove utilizador e password de um URL antes de o registar nos logs.
+ * Strips username and password from a URL before it reaches the logs.
  *
- * REDIS_URL tem o formato redis://[user]:[password]@host:porta — registá-lo em
- * bruto punha a password no stdout, e daí em qualquer agregador de logs.
+ * REDIS_URL is redis://[user]:[password]@host:port — logging it verbatim put
+ * the password on stdout, and from there into any log aggregator.
  *
  * @param {string | undefined} url
- * @returns {string} O URL sem credenciais, ou '(ilegível)' se não fizer parse.
+ * @returns {string} The URL without credentials, or '(unreadable)' if it does not parse.
  */
 export function redactarCredenciais(url) {
-  if (!url) return '(vazio)'
+  if (!url) return '(empty)'
   try {
     const u = new URL(url)
     if (u.username || u.password) {
@@ -49,21 +49,21 @@ export function redactarCredenciais(url) {
     }
     return u.toString()
   } catch {
-    // URL malformado: não arriscar imprimir o original.
-    return '(ilegível)'
+    // Malformed URL: do not risk printing the original.
+    return '(unreadable)'
   }
 }
 
 /**
- * Constrói a aplicação Fastify sem a pôr à escuta.
+ * Builds the Fastify application without making it listen.
  *
- * Separado do server.js para os testes poderem usar app.inject() sem levantar
- * um servidor, abrir sockets ou arrancar a fila de jobs.
+ * Split out of server.js so tests can use app.inject() without opening a
+ * listening socket or starting the job queue.
  *
  * @param {object}  [opts]
- * @param {boolean} [opts.rateLimit=true] Desligar nos testes: o registo está
- *   limitado a 5 pedidos por minuto e o segundo utilizador criado num teste
- *   já apanharia 429.
+ * @param {boolean} [opts.rateLimit=true] Turn off in tests: registration is
+ *   capped at 5 requests per minute, so the second user a test creates would
+ *   already get a 429.
  * @returns {Promise<{ app: import('fastify').FastifyInstance, redisClient: Redis|null, redisSub: Redis|null, allowedOrigins: string[] }>}
  */
 export async function buildApp({ rateLimit = true } = {}) {
@@ -173,6 +173,34 @@ export async function buildApp({ rateLimit = true } = {}) {
     exposeStatusRoute:     '/status',
   })
 
+  // ─── Error handler ─────────────────────────────────────────────────────────
+
+  // Fastify's default handler echoes the raw error message to the client. For a
+  // database failure that means shipping the connection host and port — an
+  // ECONNREFUSED reply literally read "connect ECONNREFUSED 127.0.0.1:5432".
+  //
+  // 5xx is masked and logged server-side instead. Below 500 the message is
+  // preserved: those are validation errors the frontend shows to the user.
+  app.setErrorHandler((error, request, reply) => {
+    const status = error.statusCode ?? 500
+
+    if (status < 500) {
+      return reply.status(status).send({
+        statusCode: status,
+        error:      error.name ?? 'Error',
+        message:    error.message,
+      })
+    }
+
+    console.error('[error]', request.method, request.url, '—', error.message)
+
+    return reply.status(500).send({
+      statusCode: 500,
+      error:      'Internal Server Error',
+      message:    'Erro interno do servidor. Tenta novamente.',
+    })
+  })
+
   // ─── Auth decorator ────────────────────────────────────────────────────────
 
   app.decorate('authenticate', async function (request, reply) {
@@ -187,10 +215,10 @@ export async function buildApp({ rateLimit = true } = {}) {
   // Uses request.user if already set by authenticate, otherwise tries a silent verify.
 
   const LAST_SEEN_INTERVALO_MS = 5 * 60 * 1000
-  // Acima disto, purga as entradas já expiradas. Sem limite o Map crescia uma
-  // entrada por utilizador autenticado e nunca encolhia — num processo de longa
-  // duração é uma fuga de memória. Entradas mais velhas que o intervalo não
-  // servem para nada: o pedido seguinte reescreve na mesma.
+  // Above this, purge already-expired entries. Unbounded, the Map grew one
+  // entry per authenticated user and never shrank — a memory leak in a
+  // long-running process. Entries older than the interval are useless anyway:
+  // the next request rewrites them regardless.
   const LAST_SEEN_MAX_ENTRADAS = 10_000
 
   const lastSeenCache = new Map()
@@ -208,9 +236,9 @@ export async function buildApp({ rateLimit = true } = {}) {
           }
         }
         lastSeenCache.set(userId, now)
-        // Deliberadamente sem await: é escrituração, não deve atrasar a
-        // resposta. Mas o erro deixa de ser engolido em silêncio — se isto
-        // falhar sempre, ninguém dava por nada.
+        // Deliberately not awaited: this is bookkeeping and must not delay the
+        // response. But the error is no longer swallowed — if this failed
+        // permanently, nobody would notice.
         query('UPDATE users SET last_seen = NOW() WHERE id = $1', [userId])
           .catch((err) => console.warn('[last_seen] falhou:', err.message))
       }

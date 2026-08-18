@@ -6,8 +6,8 @@ import { setupSocket }        from './services/socket.js'
 import { configureWebPush }   from './services/webPush.js'
 import { startJobQueue, registerWorkers } from './services/jobQueue.js'
 
-// Ponto de entrada do processo. Toda a construção da app vive em app.js, para
-// os testes a poderem instanciar sem levantar servidor nem fila de jobs.
+// Process entry point. All app construction lives in app.js so tests can build
+// an instance without a listening server or a job queue.
 
 const PORT   = Number(process.env.PORT ?? 4000)
 const SECRET = process.env.JWT_SECRET

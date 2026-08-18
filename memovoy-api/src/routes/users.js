@@ -6,12 +6,12 @@ import { notifyUser } from '../services/notifyUser.js'
 import { agentTravelBuddyMatch } from '../services/aiAgent.js'
 
 function userDto(row, viewerId) {
-  // Campos privados só quando a linha é do próprio: este DTO também serve
-  // perfis de terceiros, e incluí-los sempre vazava emails alheios.
+  // Private fields only when the row belongs to the viewer: this DTO also
+  // serves other people's profiles, and including them always leaked emails.
   //
-  // O frontend guarda o resultado do PATCH /users/me na authStore com
-  // setAuth(). Sem estes campos, editar o perfil apagava emailVerified e
-  // fazia reaparecer o aviso de verificação a quem já tinha verificado.
+  // The frontend stores the PATCH /users/me result in authStore via setAuth().
+  // Without these fields, editing a profile wiped emailVerified and brought the
+  // verification banner back for users who had already verified.
   const proprio = viewerId != null && row.id === viewerId
 
   return {
@@ -218,9 +218,9 @@ export async function usersRoutes(app) {
 
   // DELETE /users/me
   app.delete('/me', { preHandler: [app.authenticate] }, async (request, reply) => {
-    // await de propósito: sem ele o DELETE abaixo pode ganhar a corrida e o
-    // INSERT do registo falha por chave estrangeira, perdendo o rasto de que a
-    // conta foi eliminada a pedido.
+    // Awaited on purpose: without it the DELETE below can win the race and the
+    // audit INSERT fails on the foreign key, losing the record that the account
+    // was deleted on request.
     await logAudit(request.user.id, 'account_delete', {}, request.headers['x-forwarded-for'] ?? null)
     await query('DELETE FROM users WHERE id = $1', [request.user.id])
     reply.clearCookie('refreshToken', { path: '/auth' })

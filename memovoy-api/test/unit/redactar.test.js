@@ -39,8 +39,8 @@ describe('redactarCredenciais', () => {
   })
 
   test('valor por definir não rebenta', () => {
-    assert.equal(redactarCredenciais(undefined), '(vazio)')
-    assert.equal(redactarCredenciais(''), '(vazio)')
+    assert.equal(redactarCredenciais(undefined), '(empty)')
+    assert.equal(redactarCredenciais(''), '(empty)')
   })
 
   test('URL malformado não é impresso em bruto', () => {
@@ -49,7 +49,7 @@ describe('redactarCredenciais', () => {
     const r = redactarCredenciais('redis//:segredo@sem-dois-pontos')
 
     assert.doesNotMatch(r, /segredo/)
-    assert.equal(r, '(ilegível)')
+    assert.equal(r, '(unreadable)')
   })
 
   test('nunca devolve undefined nem null', () => {

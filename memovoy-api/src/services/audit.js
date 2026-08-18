@@ -1,13 +1,13 @@
 import { query } from '../db/pool.js'
 
 /**
- * Regista uma entrada de auditoria. Nunca lanca.
+ * Writes an audit log entry. Never throws.
  *
- * Devolve a promessa para quem precisar de esperar por ela. A maioria dos
- * chamadores dispara e segue — e bem, e escrituracao. Mas na eliminacao de
- * conta e preciso esperar: audit_logs.user_id tem ON DELETE SET NULL, e se o
- * DELETE do utilizador ganhar a corrida o INSERT falha por chave estrangeira e
- * o registo perde-se, silenciado por este .catch.
+ * Returns the promise for callers that need to await it. Most fire and forget —
+ * rightly so, it is bookkeeping. But account deletion must await it:
+ * audit_logs.user_id is ON DELETE SET NULL, so if the user DELETE wins the race
+ * the INSERT fails on the foreign key and the record is lost, silenced by the
+ * .catch below.
  * @param {string|null} userId
  * @param {string} action  e.g. 'password_change', 'account_delete', 'email_change'
  * @param {object} details  arbitrary JSON context
