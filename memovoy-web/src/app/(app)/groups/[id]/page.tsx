@@ -117,10 +117,20 @@ export default function GroupDetailPage() {
     if (!file) return
     setCoverUploading(true)
     try {
-      const { url, publicUrl } = await api.post<{ url: string; publicUrl: string }>('/uploads/presign', {
-        filename: file.name, contentType: file.type, size: file.size,
+      // O endpoint devolve uploadUrl, não url. Estava a destruturar o nome
+      // errado: o fetch ia para undefined, não lançava, e a capa acabava a
+      // apontar para um ficheiro que nunca chegou a ser enviado.
+      const { uploadUrl, publicUrl } = await api.post<{ uploadUrl: string; publicUrl: string; key: string }>(
+        '/uploads/presign',
+        { filename: file.name, contentType: file.type, size: file.size },
+      )
+
+      const envio = await fetch(uploadUrl, {
+        method: 'PUT', body: file, headers: { 'Content-Type': file.type },
       })
-      await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+      // fetch só rejeita em falha de rede — um 4xx/5xx passava despercebido.
+      if (!envio.ok) throw new Error(`upload falhou: ${envio.status}`)
+
       await api.patch(`/groups/${id}`, { coverUrl: publicUrl })
       qc.invalidateQueries({ queryKey: ['group', id] })
       qc.invalidateQueries({ queryKey: ['groups'] })

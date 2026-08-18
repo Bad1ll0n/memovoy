@@ -243,7 +243,19 @@ export async function buildApp({ rateLimit = true } = {}) {
     try {
       await request.jwtVerify()
     } catch {
-      reply.status(401).send({ message: 'Não autorizado.' })
+      return reply.status(401).send({ message: 'Não autorizado.' })
+    }
+
+    // A token issued mid-2FA is not a session. /auth/login hands one out after
+    // the password step with scope '2fa-pending', and it is signed with the
+    // same secret — so jwtVerify accepts it. Without this check, anyone holding
+    // the password could use that token as a bearer for five minutes and skip
+    // the second factor entirely.
+    //
+    // It is only good for POST /auth/2fa/authenticate, which reads it from the
+    // body and does not go through this decorator.
+    if (request.user?.scope === '2fa-pending') {
+      return reply.status(401).send({ message: 'Autenticação em dois passos incompleta.' })
     }
   })
 
