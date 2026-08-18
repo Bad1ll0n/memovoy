@@ -15,6 +15,13 @@ import { Avatar } from '@/components/ui/Avatar'
 import { AlertBanner } from '@/components/ui/AlertBanner'
 import { Spinner } from '@/components/ui/Spinner'
 
+/** Fora do componente: o React Compiler trata o corpo do componente como
+ *  código de render, e Date.now() ali conta como impuro. */
+function nomeDoFicheiroDeExport() {
+  return `memovoy-export-${Date.now()}.json`
+}
+
+
 export default function SettingsPage() {
   const { isReady, user } = useRequireAuth()
   const { clearAuth } = useAuthStore()
@@ -47,7 +54,7 @@ export default function SettingsPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `memovoy-export-${Date.now()}.json`
+      a.download = nomeDoFicheiroDeExport()
       document.body.appendChild(a)
       a.click()
       a.remove()

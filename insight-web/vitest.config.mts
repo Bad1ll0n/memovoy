@@ -8,11 +8,11 @@ export default defineConfig({
     },
   },
   test: {
-    // Ambiente Node: estes testes cobrem lógica pura e stores, não renderizam
-    // componentes. Se vierem testes de componentes, passar para 'jsdom' e
-    // acrescentar @testing-library/react.
+    // Node por omissão — a maioria dos testes é lógica pura e arranca mais
+    // depressa assim. Os que precisam de DOM declaram no topo do ficheiro:
+    //   // @vitest-environment jsdom
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
     restoreMocks: true,
   },
 })
