@@ -16,7 +16,9 @@ let ana
 // Verificado no carregamento do módulo, não num before(): a opção `skip` de
 // cada test() é avaliada quando o test é declarado, e isso acontece antes de
 // qualquer hook correr. Com a verificação no before, os testes saltavam sempre.
-const temMinio = await (async () => {
+const temCredenciais = Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY)
+
+const respondeMinio = await (async () => {
   try {
     const r = await fetch(`${ENDPOINT}/minio/health/live`, { signal: AbortSignal.timeout(2000) })
     return r.ok
@@ -25,8 +27,16 @@ const temMinio = await (async () => {
   }
 })()
 
+// As duas condições contam. Com o MinIO de pé mas sem credenciais no ambiente,
+// o pedido ia na mesma e voltava 500 do lado do S3 — uma falha que parece um bug
+// da aplicação e não é.
+const temMinio = respondeMinio && temCredenciais
+
 if (!temMinio) {
-  console.log('[uploads] MinIO indisponível — testes saltados. Correr: docker compose up -d')
+  const razao = !respondeMinio
+    ? 'MinIO indisponível — correr: docker compose up -d'
+    : 'sem AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY no ambiente'
+  console.log(`[uploads] testes saltados: ${razao}`)
 }
 
 /** PNG de 1×1 válido, com os magic bytes correctos. */

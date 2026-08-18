@@ -11,6 +11,14 @@ export function setupSocket(io, jwtSecret) {
 
     try {
       const payload = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] })
+
+      // A temp token issued mid-2FA is signed with the same secret as a real
+      // access token, so the signature check above accepts it. Without this
+      // guard, knowing only the password is enough to open a socket and join
+      // the victim's user room — the same bypass already closed in the
+      // `authenticate` decorator, but over WebSocket instead of HTTP.
+      if (payload.scope === '2fa-pending') return next(new Error('Não autorizado'))
+
       socket.userId = payload.id
       next()
     } catch {
@@ -18,27 +26,28 @@ export function setupSocket(io, jwtSecret) {
     }
   })
 
-  io.on('connection', async (socket) => {
+  io.on('connection', (socket) => {
     const userId = socket.userId
     socket.join(`user:${userId}`)
 
-    // Join admin room if user has admin privileges
-    try {
-      const { query } = await import('../db/pool.js')
-      const { rows: adminRows } = await query(
-        'SELECT 1 FROM users WHERE id = $1 AND is_admin = TRUE',
-        [userId],
-      )
-      if (adminRows.length > 0) socket.join('admin:alerts')
-    } catch { /* ignore — non-admin user */ }
-
-    // Rate limit: max 10 socket events per 10-second window per connection
-    let msgCount = 0
-    const RL_MAX    = 10
-    const rlTimer   = setInterval(() => { msgCount = 0 }, 10_000)
+    // Rate limit: max 10 socket events per 10-second window per connection.
+    //
+    // The window is tracked by timestamp rather than by setInterval. The timer
+    // version created one live interval per connection, cleared only on
+    // 'disconnect'; a connection dropped without that event leaked it, and a
+    // pending timer alone is enough to keep the process from exiting.
+    const RL_MAX       = 10
+    const RL_JANELA_MS = 10_000
+    let janelaInicio   = Date.now()
+    let msgCount       = 0
 
     function throttled(handler) {
       return (...args) => {
+        const agora = Date.now()
+        if (agora - janelaInicio >= RL_JANELA_MS) {
+          janelaInicio = agora
+          msgCount = 0
+        }
         if (++msgCount > RL_MAX) return
         handler(...args)
       }
@@ -102,8 +111,27 @@ export function setupSocket(io, jwtSecret) {
     }))
 
     socket.on('disconnect', () => {
-      clearInterval(rlTimer)
       socket.leave(`user:${userId}`)
     })
+
+    // Admin room last, and deliberately not awaited before the handlers above.
+    //
+    // This used to run first, inside an async connection handler. Socket.IO
+    // does not buffer incoming events for handlers registered later, so every
+    // connection had a silent window the length of a database round-trip in
+    // which join_conversation / join_itinerary / mark_read were dropped with no
+    // error anywhere. A client that emits join_* right after 'connect' — the
+    // natural thing to do — could end up in no room at all and simply receive
+    // nothing in real time.
+    ;(async () => {
+      try {
+        const { query } = await import('../db/pool.js')
+        const { rows } = await query(
+          'SELECT 1 FROM users WHERE id = $1 AND is_admin = TRUE',
+          [userId],
+        )
+        if (rows.length > 0 && socket.connected) socket.join('admin:alerts')
+      } catch { /* ignore — non-admin user */ }
+    })()
   })
 }
