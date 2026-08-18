@@ -1,4 +1,4 @@
--- ─── INSIGHT — Initial Schema ────────────────────────────────────────────────
+-- ─── MEMOVOY — Initial Schema ────────────────────────────────────────────────
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 

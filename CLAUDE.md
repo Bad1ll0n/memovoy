@@ -8,9 +8,9 @@ Não "Insight" nem "Roteiros". MemoVoy é o que o utilizador vê: assunto dos
 emails, cabeçalho da marca, `PRODID` da exportação iCal, emissor do TOTP, nome
 do ficheiro de exportação de dados, banner de arranque da API.
 
-As pastas chamavam-se `insight-api`/`insight-web` até 2026-08-18; foram
-renomeadas para condizer. O que ainda não condiz: a pasta local
-(`Project_Roteiros`) e a base de dados (`insight`).
+A 2026-08-18 tudo foi alinhado com o nome do produto: as pastas chamavam-se
+`insight-api`/`insight-web`, a base de dados `insight` e o bucket S3
+`insight-uploads`. Se encontrares `insight` em algum lado, é resíduo.
 
 O repositório no GitHub chama-se `memovoy` e está certo — não sugerir renomeá-lo.
 
@@ -18,7 +18,7 @@ Ao adicionar texto visível ao utilizador, usar MemoVoy.
 
 ## Uma app, uma base de dados
 
-`memovoy-api/` + `memovoy-web/` → BD **`insight`**. É tudo o que existe.
+`memovoy-api/` + `memovoy-web/` → BD **`memovoy`**. É tudo o que existe.
 
 Até 2026-08-18 havia também uma app Express+EJS na raiz, ligada à BD `Roteiro`.
 Foi removida: essa base de dados já não existe na máquina, logo a app não
