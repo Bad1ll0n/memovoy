@@ -33,7 +33,7 @@ jobs:
       - run: npm test
 
   web:
-    name: Web — typecheck e build
+    name: Web — testes, typecheck e build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,6 +48,9 @@ jobs:
           cache-dependency-path: insight-web/package-lock.json
 
       - run: npm ci
+
+      - name: Testes
+        run: npm test
 
       - name: Typecheck
         run: npx tsc --noEmit
