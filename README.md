@@ -66,12 +66,18 @@ HTTP com o refresh em 401, e as stores.
 cd memovoy-api
 createdb memovoy_test
 npm run test:integration:setup   # aplica as migrations
-npm run test:integration         # 24 testes
+npm run test:integration         # 104 testes
 ```
 
-Exercitam as rotas de autenticação de ponta a ponta via `app.inject()`:
-registo, login, bloqueio por tentativas falhadas, resistência à enumeração de
-emails, e que campos privados saem (ou não) em cada perfil.
+Exercitam as rotas de ponta a ponta via `app.inject()`, com o foco em
+autorização — quem pode ler e escrever o quê:
+
+- **auth** — registo, login, bloqueio por tentativas falhadas, resistência à
+  enumeração de emails, campos privados no perfil
+- **posts** — edição e eliminação só pelo autor, comentários, gostos
+- **conversas** — só participantes lêem e escrevem
+- **grupos** — dono contra membro contra estranho; grupos privados
+- **roteiros** — visibilidade público/privado, escritas com verificação de dono
 
 `test/integration.env` traz as credenciais que o CI usa. Localmente, define
 `DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente

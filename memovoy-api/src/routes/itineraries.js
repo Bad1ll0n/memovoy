@@ -471,8 +471,14 @@ export async function itinerariesRoutes(app) {
   // GET /itineraries/:id/export.ics — calendar export
   // Public itineraries: accessible without auth. Private: require auth and ownership.
   app.get('/:id/export.ics', async (request, reply) => {
-    // Try to extract auth token without hard-requiring it
-    try { await app.authenticate(request, reply) } catch { /* unauthenticated — only public visible */ }
+    // Autenticacao opcional: quem tem sessao ve tambem os privados que lhe
+    // pertencem; quem nao tem ve so os publicos.
+    //
+    // Tem de ser jwtVerify() directamente. O decorator app.authenticate nao
+    // lanca quando falha — apanha o erro e responde logo com 401 — por isso o
+    // catch aqui nunca disparava e qualquer pedido anonimo levava 401, mesmo a
+    // um roteiro publico.
+    try { await request.jwtVerify() } catch { /* anonimo — so ve publicos */ }
     const viewerId = request.user?.id ?? null
 
     const { rows } = await query(

@@ -55,7 +55,7 @@ e um valor vazio, nunca o valor real.
 `npm test` corre os unitários em ambas as apps: 58 na API (node:test nativo,
 `test/unit/`) e 48 na web (vitest). Não tocam na BD nem fazem rede.
 
-`npm run test:integration` corre 24 testes contra Postgres a sério
+`npm run test:integration` corre 104 testes contra Postgres a sério
 (`test/integration/`), via `app.inject()`. **A app é construída por
 `src/app.js`**, que devolve a instância Fastify sem a pôr à escuta;
 `src/server.js` é só o ponto de entrada que a levanta e liga Socket.IO e a fila
