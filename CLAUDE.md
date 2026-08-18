@@ -37,7 +37,7 @@ e um valor vazio, nunca o valor real.
 
 ## Estado da qualidade
 
-`npm test` corre em ambas as apps: 58 testes na API (node:test nativo) e 40 na
+`npm test` corre em ambas as apps: 58 testes na API (node:test nativo) e 48 na
 web (vitest). Nenhum toca na BD nem faz rede — as variáveis falsas de que a API
 precisa estão em `insight-api/test/test.env`.
 
@@ -47,11 +47,11 @@ cobertas.
 
 Testes com DOM usam jsdom e @testing-library/react — declarar
 `// @vitest-environment jsdom` no topo do ficheiro, porque o ambiente por
-omissão é Node. Só `useTheme` está coberto assim; não há testes end-to-end.
+omissão é Node. Só `useTheme` e `useEstaAoVivo` estão cobertos assim; não há
+testes end-to-end.
 
-O lint tem 12 erros por
-resolver (10 `set-state-in-effect`, 1 `purity`, 1 `refs`) e corre sem bloquear
-— não bloquear PRs com isso até estar limpo.
+O lint tem 11 erros por resolver (10 `set-state-in-effect`, 1 `refs`) e corre
+sem bloquear — não bloquear PRs com isso até estar limpo.
 
 As dependências estão sem vulnerabilidades conhecidas nas duas apps. Confirmar
 com `npm audit` antes de subir versões.
