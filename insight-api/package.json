@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node --watch --env-file=.env --import ./src/instrumentation.js src/server.js",
     "start": "node --env-file=.env --import ./src/instrumentation.js src/server.js",
-    "migrate": "node --env-file=.env src/db/migrate.js"
+    "migrate": "node --env-file=.env src/db/migrate.js",
+    "test": "node --env-file=test/test.env --test",
+    "test:watch": "node --env-file=test/test.env --test --watch"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",
