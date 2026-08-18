@@ -34,7 +34,15 @@ export default defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // Regista uma conta uma vez; os testes autenticados reutilizam a sessão.
+    // Sem isto a suite esgotava o limite de 5 registos por minuto da API.
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
+    },
   ],
 
   webServer: [

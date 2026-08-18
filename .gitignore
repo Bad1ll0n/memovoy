@@ -20,6 +20,9 @@ next-env.d.ts
 
 # â”€â”€â”€ Artefactos de testes e ferramentas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .playwright-mcp/
+# Sessão guardada pelo setup do Playwright — contém um cookie de autenticação.
+# Padrão sem barra inicial para apanhar memovoy-web/e2e/.auth/ também.
+**/.auth/
 playwright-report/
 test-results/
 
