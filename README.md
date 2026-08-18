@@ -66,7 +66,7 @@ HTTP com o refresh em 401, e as stores.
 cd memovoy-api
 createdb memovoy_test
 npm run test:integration:setup   # aplica as migrations
-npm run test:integration         # 126 testes
+npm run test:integration         # 145 testes
 ```
 
 Exercitam as rotas de ponta a ponta via `app.inject()`, com o foco em
@@ -80,6 +80,7 @@ autorização — quem pode ler e escrever o quê:
 - **roteiros** — visibilidade público/privado, escritas com verificação de dono
 - **utilizadores** — seguir, sessões de dispositivo, e a eliminação de conta do
   RGPD (que apaga mesmo, e só o conteúdo de quem apaga)
+- **despesas e notificações** — despesas só do próprio, notificações privadas
 
 `test/integration.env` traz as credenciais que o CI usa. Localmente, define
 `DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente
