@@ -14,7 +14,7 @@ e o que o utilizador vê nos emails e na exportação iCal.
 - **API** — Fastify 5, ESM, Node 22. JWT (access + refresh), Socket.IO com
   adapter Redis, pg-boss para jobs, OpenTelemetry, TOTP, web-push, S3/MinIO.
 - **Web** — Next.js 16 (App Router), React 19, Tailwind 4, TanStack Query,
-  Zustand, next-intl, Leaflet.
+  Zustand, Leaflet.
 - **Base de dados** — PostgreSQL. Extensões: `pgcrypto`, `pg_trgm`,
   `pg_partman`. PKs em `UUID` via `gen_random_uuid()`.
 - **Migrations** — runner próprio (`src/db/migrate.js`): ficheiros `.sql`
@@ -52,7 +52,7 @@ O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 
 ```bash
 cd memovoy-api && npm test    # 58 testes (node:test)
-cd memovoy-web && npm test    # 65 testes (vitest)
+cd memovoy-web && npm test    # 95 testes (vitest)
 ```
 
 Nenhum precisa de PostgreSQL, Redis ou chaves de API. Cobrem lógica pura:
@@ -85,9 +85,11 @@ sobre o `--env-file`.
 
 ### O que não está coberto
 
-Quase todos os componentes React — só o `Lightbox` está coberto, mais os hooks
-`useTheme`, `useEstaAoVivo` e `useValorDoCliente` — e end-to-end. Aí a
-rede de segurança é o `tsc --noEmit` e o `next build`.
+A maioria dos componentes React. Estão cobertos o `Lightbox`, o `Avatar`, o
+`EmailVerificationBanner` e o `FeatureTour`, mais os hooks `useTheme`,
+`useEstaAoVivo` e `useValorDoCliente`. Não há testes end-to-end, nem dos
+endpoints de geração por IA — esses precisariam da API da Groq. Aí a rede de
+segurança é o `tsc --noEmit` e o `next build`.
 
 O CI (`.github/workflows/ci.yml`) corre tudo, com um Postgres em contentor para
 a integração. O lint é bloqueante e está sem erros nem avisos.

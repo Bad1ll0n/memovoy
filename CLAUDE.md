@@ -53,7 +53,7 @@ e um valor vazio, nunca o valor real.
 ## Estado da qualidade
 
 `npm test` corre os unitários em ambas as apps: 58 na API (node:test nativo,
-`test/unit/`) e 65 na web (vitest). Não tocam na BD nem fazem rede.
+`test/unit/`) e 95 na web (vitest). Não tocam na BD nem fazem rede.
 
 `npm run test:integration` corre 104 testes contra Postgres a sério
 (`test/integration/`), via `app.inject()`. **A app é construída por
@@ -79,8 +79,13 @@ testes: são essas as zonas cobertas.
 
 Testes com DOM usam jsdom e @testing-library/react — declarar
 `// @vitest-environment jsdom` no topo do ficheiro, porque o ambiente por
-omissão é Node. Só `useTheme` e `useEstaAoVivo` estão cobertos assim; não há
-testes end-to-end.
+omissão é Node. Componentes que precisem de providers renderizam-se com
+`renderComProviders` de `@/test-utils`.
+
+Cobertos: os componentes `Lightbox`, `Avatar`, `EmailVerificationBanner` e
+`FeatureTour`, e os hooks `useTheme`, `useEstaAoVivo` e `useValorDoCliente`. Não
+há end-to-end, nem testes dos endpoints de geração por IA — esses precisariam de
+um duplo do cliente da Groq.
 
 O lint **bloqueia no CI** e está limpo: zero erros, zero avisos. Manter assim —
 se um aviso novo aparecer, resolvê-lo em vez de o deixar acumular.
