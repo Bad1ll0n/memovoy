@@ -2,15 +2,15 @@
 
 Ler o `README.md` primeiro. Este ficheiro cobre só o que costuma induzir em erro.
 
-## Duas apps, duas bases de dados
+## Uma app, uma base de dados
 
-- `insight-api/` + `insight-web/` → BD **`insight`**. É onde o trabalho acontece.
-- Raiz (`server.js`, `controllers/`, `routes/`, `views/`, `db/`, `config/`) →
-  BD **`Roteiro`**. App Express+EJS anterior, independente.
+`insight-api/` + `insight-web/` → BD **`insight`**. É tudo o que existe.
 
-Os nomes de tabela repetem-se entre as duas (`users`, `posts`, `itineraries`).
-Antes de mexer em SQL, confirmar a qual das apps pertence o ficheiro. `db/` na
-raiz é da legacy; `insight-api/migrations/` é da actual.
+Até 2026-08-18 havia também uma app Express+EJS na raiz, ligada à BD `Roteiro`.
+Foi removida: essa base de dados já não existe na máquina, logo a app não
+arrancava. Se encontrares referências a `server.js`, `controllers/`, `views/` ou
+`db/` na raiz, são de documentação desactualizada — o código está no histórico,
+em `7b6ebdd`.
 
 ## Migrations
 

@@ -1,24 +1,12 @@
 # Project Roteiros
 
-Monorepo com **duas aplicações independentes**, em bases de dados separadas.
-
-| | Pasta | Stack | Base de dados | Estado |
-|---|---|---|---|---|
-| **Insight** (actual) | `insight-api/`, `insight-web/` | Fastify 5 + Next.js 16 | `insight` | Em desenvolvimento activo |
-| **Roteiros** (legacy) | raiz: `server.js`, `controllers/`, `views/` | Express 4 + EJS | `Roteiro` | Anterior; destino por decidir |
-
-As duas não partilham dados. Os nomes de tabela sobrepõem-se (`users`, `posts`,
-`itineraries`, `post_likes`, `post_comments`) mas vivem em bases de dados
-distintas — a Insight é uma reescrita de raiz, não uma extensão da legacy.
-
----
-
-## Insight — a aplicação actual
-
 Rede social de viagens: feed, roteiros gerados por IA, mensagens em tempo real,
 grupos, despesas partilhadas, mapas, rankings e gamificação.
 
-### Stack real
+- **`insight-api/`** — API Fastify 5, na base de dados `insight`
+- **`insight-web/`** — frontend Next.js 16
+
+## Stack real
 
 - **API** — Fastify 5, ESM, Node 22. JWT (access + refresh), Socket.IO com
   adapter Redis, pg-boss para jobs, OpenTelemetry, TOTP, web-push, S3/MinIO.
@@ -30,7 +18,7 @@ grupos, despesas partilhadas, mapas, rankings e gamificação.
   numerados aplicados por ordem, cada um numa transação, registados na tabela
   `_migrations`. Não é Flyway.
 
-### Arrancar
+## Arrancar
 
 ```bash
 cd insight-api && npm install && cp .env.example .env
@@ -55,7 +43,7 @@ cd insight-web && npm install && npm run dev
 O frontend sobe em `http://localhost:3000` e lê `NEXT_PUBLIC_API_URL` de
 `.env.local`.
 
-### Testes
+## Testes
 
 ```bash
 cd insight-api && npm test    # 58 testes (node:test)
@@ -74,7 +62,7 @@ end-to-end. Aí a rede de segurança é o `tsc --noEmit` e o `next build`.
 O CI (`.github/workflows/ci.yml`) corre tudo isto. O lint corre em modo
 informativo — tem 12 erros por resolver e por isso ainda não bloqueia.
 
-### Rotas da API
+## Rotas da API
 
 `/auth` `/users` `/posts` `/feed` `/itineraries` `/conversations` `/messages`
 `/notifications` `/search` `/explore` `/rankings` `/map` `/bookmarks` `/uploads`
@@ -82,22 +70,13 @@ informativo — tem 12 erros por resolver e por isso ainda não bloqueia.
 
 ---
 
-## Roteiros — a aplicação legacy
-
-Express 4 + EJS + Passport (sessões), na raiz do repositório. Lê as variáveis
-`DB_*` do `.env` da raiz e liga-se à base de dados `Roteiro`.
-
-```bash
-npm install && npm run dev
-```
-
-`Scripts/` contém scripts de povoamento de dados (GeoNames, Foursquare) que
-alimentaram esta base de dados.
-
----
-
 ## Notas
 
+- Uma app **Express 4 + EJS** vivia na raiz (`server.js`, `controllers/`,
+  `views/`, `routes/`) e foi removida a 2026-08-18. Ligava-se à base de dados
+  `Roteiro`, que já não existe na máquina — não conseguia arrancar. Fica no
+  histórico: `git show 7b6ebdd:server.js`, ou
+  `git checkout 7b6ebdd -- views/ controllers/ routes/` para a repor.
 - **`.archive/`** guarda documentação da estrutura `memovoy-*` anterior e os
   diffs por commitar de worktrees de agentes já removidos. É referência
   histórica: descreve uma arquitectura planeada (Kubernetes, Kafka,
