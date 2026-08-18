@@ -56,7 +56,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full antialiased">
         {/* Page loader — SVG idêntico ao Project_Roteiros original */}
-        <div className="page-loader" id="__page-loader">
+        {/*
+          suppressHydrationWarning porque o script abaixo acrescenta a classe
+          `done` a este elemento assim que a página acaba de carregar, o que
+          costuma acontecer antes da hidratação. O React encontrava
+          `page-loader done` no DOM contra `page-loader` no HTML servido e
+          registava um erro de hidratação em todas as páginas. A divergência é
+          intencional: o loader tem de desaparecer sem esperar pelo JavaScript
+          da aplicação.
+        */}
+        <div className="page-loader" id="__page-loader" suppressHydrationWarning>
           <svg width="34" height="40" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
             <rect x="0" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
               <animate attributeName="opacity" values="0.2;1;0.2" dur="0.8s" begin="0s" repeatCount="indefinite" />
