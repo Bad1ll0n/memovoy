@@ -173,6 +173,27 @@ export async function buildApp({ rateLimit = true } = {}) {
     exposeStatusRoute:     '/status',
   })
 
+  // ─── UUID route params ─────────────────────────────────────────────────────
+
+  // Route ids go straight into SQL against UUID columns. A malformed one made
+  // Postgres throw "invalid input syntax for type uuid", surfacing as a 500 —
+  // wrong status for what is a client mistake, and it used to leak the query
+  // text with it.
+  //
+  // Only these names are checked. `jti` is VARCHAR(64) and `token` is an invite
+  // code: neither is a UUID column, so validating them would reject valid input.
+  const PARAMS_UUID = new Set(['id', 'itineraryId', 'userId', 'postId', 'commentId'])
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+  app.addHook('preValidation', async (request, reply) => {
+    for (const [nome, valor] of Object.entries(request.params ?? {})) {
+      if (!PARAMS_UUID.has(nome)) continue
+      if (typeof valor === 'string' && !UUID_RE.test(valor)) {
+        return reply.status(400).send({ message: 'Identificador inválido.' })
+      }
+    }
+  })
+
   // ─── Error handler ─────────────────────────────────────────────────────────
 
   // Fastify's default handler echoes the raw error message to the client. For a

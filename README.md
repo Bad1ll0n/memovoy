@@ -66,7 +66,7 @@ HTTP com o refresh em 401, e as stores.
 cd memovoy-api
 createdb memovoy_test
 npm run test:integration:setup   # aplica as migrations
-npm run test:integration         # 171 testes
+npm run test:integration         # 187 testes
 ```
 
 Exercitam as rotas de ponta a ponta via `app.inject()`, com o foco em
@@ -85,6 +85,8 @@ autorização — quem pode ler e escrever o quê:
   malformadas do modelo, e a retentativa em erros 5xx
 - **base de dados em baixo** — que a app arranca à mesma, que `/health` responde,
   e que os erros 5xx não revelam host, porta nem credenciais da ligação
+- **ids de rota** — um id malformado dá 400 antes de chegar ao Postgres, e os
+  parâmetros que não são UUID (`jti`, `token`) ficam de fora da validação
 
 `test/integration.env` traz as credenciais que o CI usa. Localmente, define
 `DATABASE_URL` no ambiente para as sobrepor — o Node dá precedência ao ambiente

@@ -55,7 +55,7 @@ e um valor vazio, nunca o valor real.
 `npm test` corre os unitários em ambas as apps: 65 na API (node:test nativo,
 `test/unit/`) e 95 na web (vitest). Não tocam na BD nem fazem rede.
 
-`npm run test:integration` corre 171 testes contra Postgres a sério
+`npm run test:integration` corre 187 testes contra Postgres a sério
 (`test/integration/`), via `app.inject()`. **A app é construída por
 `src/app.js`**, que devolve a instância Fastify sem a pôr à escuta;
 `src/server.js` é só o ponto de entrada que a levanta e liga Socket.IO e a fila
@@ -101,6 +101,11 @@ alteração não commitada, é isso; commita-a com o resto em vez de a reverter.
 
 O lint **bloqueia no CI** e está limpo: zero erros, zero avisos. Manter assim —
 se um aviso novo aparecer, resolvê-lo em vez de o deixar acumular.
+
+Um hook `preValidation` em `app.js` valida que `id`, `itineraryId`, `userId`,
+`postId` e `commentId` são UUIDs antes de chegarem ao SQL. Ao acrescentar uma
+rota com um parâmetro novo que seja coluna UUID, junta-lo a essa lista — e não
+juntar os que não são (`jti` é VARCHAR, `token` é um código de convite).
 
 Ler valores que só existem no cliente — `localStorage`, `navigator`, `window` —
 faz-se com `useEstaHidratado()` ou `useValorDoCliente()` de
