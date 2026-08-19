@@ -14,7 +14,7 @@
     "carga:semear": "node --env-file=test/integration.env test/carga/semear.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.726.1",
+    "@aws-sdk/client-s3": "^3.1111.0",
     "@aws-sdk/s3-request-presigner": "^3.726.1",
     "@fastify/compress": "^9.0.0",
     "@fastify/cookie": "^11.0.1",
