@@ -63,7 +63,11 @@ export function LiveTripButton({ className }: Props) {
         onClick={handleLive}
         disabled={loading}
         className={`flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl transition-all hover:opacity-80 ${className ?? ''}`}
-        style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+        // Tokens, não cores em código. Estavam aqui os valores do tema claro
+        // aplicados aos dois, e no escuro davam 3,75:1 — abaixo do mínimo.
+        // Não há um vermelho que sirva os dois temas: o claro precisa de um
+        // mais escuro, o escuro de um mais claro. É para isso que o token existe.
+        style={{ background: 'var(--danger-subtle)', color: 'var(--danger)' }}
         title="Partilhar localização em tempo real"
       >
         <Radio className={`w-3.5 h-3.5 ${loading ? 'animate-pulse' : ''}`} />
@@ -71,7 +75,7 @@ export function LiveTripButton({ className }: Props) {
       </button>
 
       {error && (
-        <p className="text-xs mt-1" style={{ color: '#ef4444' }}>
+        <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>
           {error}
         </p>
       )}
