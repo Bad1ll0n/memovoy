@@ -935,8 +935,18 @@ export async function itinerariesRoutes(app) {
       return reply.status(400).send({ message: 'Dia inválido.' })
     }
 
-    data.days[dayIndex].activities.push(activity)
-    data.days[dayIndex].activities.sort((a, b) => a.time.localeCompare(b.time))
+    // Defesa em profundidade contra dados que a IA gerou antes de haver
+    // validação. `activities` podia não existir ou não ser um array, e tanto o
+    // push como o sort rebentavam com 500 — confirmado com um roteiro cujo dia
+    // não tinha activities e outro em que era uma string.
+    const dia = data.days[dayIndex]
+    if (!Array.isArray(dia.activities)) dia.activities = []
+
+    dia.activities.push(activity)
+
+    // Uma actividade sem hora ordena-se primeiro em vez de rebentar. O caso
+    // passava por acaso, consoante a ordem em que o comparador fosse chamado.
+    dia.activities.sort((a, b) => String(a?.time ?? '').localeCompare(String(b?.time ?? '')))
 
     await query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(data), request.params.id])
 
@@ -962,6 +972,9 @@ export async function itinerariesRoutes(app) {
       return reply.status(400).send({ message: 'Índice inválido.' })
     }
 
+    if (!Array.isArray(data.days[dayIndex].activities)) {
+      return reply.status(400).send({ message: 'Dia sem actividades.' })
+    }
     data.days[dayIndex].activities.splice(activityIndex, 1)
 
     await query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(data), request.params.id])

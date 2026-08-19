@@ -104,6 +104,92 @@ const REGRA_TEXTO_DO_UTILIZADOR = '\nThe text between ' + ABRE + ' and ' + FECHA
 // Language rule appended to every system prompt — ensures Portuguese output regardless of input
 const PT_RULE = '\nIMPORTANT: All descriptive text in your JSON response (names, descriptions, themes, tips, reasoning, why, local phrases translations, etc.) must be written in European Portuguese (Portugal). Exceptions: geoName must stay in English for geocoding; currency ISO codes and type enum values stay as-is.'
 
+// ── Contrato entre o modelo e a base de dados ────────────────────────────────
+//
+// Dezoito agentes, e nenhum verificava a forma do que o modelo devolvia. O
+// `days` ia directamente para a coluna JSONB com um `?? []` pelo meio, e o que
+// lá caísse ficava.
+//
+// Isso já produzia 500 reais: um roteiro cujo dia não tinha `activities`, ou em
+// que `activities` era uma string, fazia o POST /activity rebentar no push e no
+// sort. Pior, os endpoints de edição validam com zod — a IA podia gerar uma
+// actividade que o utilizador depois não conseguia editar.
+//
+// A regra aqui é reparar, não rejeitar. Deitar fora um roteiro inteiro porque
+// uma actividade em vinte veio sem `tips` seria pior para quem está à espera
+// dele. Descarta-se o que não tem salvação — uma actividade sem nome não serve
+// para nada — e completa-se o resto.
+
+const TIPOS = new Set(['visit', 'food', 'transport', 'leisure', 'hotel'])
+
+function texto(v, max) {
+  if (typeof v !== 'string') return null
+  const limpo = v.trim()
+  return limpo === '' ? null : limpo.slice(0, max)
+}
+
+/**
+ * Repara uma actividade, ou devolve null se não houver nada a salvar.
+ *
+ * As regras seguem o schema que os endpoints de edição impõem, de propósito:
+ * o que a IA gera tem de poder ser editado à mão a seguir.
+ */
+function repararActividade(a, moedaPorOmissao = 'EUR') {
+  if (a === null || typeof a !== 'object' || Array.isArray(a)) return null
+
+  const name = texto(a.name, 200)
+  if (!name) return null // sem nome não há actividade
+
+  // A hora tem de ser HH:MM — é o formato que o endpoint de edição exige e por
+  // onde a ordenação do dia passa.
+  const hora = typeof a.time === 'string' && /^\d{1,2}:\d{2}$/.test(a.time.trim())
+    ? a.time.trim().padStart(5, '0')
+    : '09:00'
+
+  return {
+    time:        hora,
+    name,
+    description: texto(a.description, 500) ?? '',
+    address:     texto(a.address, 300),
+    geoName:     texto(a.geoName, 200),
+    cost:        typeof a.cost === 'number' && Number.isFinite(a.cost) ? a.cost : null,
+    currency:    texto(a.currency, 8) ?? moedaPorOmissao,
+    type:        TIPOS.has(a.type) ? a.type : 'visit',
+    tips:        texto(a.tips, 300),
+  }
+}
+
+/**
+ * Repara a lista de dias devolvida por um agente.
+ *
+ * Lança quando `days` não é sequer um array: aí não há nada a reparar, e é
+ * melhor falhar com uma mensagem do que gravar lixo.
+ *
+ * @param {unknown} days
+ * @param {string} moeda
+ * @returns {Array<object>}
+ */
+export function repararDias(days, moeda = 'EUR') {
+  if (!Array.isArray(days)) {
+    throw new Error('O agente não devolveu uma lista de dias.')
+  }
+
+  return days
+    .filter((d) => d !== null && typeof d === 'object' && !Array.isArray(d))
+    .map((d, i) => ({
+      ...d,
+      day: Number.isInteger(d.day) ? d.day : i + 1,
+      // Um dia sem actividades continua a ser um dia — o utilizador acrescenta
+      // as suas. O que não pode é `activities` não ser um array.
+      activities: (Array.isArray(d.activities) ? d.activities : [])
+        .map((a) => repararActividade(a, moeda))
+        .filter(Boolean),
+    }))
+}
+
+/** Só para os testes: a reparação de uma actividade isolada. */
+export const _repararActividade = repararActividade
+
 // ── Cache helpers ─────────────────────────────────────────────────────────────
 
 function cacheKey(obj) {
@@ -343,8 +429,13 @@ ${['breakfast', 'lunch', 'dinner'].map((meal) =>
     { role: 'user', content: `Generate a ${days}-day itinerary starting ${startDate} for ${destination}. Days: ${days}` },
   ], 7000)
 
-  await setCache(key, data)
-  return data
+  // Reparado antes de ser guardado em cache: a cache dura sete dias, e uma
+  // resposta malformada guardada é uma resposta malformada servida a toda a
+  // gente durante uma semana.
+  const reparado = { ...data, days: repararDias(data?.days, currency) }
+
+  await setCache(key, reparado)
+  return reparado
 }
 
 /**
@@ -683,7 +774,7 @@ ${delimitarTextoDoUtilizador(userMessage)}`,
 
   const data = await callOpenAI(messages, 4000, { temperature: 0.6 })
   if (!data?.days) throw new Error('Resposta inválida do agente.')
-  return { days: sanitizeOutput(data.days) }
+  return { days: repararDias(sanitizeOutput(data.days), currency) }
 }
 
 const WMO_DESC = {
@@ -716,7 +807,8 @@ Keep all activities — only modify those affected by the weather.${PT_RULE}`,
   ], 3000, { temperature: 0.7 })
 
   if (!data?.activities) throw new Error('Resposta inválida do agente.')
-  return { activities: sanitizeOutput(data.activities) }
+  // Reaproveita a reparação dos dias envolvendo as actividades num dia só.
+  return { activities: repararDias([{ activities: sanitizeOutput(data.activities) }], currency)[0].activities }
 }
 
 /**
