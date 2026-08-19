@@ -228,7 +228,18 @@ describe('notificações', () => {
     assert.equal(res.statusCode, 200)
     const body = JSON.parse(res.body)
     const n = typeof body === 'number' ? body : (body.count ?? body.unread)
-    assert.equal(n, 1)
+
+    // Contra a base de dados, não contra um número fixo. Seguir alguém gera a
+    // notificação do follow e ainda a do badge de primeiro seguidor, e esta
+    // última chega de forma assíncrona — fixar 1 tornava o teste intermitente.
+    // O que o endpoint promete é concordar com o que lá está.
+    const { rows } = await query(
+      `SELECT COUNT(*)::int AS n FROM notifications
+       WHERE recipient_id = $1 AND NOT read`,
+      [ana.user.id],
+    )
+    assert.equal(n, rows[0].n)
+    assert.ok(n >= 1, 'tem de haver pelo menos a notificação do follow')
   })
 
   test('a contagem de outro utilizador é zero', async () => {

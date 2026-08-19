@@ -9,7 +9,8 @@
     "test": "node --env-file=test/test.env --test \"test/unit/*.test.js\"",
     "test:watch": "node --env-file=test/test.env --test --watch \"test/unit/*.test.js\"",
     "test:integration": "node --env-file=test/integration.env --test --test-concurrency=1 \"test/integration/*.test.js\"",
-    "test:integration:setup": "node --env-file=test/integration.env src/db/migrate.js"
+    "test:integration:setup": "node --env-file=test/integration.env src/db/migrate.js",
+    "carga": "node --env-file=test/integration.env test/carga/carga.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",
@@ -36,7 +37,6 @@
     "nodemailer": "^9.0.3",
     "openai": "^4.77.0",
     "pg": "^8.14.0",
-    "pg-boss": "^12.25.1",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",
     "web-push": "^3.6.7",

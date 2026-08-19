@@ -230,13 +230,21 @@ test.describe('acessibilidade — área autenticada', () => {
 })
 
 test.describe('acessibilidade por teclado', () => {
-  test.use({ storageState: FICHEIRO_SESSAO })
+  // Sessão própria, não a partilhada. A do projecto `setup` é rodada a cada
+  // pedido de refresh pelos testes que correm antes deste, e chegava aqui já
+  // morta — o teste aterrava no login e falhava por um motivo que nada tem a
+  // ver com o que se quer verificar.
+  test.use({ storageState: ANONIMO })
 
-  // Um único teste de propósito: a sessão partilhada é rodada a cada pedido de
-  // refresh, e dois testes seguidos a usá-la deixavam o segundo no login. O
-  // comportamento é um só — o link está fora do ecrã até ser focado, e depois
-  // leva ao conteúdo.
   test('o skip link está escondido, o primeiro Tab revela-o e ele leva ao conteúdo', async ({ page }) => {
+    const sufixo = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+    await page.goto('/auth/register')
+    await page.getByLabel('Nome de utilizador').fill(`a11y${sufixo}`.toLowerCase().replace(/[^a-z0-9_]/g, ''))
+    await page.getByLabel('Email').fill(`${sufixo}@a11y.pt`)
+    await page.getByLabel('Password', { exact: true }).fill('PasswordValida1')
+    await page.getByRole('button', { name: /criar conta|registar/i }).click()
+    await expect(page).toHaveURL(/\/(feed|onboarding)/, { timeout: 20_000 })
+
     await page.goto('/feed')
     await page.waitForLoadState('networkidle')
     expect(page.url(), 'o teste tem de estar dentro da app, não no login').toContain('/feed')

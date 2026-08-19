@@ -258,32 +258,6 @@ export async function itinerariesRoutes(app) {
     reply.raw.end()
   })
 
-  // POST /itineraries/generate-async — enqueue AI generation via pg-boss
-  // Returns { jobId } immediately; result delivered via Socket.IO event itinerary:job
-  app.post('/generate-async', { preHandler: [app.authenticate] }, async (request, reply) => {
-    const parsed = generateSchema.safeParse(request.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ message: parsed.error.errors[0].message })
-    }
-
-    const { getJobQueue, JOB_AI_GENERATE } = await import('../services/jobQueue.js')
-    const boss = getJobQueue()
-    if (!boss) {
-      return reply.status(503).send({ message: 'Fila de geração não disponível. Usa /generate-stream.' })
-    }
-
-    const jobId = await boss.send(JOB_AI_GENERATE, {
-      userId: request.user.id,
-      params: parsed.data,
-    }, {
-      retryLimit: 2,
-      retryDelay: 30,
-      expireInMinutes: 10,
-    })
-
-    reply.status(202).send({ jobId })
-  })
-
   // POST /itineraries/generate — AI 3-step agent (non-streaming fallback)
   app.post('/generate', { preHandler: [app.authenticate] }, async (request, reply) => {
     const parsed = generateSchema.safeParse(request.body)

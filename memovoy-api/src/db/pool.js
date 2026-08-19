@@ -26,7 +26,9 @@ export async function query(text, params) {
   try {
     const result = await pool.query(text, params)
     const duration = Date.now() - start
-    if (duration > 100) {
+    // Desligável: durante um teste de carga são milhares de linhas por segundo,
+    // e o próprio registo passa a pesar no que se está a medir.
+    if (duration > 100 && process.env.LOG_SLOW_QUERIES !== 'false') {
       console.warn('[db] Slow query', { text: text.slice(0, 80), duration })
     }
     return result

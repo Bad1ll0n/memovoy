@@ -230,6 +230,25 @@ export async function buildApp({ rateLimit = true } = {}) {
       })
     }
 
+    // 503 passa tal e qual. Não é uma avaria: é o under-pressure a recusar
+    // trabalho de propósito, com uma mensagem escrita para ser lida e um
+    // Retry-After que diz a clientes e balanceadores quanto esperar. Colapsá-lo
+    // em 500 deitava fora esse sinal e anunciava uma avaria que não existe —
+    // encontrado no teste de carga, onde todos os 503 chegavam como 500.
+    //
+    // Continua a não haver fuga de detalhes internos: esta mensagem é do
+    // plugin, não do erro.
+    if (status === 503) {
+      return reply
+        .status(503)
+        .header('retry-after', reply.getHeader('retry-after') ?? '50')
+        .send({
+          statusCode: 503,
+          error:      'Service Unavailable',
+          message:    error.message,
+        })
+    }
+
     console.error('[error]', request.method, request.url, '—', error.message)
 
     return reply.status(500).send({

@@ -4,7 +4,6 @@ import { createAdapter }      from '@socket.io/redis-adapter'
 import { buildApp }           from './app.js'
 import { setupSocket }        from './services/socket.js'
 import { configureWebPush }   from './services/webPush.js'
-import { startJobQueue, registerWorkers } from './services/jobQueue.js'
 
 // Process entry point. All app construction lives in app.js so tests can build
 // an instance without a listening server or a job queue.
@@ -38,14 +37,5 @@ if (redisClient && redisSub) {
 global._io = io
 setupSocket(io, SECRET)
 configureWebPush()
-
-// ─── pg-boss job queue (requires DATABASE_URL env var) ───────────────────────
-if (process.env.DATABASE_URL) {
-  startJobQueue(process.env.DATABASE_URL)
-    .then((boss) => registerWorkers(boss, { io }))
-    .catch((err) => console.warn('[pg-boss] Failed to start:', err.message))
-} else {
-  console.warn('[pg-boss] DATABASE_URL not set — job queue disabled. Async AI generation unavailable.')
-}
 
 console.log(`[server] Memovoy API → http://localhost:${PORT}`)
