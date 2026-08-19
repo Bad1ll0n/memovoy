@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Flag, X } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useDialogoModal } from '@/hooks/useDialogoModal'
 import { Spinner } from './Spinner'
 
 const REASONS = [
@@ -23,6 +24,9 @@ interface Props {
 }
 
 export function ReportModal({ targetType, targetId, onClose }: Props) {
+  // Sempre aberto enquanto está montado — quem o mostra é o pai, condicionalmente.
+  const caixaRef = useDialogoModal(true, onClose)
+
   const [reason, setReason]   = useState<Reason | ''>('')
   const [detail, setDetail]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,15 +51,19 @@ export function ReportModal({ targetType, targetId, onClose }: Props) {
       className="fixed inset-0 z-[1200] flex items-end sm:items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-denuncia"
     >
       <div
+        ref={caixaRef}
         className="w-full max-w-sm rounded-2xl p-5"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Flag className="w-4 h-4" style={{ color: 'var(--danger)' }} />
-            <h2 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+            <h2 id="titulo-denuncia" className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
               Reportar conteúdo
             </h2>
           </div>

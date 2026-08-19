@@ -8,6 +8,7 @@ import { api, getAccessToken, API_URL } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { Avatar } from '@/components/ui/Avatar'
 import { Spinner } from '@/components/ui/Spinner'
+import { useDialogoModal } from '@/hooks/useDialogoModal'
 import { AlertBanner } from '@/components/ui/AlertBanner'
 
 interface ItinerarySummary {
@@ -53,6 +54,9 @@ async function uploadFileWithProgress(
 }
 
 export function CreatePostModal({ onClose, initialDestination }: Props) {
+  // Sempre aberto enquanto está montado — quem o mostra é o pai, condicionalmente.
+  const caixaRef = useDialogoModal(true, onClose)
+
   const { user } = useAuthStore()
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -211,8 +215,12 @@ export function CreatePostModal({ onClose, initialDestination }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.7)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Criar publicação"
     >
       <div
+        ref={caixaRef}
         className="card w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in"
         style={{ borderRadius: 20, display: 'flex', flexDirection: 'column' }}
       >

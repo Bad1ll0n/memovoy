@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
+import { useDialogoModal } from '@/hooks/useDialogoModal'
 import { Spinner } from './Spinner'
 
 interface Props {
@@ -27,20 +28,12 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  // Escape, armadilha de foco e restauro do foco vivem no hook, para os outros
+  // diálogos da app poderem usar o mesmo — nenhum deles tinha nada disto.
+  // O foco começa no Cancelar de propósito: o botão seguro é o que deve estar
+  // debaixo do dedo, para um Enter distraído não apagar nada.
   const cancelRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (open) cancelRef.current?.focus()
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onCancel])
+  const caixaRef = useDialogoModal(open, onCancel, cancelRef)
 
   if (!open) return null
 
@@ -56,6 +49,7 @@ export function ConfirmModal({
       aria-labelledby="confirm-title"
     >
       <div
+        ref={caixaRef}
         className="w-full max-w-sm rounded-2xl p-6 flex flex-col gap-4 shadow-xl"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
