@@ -68,6 +68,7 @@
   --danger:         #F87171;
   --danger-subtle:  rgba(248, 113, 113, 0.12);
   --success:        #68BCA0;
+  --success-subtle: rgba(104, 188, 160, 0.10);
   --gold:           #ffd700;
   --silver:         #c0c0c0;
   --bronze:         #cd7f32;
@@ -95,7 +96,11 @@
      contrário, um vermelho mais claro, e por isso os dois valores divergem. */
   --danger:         #c81e1e;
   --danger-subtle:  rgba(239, 68, 68, 0.08);
-  --success:        #3A9E7E;
+  /* Era #3A9E7E, que dá 2,96:1 sobre um fundo de 10% da própria cor — o que
+     o banner de sucesso usa. #276E56 dá 5,30. Mesmo caso do --danger: o tema
+     claro precisa de um tom mais escuro do que o escuro. */
+  --success:        #276E56;
+  --success-subtle: rgba(39, 110, 86, 0.10);
 }
 
 /* ─── Tailwind v4 theme tokens ─── */
@@ -111,6 +116,7 @@
   --color-text-primary:   var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted:     var(--text-muted);
+  --color-success-subtle: var(--success-subtle);
   --color-danger:         var(--danger);
   --color-danger-subtle:  var(--danger-subtle);
   --color-success:        var(--success);

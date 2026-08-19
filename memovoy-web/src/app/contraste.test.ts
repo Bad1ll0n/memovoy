@@ -102,12 +102,14 @@ function tokenRgba(selector: string, nome: string): string {
 describe.each([
   ['escuro', ':root {', ESCURO],
   ['claro', '[data-theme="light"] {', CLARO],
-] as const)('perigo no tema %s', (nome, selector, paleta) => {
-  test('--danger legível sobre --danger-subtle', () => {
-    const fundo = compor(tokenRgba(selector, 'danger-subtle'), paleta['bg-card'])
-    const r = contraste(paleta.danger, fundo)
+] as const)('cores de estado no tema %s', (nome, selector, paleta) => {
+  // Cada uma destas aparece sobre a sua própria versão translúcida: o
+  // .btn-danger e a pastilha LIVE num caso, o banner de sucesso no outro.
+  test.each(['danger', 'success'] as const)('--%s legível sobre a sua versão subtil', (cor) => {
+    const fundo = compor(tokenRgba(selector, `${cor}-subtle`), paleta['bg-card'])
+    const r = contraste(paleta[cor], fundo)
 
-    expect(r, `--danger ${paleta.danger} sobre ${fundo} no tema ${nome}: ${r.toFixed(2)}:1`)
+    expect(r, `--${cor} ${paleta[cor]} sobre ${fundo} no tema ${nome}: ${r.toFixed(2)}:1`)
       .toBeGreaterThanOrEqual(MINIMO)
   })
 })

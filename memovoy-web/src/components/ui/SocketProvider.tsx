@@ -45,9 +45,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       qc.invalidateQueries({ queryKey: ['conversations'] })
     })
 
-    // Async AI generation progress — consumers subscribe to 'itinerary:job' via useSocket()
-    // No query invalidation here; components handle the event directly for streaming UX.
-
     // Excepção deliberada ao set-state-in-effect: expor um recurso externo
     // criado no efeito é precisamente para isto que o estado serve. Criá-lo
     // durante o render — num useMemo — abriria a ligação num sítio que tem de

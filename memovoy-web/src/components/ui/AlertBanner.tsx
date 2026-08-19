@@ -11,7 +11,14 @@ export function AlertBanner({
     return (
       <div
         className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-sm"
-        style={{ background: 'rgba(34,197,94,0.1)', color: '#16a34a', border: '1px solid rgba(34,197,94,0.25)' }}
+        // Tokens, não cores em código. Estava aqui #16a34a sobre um verde a
+        // 10%, que dá 4,12:1 no tema escuro e 3,02 no claro — falha os dois. As
+        // outras variantes já usavam classes com tokens; só esta é que não.
+        style={{
+          background: 'var(--success-subtle)',
+          color: 'var(--success)',
+          border: '1px solid color-mix(in srgb, var(--success) 25%, transparent)',
+        }}
         role="alert"
       >
         <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
