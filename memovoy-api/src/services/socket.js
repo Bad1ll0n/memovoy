@@ -1,6 +1,32 @@
 import jwt from 'jsonwebtoken'
 
 /**
+ * Broadcasts to a room, skipping the client that caused the change.
+ *
+ * The originator already applied the change locally and gets the HTTP response,
+ * so echoing the event back only costs it a redundant refetch — and can clobber
+ * a local edit that has not been confirmed yet. The client sends its socket id
+ * in `x-socket-id`; when absent (server-side call, or socket not yet connected)
+ * this degrades to a plain room broadcast.
+ *
+ * @param {string} sala
+ * @param {string} evento
+ * @param {unknown} dados
+ * @param {import('fastify').FastifyRequest} [request]
+ */
+export function difundirNaSala(sala, evento, dados, request) {
+  const io = global._io
+  if (!io) return
+
+  const origem = request?.headers?.['x-socket-id']
+  const alvo = typeof origem === 'string' && origem
+    ? io.to(sala).except(origem)
+    : io.to(sala)
+
+  alvo.emit(evento, dados)
+}
+
+/**
  * @param {import('socket.io').Server} io
  * @param {string} jwtSecret
  */

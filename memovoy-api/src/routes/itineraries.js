@@ -13,6 +13,7 @@ async function getUserPreferences(userId) {
   return rows.map((r) => r.type)
 }
 import { checkItineraryBadges } from '../services/badges.js'
+import { difundirNaSala } from '../services/socket.js'
 
 const generateSchema = z.object({
   destination:    z.string().min(2).max(100),
@@ -924,7 +925,7 @@ export async function itinerariesRoutes(app) {
 
     await query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(data), request.params.id])
 
-    if (global._io) global._io.to(`itinerary:${request.params.id}`).emit('itinerary_changed', { dayIndex, activityIndex, activity })
+    difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activityIndex, activity }, request)
 
     reply.send({ ok: true })
   })
@@ -965,7 +966,7 @@ export async function itinerariesRoutes(app) {
 
     await query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(data), request.params.id])
 
-    if (global._io) global._io.to(`itinerary:${request.params.id}`).emit('itinerary_changed', { dayIndex, activities: data.days[dayIndex].activities })
+    difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activities: data.days[dayIndex].activities }, request)
 
     reply.status(201).send({ activities: data.days[dayIndex].activities })
   })
@@ -991,7 +992,7 @@ export async function itinerariesRoutes(app) {
 
     await query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(data), request.params.id])
 
-    if (global._io) global._io.to(`itinerary:${request.params.id}`).emit('itinerary_changed', { dayIndex, activities: data.days[dayIndex].activities })
+    difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activities: data.days[dayIndex].activities }, request)
 
     reply.send({ ok: true })
   })
@@ -1022,7 +1023,7 @@ export async function itinerariesRoutes(app) {
 
     await query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(data), request.params.id])
 
-    if (global._io) global._io.to(`itinerary:${request.params.id}`).emit('itinerary_changed', { dayIndex, activities })
+    difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activities }, request)
 
     reply.send({ ok: true })
   })

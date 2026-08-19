@@ -47,22 +47,22 @@ export async function messagesRoutes(app) {
     if (io) {
       io.to(`conv:${conversationId}`).emit('new_message', dto)
 
-      // Notify other participants with unread count — single query instead of N
-      const { rows: unreadCounts } = await query(
-        `SELECT cp.user_id, COUNT(m.id) AS cnt
-         FROM conversation_participants cp
-         LEFT JOIN messages m
-           ON m.conversation_id = cp.conversation_id
-          AND m.sender_id <> cp.user_id
-          AND m.read_at IS NULL
-         WHERE cp.conversation_id = $1 AND cp.user_id <> $2
-         GROUP BY cp.user_id`,
+      // Tell the other participants their conversation list changed. They
+      // refetch it, and the unread badge is recomputed from the per-conversation
+      // counts already in that response.
+      //
+      // There used to be a second event here, `unread_messages`, carrying a
+      // count from a dedicated query. Nothing ever listened to it, and it was a
+      // trap: the query was scoped to THIS conversation, so a payload named
+      // like a global total actually held the count for one thread. Wiring it
+      // to the badge would have shown the wrong number. Removed along with its
+      // query — one round-trip to the database saved per message sent.
+      const { rows: outros } = await query(
+        'SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id <> $2',
         [conversationId, senderId],
       )
 
-      for (const row of unreadCounts) {
-        io.to(`user:${row.user_id}`).emit('unread_messages', { count: Number(row.cnt) })
-        // Trigger conversations list refresh so preview + unread badge update
+      for (const row of outros) {
         io.to(`user:${row.user_id}`).emit('conversations:updated')
       }
       // Also refresh sender's conversation list (lastMessage preview)

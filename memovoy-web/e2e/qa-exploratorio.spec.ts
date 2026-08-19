@@ -228,3 +228,32 @@ test.describe('acessibilidade — área autenticada', () => {
     }
   })
 })
+
+test.describe('acessibilidade por teclado', () => {
+  test.use({ storageState: FICHEIRO_SESSAO })
+
+  // Um único teste de propósito: a sessão partilhada é rodada a cada pedido de
+  // refresh, e dois testes seguidos a usá-la deixavam o segundo no login. O
+  // comportamento é um só — o link está fora do ecrã até ser focado, e depois
+  // leva ao conteúdo.
+  test('o skip link está escondido, o primeiro Tab revela-o e ele leva ao conteúdo', async ({ page }) => {
+    await page.goto('/feed')
+    await page.waitForLoadState('networkidle')
+    expect(page.url(), 'o teste tem de estar dentro da app, não no login').toContain('/feed')
+
+    // Fora do ecrã, não removido: display:none tirava-o da ordem de tabulação.
+    const link = page.getByRole('link', { name: /Saltar para o conteúdo/i })
+    await expect(link).toHaveCount(1)
+    await expect(link).not.toBeInViewport()
+
+    // Primeiro focável do documento, à frente do banner de verificação de email.
+    await page.keyboard.press('Tab')
+    const focado = page.locator(':focus')
+    await expect(focado).toHaveText(/Saltar para o conteúdo/i)
+    await expect(focado).toBeInViewport()
+
+    await page.keyboard.press('Enter')
+    const idFocado = await page.evaluate(() => document.activeElement?.id ?? '')
+    expect(idFocado).toBe('conteudo-principal')
+  })
+})

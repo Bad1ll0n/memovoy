@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   User, Lock, Bell, Trash2, ChevronRight, LogOut,
-  Shield, Globe, Palette, ShieldCheck, Monitor, Download, Sparkles,
+  Shield, Palette, ShieldCheck, Monitor, Download, Sparkles,
 } from 'lucide-react'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useTheme } from '@/hooks/useTheme'
@@ -97,7 +97,6 @@ export default function SettingsPage() {
       title: 'Preferências',
       items: [
         { Icon: Bell, label: 'Notificações', href: '/settings/notifications' },
-        { Icon: Globe, label: 'Idioma', href: '/settings/language' },
         {
           Icon: Palette,
           label: `Tema: ${theme === 'dark' ? 'Escuro' : 'Claro'}`,

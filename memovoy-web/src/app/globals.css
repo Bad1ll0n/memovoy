@@ -24,6 +24,29 @@
     animation-duration: 0s !important;
     animation-delay: 0s !important;
   }
+
+  /* Este bloco só cobria as transições de página. Tudo o resto — os pops do
+     like e do follow, o fadeIn das listas, o shimmer dos skeletons e as
+     transições de cor — continuava a animar para quem pediu ao sistema que não
+     animasse. Para parte das pessoas isso não é preferência: é enjoo ou
+     enxaqueca. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Excepção deliberada: o spinner é o que diz que algo está a acontecer.
+     Parado, deixa de comunicar. Fica, mas mais lento. */
+  .spinner,
+  .spinner-sm,
+  .spinner-lg {
+    animation-duration: 1.4s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* ─── Design Tokens — Dark mode (default) — Paleta Brisa ─── */
@@ -114,6 +137,31 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Salta a navegação. Fora do ecrã até ser focado — não escondido com
+   display:none nem visibility:hidden, que o tirariam da ordem de tabulação. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  padding: 0.625rem 1rem;
+  background: var(--accent);
+  color: #000;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 0 0 0.5rem 0;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* O foco no <main> é programático (tabIndex={-1}), vindo do skip link. Marcar
+   o contorno aí não ajuda ninguém e fica feio. */
+main:focus {
+  outline: none;
 }
 
 mark {

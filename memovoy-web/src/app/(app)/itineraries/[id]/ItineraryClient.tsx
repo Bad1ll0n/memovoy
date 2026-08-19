@@ -30,6 +30,7 @@ import { ItineraryRefinement } from '@/components/itinerary/ItineraryRefinement'
 import { TripCompanion } from '@/components/itinerary/TripCompanion'
 import { ItineraryReactions } from '@/components/itinerary/ItineraryReactions'
 import { ItineraryLineage } from '@/components/itinerary/ItineraryLineage'
+import { useSalaDoRoteiro } from '@/hooks/useSalaDoRoteiro'
 import type { ActivityPin } from '@/components/map/ActivityMap'
 
 function formatDate(iso: string | null | undefined): string {
@@ -742,6 +743,9 @@ export default function ItineraryClient() {
     mutationFn: ({ dayIndex, activities }: { dayIndex: number; activities: Activity[] }) =>
       api.patch(`/itineraries/${id}/reorder`, { dayIndex, activities }),
   })
+
+  // Sincroniza com o que os outros colaboradores alteram, em tempo real.
+  useSalaDoRoteiro(id)
 
   const { data: it, isLoading, error } = useQuery<Itinerary>({
     queryKey: ['itinerary', id],

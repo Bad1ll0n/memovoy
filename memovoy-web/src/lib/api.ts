@@ -22,6 +22,16 @@ export function getAccessToken() {
   return _accessToken
 }
 
+// Id do socket desta aba, para o servidor poder excluir a origem ao difundir
+// alterações. Sem isto, quem edita um roteiro recebe o seu próprio
+// `itinerary_changed`, refaz o pedido sem necessidade e arrisca estalar por
+// cima de uma alteração local ainda por confirmar.
+let _socketId: string | null = null
+
+export function setSocketId(id: string | null) {
+  _socketId = id
+}
+
 async function request<T>(path: string, init: RequestInit = {}, _retry = true): Promise<T> {
   const headers: Record<string, string> = {
     ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
@@ -30,6 +40,10 @@ async function request<T>(path: string, init: RequestInit = {}, _retry = true): 
 
   if (_accessToken) {
     headers['Authorization'] = `Bearer ${_accessToken}`
+  }
+
+  if (_socketId) {
+    headers['x-socket-id'] = _socketId
   }
 
   const res = await fetch(`${API_URL}${path}`, {

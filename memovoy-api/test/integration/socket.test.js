@@ -238,6 +238,28 @@ describe('salas de conversa', () => {
     assert.equal(recebido, null, 'um estranho não pode ouvir a conversa')
   })
 
+  test('enviar mensagem avisa o destinatário para refrescar a lista', async () => {
+    // É este o evento que mantém o badge de não lidas certo. Havia também um
+    // `unread_messages` com uma contagem, que ninguém ouvia e cujo valor era
+    // só daquela conversa apesar do nome; foi removido.
+    const convId = await abrirConversa()
+    const doBob = await ligar(bob.accessToken)
+
+    const espera = esperarEvento(doBob.socket, 'conversations:updated', 3000)
+
+    const res = await app.inject({
+      method: 'POST', url: '/messages',
+      headers: comToken(ana.accessToken),
+      payload: { conversationId: convId, content: 'olá Bob' },
+    })
+    assert.equal(res.statusCode, 201, `a mensagem devia ser criada: ${res.body}`)
+
+    const recebido = await espera
+    doBob.socket.close()
+
+    assert.ok(recebido, 'o destinatário devia ser avisado')
+  })
+
   test('sala de conversa inexistente não é aceite', async () => {
     const daAna = await ligar(ana.accessToken)
 
@@ -288,6 +310,103 @@ describe('salas de roteiro', () => {
 
     doBob.socket.close()
     assert.equal(recebido, null, 'o roteiro é da Ana')
+  })
+})
+
+describe('difusão de alterações do roteiro', () => {
+  /** Cria um roteiro da Ana com um dia e uma actividade, e convida o Bob. */
+  async function roteiroPartilhado() {
+    const iti = JSON.parse((await app.inject({
+      method: 'POST', url: '/itineraries', headers: comToken(ana.accessToken),
+      payload: {
+        title: 'Lisboa', destination: 'Lisboa',
+        data: { days: [{ activities: [{
+          time: '10:00', name: 'Torre', description: 'd', type: 'visit', currency: 'EUR',
+        }] }] },
+      },
+    })).body)
+
+    await app.inject({
+      method: 'POST', url: `/itineraries/${iti.id}/collaborators`,
+      headers: comToken(ana.accessToken),
+      payload: { userId: bob.user.id, role: 'editor' },
+    })
+
+    return iti.id
+  }
+
+  const ACTIVIDADE = {
+    time: '11:00', name: 'Mosteiro', description: 'novo', type: 'visit', currency: 'EUR',
+  }
+
+  test('um colaborador recebe a alteração feita pelo dono', async () => {
+    const itiId = await roteiroPartilhado()
+
+    const doBob = await ligar(bob.accessToken)
+    doBob.socket.emit('join_itinerary', itiId)
+    assert.ok(await esperarSala(`itinerary:${itiId}`, doBob.socket.id), 'o colaborador devia entrar na sala')
+
+    const espera = esperarEvento(doBob.socket, 'itinerary_changed', 3000)
+
+    const res = await app.inject({
+      method: 'PATCH', url: `/itineraries/${itiId}/activity`,
+      headers: comToken(ana.accessToken),
+      payload: { dayIndex: 0, activityIndex: 0, activity: ACTIVIDADE },
+    })
+    assert.equal(res.statusCode, 200, `o PATCH devia passar: ${res.body}`)
+
+    const recebido = await espera
+    doBob.socket.close()
+
+    assert.ok(recebido, 'o colaborador devia ver a alteração em tempo real')
+    assert.equal(recebido.activity.name, 'Mosteiro')
+  })
+
+  test('quem edita não recebe o eco da sua própria alteração', async () => {
+    // O x-socket-id identifica a origem. Sem a exclusão, quem edita apanhava o
+    // seu próprio evento, refazia o pedido à toa e arriscava estalar por cima
+    // de uma alteração local ainda por confirmar.
+    const itiId = await roteiroPartilhado()
+
+    const daAna = await ligar(ana.accessToken)
+    daAna.socket.emit('join_itinerary', itiId)
+    assert.ok(await esperarSala(`itinerary:${itiId}`, daAna.socket.id))
+
+    const espera = esperarEvento(daAna.socket, 'itinerary_changed', 2000)
+
+    await app.inject({
+      method: 'PATCH', url: `/itineraries/${itiId}/activity`,
+      headers: { ...comToken(ana.accessToken), 'x-socket-id': daAna.socket.id },
+      payload: { dayIndex: 0, activityIndex: 0, activity: ACTIVIDADE },
+    })
+
+    const recebido = await espera
+    daAna.socket.close()
+
+    assert.equal(recebido, null, 'a origem da alteração não pode receber o seu próprio evento')
+  })
+
+  test('sem x-socket-id a difusão chega a toda a gente', async () => {
+    // Degradação deliberada: chamadas de servidor e sockets ainda por ligar não
+    // têm id, e nesse caso vale mais difundir a mais do que a menos.
+    const itiId = await roteiroPartilhado()
+
+    const daAna = await ligar(ana.accessToken)
+    daAna.socket.emit('join_itinerary', itiId)
+    assert.ok(await esperarSala(`itinerary:${itiId}`, daAna.socket.id))
+
+    const espera = esperarEvento(daAna.socket, 'itinerary_changed', 3000)
+
+    await app.inject({
+      method: 'PATCH', url: `/itineraries/${itiId}/activity`,
+      headers: comToken(ana.accessToken),
+      payload: { dayIndex: 0, activityIndex: 0, activity: ACTIVIDADE },
+    })
+
+    const recebido = await espera
+    daAna.socket.close()
+
+    assert.ok(recebido, 'sem id de origem, a sala inteira recebe')
   })
 })
 

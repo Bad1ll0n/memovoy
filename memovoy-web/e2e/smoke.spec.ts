@@ -93,3 +93,26 @@ test.describe('rotas protegidas', () => {
     await expect(page).toHaveURL(/\/auth\/login/, { timeout: 20_000 })
   })
 })
+
+test.describe('fronteiras de erro', () => {
+  // Até aqui não existia um único error.tsx / not-found.tsx em toda a App
+  // Router: um endereço inválido dava o ecrã por omissão do Next, que em
+  // produção é um "Application error" cinzento sem saída.
+
+  test('endereço inexistente mostra o 404 da app, não o do Next', async ({ page }) => {
+    const res = await page.goto('/isto-nao-existe-de-certeza')
+
+    expect(res?.status()).toBe(404)
+    await expect(page.getByText('Esta página não existe')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Ir para o início/i })).toBeVisible()
+  })
+
+  test('do 404 dá para voltar ao início', async ({ page }) => {
+    await page.goto('/caminho-invalido')
+    await page.getByRole('link', { name: /Ir para o início/i }).click()
+
+    // Sem sessão o feed reencaminha para o login; o que importa é ter saído do 404.
+    await page.waitForURL((url) => !url.pathname.includes('caminho-invalido'))
+    await expect(page.getByText('Esta página não existe')).toHaveCount(0)
+  })
+})

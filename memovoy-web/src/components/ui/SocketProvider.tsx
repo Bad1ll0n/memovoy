@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { io, type Socket } from 'socket.io-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
+import { setSocketId } from '@/lib/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -31,6 +32,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       transports: ['websocket'],
     })
 
+    // O id só existe depois do handshake, e muda a cada reconexão.
+    s.on('connect', () => setSocketId(s.id ?? null))
+    s.on('disconnect', () => setSocketId(null))
+
     s.on('new_notification', () => {
       qc.invalidateQueries({ queryKey: ['notifications'] })
       qc.invalidateQueries({ queryKey: ['unread-notif-count'] })
@@ -52,6 +57,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     return () => {
       s.disconnect()
+      setSocketId(null)
       setSocket(null)
     }
   }, [accessToken, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
