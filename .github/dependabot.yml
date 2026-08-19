@@ -1,0 +1,47 @@
+version: 2
+
+# O job de segurança do CI avisa quando uma vulnerabilidade aparece. Isto trata
+# do outro lado: propor a actualização sem esperar que alguém se lembre.
+#
+# Semanal e não diário: o CI corre em cada PR, e um PR por dia por workspace
+# deixa de ser sinal e passa a ser ruído que se aprende a ignorar.
+
+updates:
+  - package-ecosystem: npm
+    directory: /memovoy-api
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Agrupadas: patches de dependências de desenvolvimento não merecem um PR
+      # cada. As de produção vêm separadas, uma a uma, para se poder olhar.
+      dev-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "chore(api)"
+
+  - package-ecosystem: npm
+    directory: /memovoy-web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "chore(web)"
+
+  # As próprias actions são supply chain: um actions/checkout desactualizado é
+  # tão problema como um pacote npm desactualizado, e passa muito mais tempo
+  # despercebido.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "chore(ci)"

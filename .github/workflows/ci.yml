@@ -124,3 +124,60 @@ jobs:
       - run: npm ci
 
       - run: npm run lint
+
+  seguranca:
+    name: Segurança — dependências e segredos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Precisa do histórico todo para o varrimento de segredos poder olhar
+          # para os commits, não só para a árvore actual.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Bloqueante a partir de 'high'. As moderadas avisam mas não param o
+      # pipeline: em transitivas de ferramentas de desenvolvimento aparecem com
+      # frequência e nem sempre há correcção no momento. Ambos os workspaces
+      # estão hoje a zero — se subir, quero saber no push, não num audit manual.
+      - name: Auditar dependências da API
+        working-directory: memovoy-api
+        run: npm audit --audit-level=high
+
+      - name: Auditar dependências do web
+        working-directory: memovoy-web
+        run: npm audit --audit-level=high
+
+      # Varrimento de segredos sem depender de nenhuma action de terceiros: uma
+      # action externa neste sítio é ela própria supply chain, e o que se procura
+      # aqui são padrões conhecidos, não análise de entropia.
+      #
+      # Os .env estão no .gitignore, mas o .gitignore protege o futuro e não o
+      # passado — isto olha para o que já está versionado.
+      - name: Procurar segredos versionados
+        run: |
+          set -u
+          padroes='(AKIA[0-9A-Z]{16}|gsk_[A-Za-z0-9]{40,}|sk-[A-Za-z0-9]{32,}|ghp_[A-Za-z0-9]{36}|-----BEGIN [A-Z ]*PRIVATE KEY-----|xox[baprs]-[A-Za-z0-9-]{10,})'
+
+          # Ficheiros versionados apenas. O docker-compose.yml tem minioadmin/
+          # minioadmin, que são as credenciais do contentor local e estão lá de
+          # propósito — não batem em nenhum destes padrões.
+          if git grep -nIE "$padroes" -- . ':!*.lock' ':!package-lock.json'; then
+            echo "::error::Encontrado o que parece ser um segredo em ficheiros versionados."
+            exit 1
+          fi
+
+          echo "Nenhum padrão de segredo conhecido em ficheiros versionados."
+
+      # O .env nunca pode entrar no repositório. O .gitignore trata disso, mas
+      # um `git add -f` passa-lhe à frente sem avisar ninguém.
+      - name: Confirmar que nenhum .env está versionado
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$|(^|/)\.env\.(local|production)$'; then
+            echo "::error::Um ficheiro .env está versionado."
+            exit 1
+          fi
+          echo "Nenhum .env versionado."
