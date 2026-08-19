@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   User, Lock, Bell, Trash2, ChevronRight, LogOut,
-  Shield, Palette, ShieldCheck, Monitor, Download, Sparkles,
-} from 'lucide-react'
+  Shield, Palette, ShieldCheck, Monitor, Download, Sparkles, ShieldAlert } from 'lucide-react'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuthStore } from '@/store/authStore'
@@ -104,6 +103,14 @@ export default function SettingsPage() {
         },
       ],
     },
+    // Só para administradores. Esconder o atalho não é a segurança — cada rota
+    // /admin relê a flag da base de dados e responde 404 a quem não a tiver.
+    ...(user.isAdmin ? [{
+      title: 'Administração',
+      items: [
+        { Icon: ShieldAlert, label: 'Moderação', href: '/admin/reports' },
+      ],
+    }] : []),
   ]
 
   return (

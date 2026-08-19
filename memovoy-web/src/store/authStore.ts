@@ -15,6 +15,9 @@ export interface AuthUser {
   score: number
   emailVerified: boolean
   onboardingCompleted: boolean
+  // Só para decidir se o atalho de moderação aparece. A autorização é sempre
+  // do servidor, que relê a flag da base de dados em cada pedido.
+  isAdmin?: boolean
 }
 
 interface AuthState {

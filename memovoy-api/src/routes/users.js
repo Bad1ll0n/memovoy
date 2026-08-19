@@ -37,6 +37,10 @@ function userDto(row, viewerId) {
       email:               row.email,
       emailVerified:       row.email_verified ?? false,
       onboardingCompleted: row.onboarding_completed ?? false,
+      // Only ever exposed to the account itself, and only to decide whether to
+      // show the moderation link. Authorisation is never based on it: every
+      // /admin route re-reads the flag from the database.
+      isAdmin:             row.is_admin ?? false,
     } : {}),
   }
 }

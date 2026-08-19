@@ -10,6 +10,7 @@ import fastifyUnderPressure from '@fastify/under-pressure'
 import Redis from 'ioredis'
 
 import { query }               from './db/pool.js'
+import { contadoresDaIa }      from './services/aiAgent.js'
 import { authRoutes }          from './routes/auth.js'
 import { usersRoutes }         from './routes/users.js'
 import { postsRoutes }         from './routes/posts.js'
@@ -28,6 +29,7 @@ import { uploadsRoutes }       from './routes/uploads.js'
 import { expensesRoutes }      from './routes/expenses.js'
 import { packingRoutes }       from './routes/packing.js'
 import { groupsRoutes }        from './routes/groups.js'
+import { adminRoutes }          from './routes/admin.js'
 import { reportsRoutes }       from './routes/reports.js'
 
 /**
@@ -259,6 +261,27 @@ export async function buildApp({ rateLimit = true } = {}) {
     }
   })
 
+  // ─── requireAdmin — authenticate, then check the admin flag ────────────────
+  //
+  // The flag is read from the database on every call, never from the token. A
+  // token outlives a revoked admin flag, so trusting a claim inside it would
+  // leave a demoted account with moderation powers until expiry.
+  app.decorate('requireAdmin', async function (request, reply) {
+    await app.authenticate(request, reply)
+    if (reply.sent) return
+
+    const { rows } = await query(
+      'SELECT is_admin FROM users WHERE id = $1',
+      [request.user.id],
+    )
+
+    // Deliberately a 404, not a 403: a 403 confirms the route exists and tells
+    // whoever is probing that there is an admin area worth attacking.
+    if (!rows[0]?.is_admin) {
+      return reply.status(404).send({ message: 'Não encontrado.' })
+    }
+  })
+
   // ─── last_seen — update every 5 min per authenticated user ─────────────────
   // Uses request.user if already set by authenticate, otherwise tries a silent verify.
 
@@ -316,10 +339,18 @@ export async function buildApp({ rateLimit = true } = {}) {
   await app.register(packingRoutes,       { prefix: '/packing' })
   await app.register(groupsRoutes,        { prefix: '/groups' })
   await app.register(reportsRoutes,       { prefix: '/reports' })
+  await app.register(adminRoutes,          { prefix: '/admin' })
 
   // ─── Health check ──────────────────────────────────────────────────────────
 
-  app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }))
+  app.get('/health', async () => ({
+    status: 'ok',
+    ts: new Date().toISOString(),
+    // Running totals since process start. Token counts were logged per call and
+    // then forgotten — readable one line at a time, useless for answering what
+    // the AI cost today or how often it is falling back.
+    ia: contadoresDaIa(),
+  }))
 
   return { app, redisClient, redisSub, allowedOrigins }
 }
