@@ -106,8 +106,39 @@ const registo = await app.inject({
     password: 'PasswordDeCarga1',
   },
 })
-const { accessToken } = JSON.parse(registo.body)
+const { accessToken, user } = JSON.parse(registo.body)
 const auth = { authorization: `Bearer ${accessToken}` }
+
+// A conta passa a seguir gente e a ter gostos seus.
+//
+// Sem isto o feed dela vem vazio e a rota cai sempre no caminho de conteúdo
+// curado — media-se o caminho excepcional e não o normal, e os números não
+// dizem nada sobre o que as pessoas realmente vêem.
+const { query } = await import('../../src/db/pool.js')
+await query(
+  `INSERT INTO follows (follower_id, following_id)
+   SELECT $1, id FROM users WHERE id <> $1 ORDER BY id LIMIT 30
+   ON CONFLICT DO NOTHING`,
+  [user.id],
+)
+await query(
+  `INSERT INTO post_likes (post_id, user_id)
+   SELECT id, $1 FROM posts ORDER BY created_at DESC LIMIT 50
+   ON CONFLICT DO NOTHING`,
+  [user.id],
+)
+
+const { rows: comFeed } = await query(
+  `SELECT COUNT(*)::int AS n FROM posts p
+   WHERE p.user_id = $1 OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = $1)`,
+  [user.id],
+)
+console.log(`
+Conta de carga: ${comFeed[0].n} publicações no feed`)
+if (comFeed[0].n === 0) {
+  console.log('AVISO: feed vazio — o /feed vai medir o caminho de conteúdo curado.')
+  console.log('       Correr `npm run carga:semear` primeiro.')
+}
 
 console.log(`\nCarga: ${LIGACOES} pedidos simultâneos, ${SEGUNDOS}s por cenário`)
 console.log('Sem rate limit — o objectivo é medir a app, não o limitador.')

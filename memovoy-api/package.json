@@ -10,7 +10,8 @@
     "test:watch": "node --env-file=test/test.env --test --watch \"test/unit/*.test.js\"",
     "test:integration": "node --env-file=test/integration.env --test --test-concurrency=1 \"test/integration/*.test.js\"",
     "test:integration:setup": "node --env-file=test/integration.env src/db/migrate.js",
-    "carga": "node --env-file=test/integration.env test/carga/carga.js"
+    "carga": "node --env-file=test/integration.env test/carga/carga.js",
+    "carga:semear": "node --env-file=test/integration.env test/carga/semear.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",
