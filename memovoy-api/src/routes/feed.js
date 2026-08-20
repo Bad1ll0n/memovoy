@@ -122,7 +122,7 @@ export async function feedRoutes(app) {
     }
 
     reply.header('Server-Timing', `db;dur=${Date.now() - t0}`)
-    reply.send({
+    return reply.send({
       posts:      posts.map(postDto),
       nextCursor: hasMore ? posts[posts.length - 1].id : null,
       isCurated,

@@ -69,6 +69,6 @@ export async function messagesRoutes(app) {
       io.to(`user:${senderId}`).emit('conversations:updated')
     }
 
-    reply.status(201).send(dto)
+    return reply.status(201).send(dto)
   })
 }

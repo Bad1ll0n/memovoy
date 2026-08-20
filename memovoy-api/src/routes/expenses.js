@@ -37,7 +37,7 @@ export async function expensesRoutes(app) {
     const byCategory = Object.fromEntries(CATEGORIES.map((c) => [c, 0]))
     rows.forEach((r) => { byCategory[r.category] = (byCategory[r.category] ?? 0) + Number(r.amount) })
 
-    reply.send({
+    return reply.send({
       expenses: rows.map((r) => ({
         id:          r.id,
         amount:      Number(r.amount),
@@ -70,7 +70,7 @@ export async function expensesRoutes(app) {
     )
 
     const r = rows[0]
-    reply.status(201).send({
+    return reply.status(201).send({
       id:          r.id,
       amount:      Number(r.amount),
       currency:    r.currency,
@@ -105,7 +105,7 @@ export async function expensesRoutes(app) {
       [request.params.id, ...values],
     )
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // DELETE /expenses/:id — eliminar despesa
@@ -115,7 +115,7 @@ export async function expensesRoutes(app) {
     if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
 
     await query('DELETE FROM expenses WHERE id = $1', [request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /expenses/rates?base=EUR — ECB exchange rates via frankfurter.app (cached 24h)
@@ -137,10 +137,10 @@ export async function expensesRoutes(app) {
       const data = await res.json()
       _ratesCache     = { base: data.base, date: data.date, rates: data.rates }
       _ratesCacheTime = now
-      reply.send(_ratesCache)
+      return reply.send(_ratesCache)
     } catch {
       if (_ratesCache) return reply.send(_ratesCache) // serve stale on error
-      reply.status(503).send({ message: 'Serviço de taxas de câmbio temporariamente indisponível.' })
+      return reply.status(503).send({ message: 'Serviço de taxas de câmbio temporariamente indisponível.' })
     }
   })
 }

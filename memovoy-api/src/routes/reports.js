@@ -67,6 +67,6 @@ export async function reportsRoutes(app) {
       // Swallow — reporter already reported this item
     }
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 }

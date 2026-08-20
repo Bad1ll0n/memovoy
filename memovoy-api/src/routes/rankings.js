@@ -14,7 +14,7 @@ export async function rankingsRoutes(app) {
       [limit],
     )
 
-    reply.send(
+    return reply.send(
       rows.map((u) => ({
         id:        u.id,
         username:  u.username,
@@ -59,7 +59,7 @@ export async function rankingsRoutes(app) {
       [limit],
     )
 
-    reply.send(
+    return reply.send(
       rows.map((r) => ({
         destination: r.destination,
         count:       Number(r.this_week_cnt),

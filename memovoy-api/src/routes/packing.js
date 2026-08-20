@@ -22,7 +22,7 @@ export async function packingRoutes(app) {
       [itineraryId, request.user.id],
     )
 
-    reply.send({
+    return reply.send({
       items: rows.map((r) => ({
         id:        r.id,
         label:     r.label,
@@ -58,7 +58,7 @@ export async function packingRoutes(app) {
     )
 
     const r = rows[0]
-    reply.status(201).send({ id: r.id, label: r.label, packed: r.packed, sortOrder: r.sort_order, createdAt: r.created_at })
+    return reply.status(201).send({ id: r.id, label: r.label, packed: r.packed, sortOrder: r.sort_order, createdAt: r.created_at })
   })
 
   // POST /packing/itinerary/:itineraryId/reorder — reorder items
@@ -79,7 +79,7 @@ export async function packingRoutes(app) {
        WHERE pi.id = v.id AND pi.user_id = $3`,
       [ids, idxs, request.user.id],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // PATCH /packing/:id — toggle packed ou editar label
@@ -110,7 +110,7 @@ export async function packingRoutes(app) {
 
     await query(`UPDATE packing_items SET ${sets.join(', ')} WHERE id = $1`, vals)
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /packing/itinerary/:itineraryId/ai-suggest — AI-generated packing list
@@ -137,9 +137,9 @@ export async function packingRoutes(app) {
         travelStyle: iti.travel_style ?? [],
         groupType:   iti.group_type  ?? 'solo',
       })
-      reply.send({ items: result.items ?? [] })
+      return reply.send({ items: result.items ?? [] })
     } catch {
-      reply.status(500).send({ message: 'Erro ao gerar lista. Tenta novamente.' })
+      return reply.status(500).send({ message: 'Erro ao gerar lista. Tenta novamente.' })
     }
   })
 
@@ -150,6 +150,6 @@ export async function packingRoutes(app) {
     if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
 
     await query('DELETE FROM packing_items WHERE id = $1', [request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 }

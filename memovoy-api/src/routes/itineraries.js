@@ -64,7 +64,7 @@ export async function itinerariesRoutes(app) {
       [request.user.id, itineraryId ?? null, destination, originalName ?? null, feedback, chosenName, JSON.stringify(chosenActivity)],
     )
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // POST /itineraries/suggest-by-mood — get destination suggestions from a vibe/mood description
@@ -80,9 +80,9 @@ export async function itinerariesRoutes(app) {
 
     try {
       const result = await agentMoodTrip(parsed.data)
-      reply.send(result)
+      return reply.send(result)
     } catch {
-      reply.status(500).send({ message: 'Erro ao processar a tua vibe. Tenta novamente.' })
+      return reply.status(500).send({ message: 'Erro ao processar a tua vibe. Tenta novamente.' })
     }
   })
 
@@ -97,9 +97,9 @@ export async function itinerariesRoutes(app) {
     if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
     try {
       const result = await agentRecommendDuration(parsed.data)
-      reply.send(result)
+      return reply.send(result)
     } catch {
-      reply.status(500).send({ message: 'Erro ao calcular duração. Tenta novamente.' })
+      return reply.status(500).send({ message: 'Erro ao calcular duração. Tenta novamente.' })
     }
   })
 
@@ -132,7 +132,7 @@ export async function itinerariesRoutes(app) {
     query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]).catch(() => {})
     checkItineraryBadges(request.user.id).catch(() => {})
 
-    reply.status(201).send({ id: rows[0].id })
+    return reply.status(201).send({ id: rows[0].id })
   })
 
   // POST /itineraries/generate-stream — AI generation with SSE streaming
@@ -358,7 +358,7 @@ export async function itinerariesRoutes(app) {
     query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]).catch(() => {})
     checkItineraryBadges(request.user.id).catch(() => {})
 
-    reply.status(201).send({ id: rows[0].id })
+    return reply.status(201).send({ id: rows[0].id })
   })
 
   // GET /itineraries/mine
@@ -381,7 +381,7 @@ export async function itinerariesRoutes(app) {
     const hasMore = rows.length > limit
     const items   = rows.slice(0, limit)
 
-    reply.send({
+    return reply.send({
       itineraries: items.map(itiSummaryDto),
       nextCursor:  hasMore ? items[items.length - 1].id : null,
     })
@@ -410,7 +410,7 @@ export async function itinerariesRoutes(app) {
     // Increment view count (fire-and-forget)
     query('UPDATE itineraries SET views_count = views_count + 1 WHERE id = $1', [row.id]).catch(() => {})
 
-    reply.send({
+    return reply.send({
       id:                 row.id,
       title:              row.title,
       destination:        row.destination,
@@ -521,7 +521,7 @@ export async function itinerariesRoutes(app) {
       'END:VCALENDAR',
     ].join('\r\n')
 
-    reply
+    return reply
       .header('Content-Type', 'text/calendar; charset=utf-8')
       .header('Content-Disposition', `attachment; filename="roteiro-${request.params.id}.ics"`)
       .send(ics)
@@ -542,7 +542,7 @@ export async function itinerariesRoutes(app) {
       [country ?? null, limit],
     )
 
-    reply.send(rows.map((r) => ({ id: r.id, title: r.title, destination: r.destination })))
+    return reply.send(rows.map((r) => ({ id: r.id, title: r.title, destination: r.destination })))
   })
 
   // POST /itineraries/suggest-for-day — AI suggests 3 activities for a day being built
@@ -561,9 +561,9 @@ export async function itinerariesRoutes(app) {
     try {
       const prefs = await getUserPreferences(request.user.id)
       const result = await agentSuggestForDay({ ...parsed.data, userPreferences: prefs })
-      reply.send({ suggestions: result.suggestions ?? [] })
+      return reply.send({ suggestions: result.suggestions ?? [] })
     } catch {
-      reply.status(500).send({ message: 'Erro ao gerar sugestões. Tenta novamente.' })
+      return reply.status(500).send({ message: 'Erro ao gerar sugestões. Tenta novamente.' })
     }
   })
 
@@ -601,7 +601,7 @@ export async function itinerariesRoutes(app) {
       feedback,
     })
 
-    reply.send({ suggestions: result.suggestions ?? [] })
+    return reply.send({ suggestions: result.suggestions ?? [] })
   })
 
   // POST /itineraries/:id/suggest/stream — SSE streaming activity suggestions
@@ -734,7 +734,7 @@ export async function itinerariesRoutes(app) {
     // Equivalent car km
     const carKmEquivalent = Math.round(totalKgCO2 / FACTORS.car)
 
-    reply.send({
+    return reply.send({
       totalKgCO2,
       breakdown,
       treesEquivalent,
@@ -783,9 +783,9 @@ export async function itinerariesRoutes(app) {
         isAlert:  daily.weathercode[i] >= 61 || daily.precipitation_sum[i] > 5,
       }))
 
-      reply.send({ weather })
+      return reply.send({ weather })
     } catch {
-      reply.send({ weather: [] })
+      return reply.send({ weather: [] })
     }
   })
 
@@ -819,7 +819,7 @@ export async function itinerariesRoutes(app) {
       tempMin:     parsed.data.tempMin,
     })
 
-    reply.send({ activities: result.activities })
+    return reply.send({ activities: result.activities })
   })
 
   // POST /itineraries/:id/refine — conversational itinerary refinement
@@ -855,7 +855,7 @@ export async function itinerariesRoutes(app) {
       [JSON.stringify(result.days), request.params.id],
     )
 
-    reply.send({ days: result.days })
+    return reply.send({ days: result.days })
   })
 
   // PATCH /itineraries/:id/activity — Replace one activity in JSONB
@@ -901,7 +901,7 @@ export async function itinerariesRoutes(app) {
 
     difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activityIndex, activity }, request)
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /itineraries/:id/activity — add a new activity to a day (sorted by time)
@@ -952,7 +952,7 @@ export async function itinerariesRoutes(app) {
 
     difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activities: data.days[dayIndex].activities }, request)
 
-    reply.status(201).send({ activities: data.days[dayIndex].activities })
+    return reply.status(201).send({ activities: data.days[dayIndex].activities })
   })
 
   // DELETE /itineraries/:id/activity?dayIndex=&activityIndex= — remove an activity
@@ -981,7 +981,7 @@ export async function itinerariesRoutes(app) {
 
     difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activities: data.days[dayIndex].activities }, request)
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // PATCH /itineraries/:id/reorder — reorder activities within a day
@@ -1012,7 +1012,7 @@ export async function itinerariesRoutes(app) {
 
     difundirNaSala(`itinerary:${request.params.id}`, 'itinerary_changed', { dayIndex, activities }, request)
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /itineraries/:id/checkin — mark activity as visited
@@ -1037,7 +1037,7 @@ export async function itinerariesRoutes(app) {
 
     query('UPDATE users SET score = score + 2 WHERE id = $1', [request.user.id]).catch(() => {})
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /itineraries/:id/checkin?dayIndex=&activityIndex= — remove check-in
@@ -1053,7 +1053,7 @@ export async function itinerariesRoutes(app) {
        WHERE user_id = $1 AND itinerary_id = $2 AND day_index = $3 AND activity_index = $4`,
       [request.user.id, request.params.id, dayIndex, activityIndex],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /itineraries/:id/checkins — get viewer's checkins for an itinerary
@@ -1065,7 +1065,7 @@ export async function itinerariesRoutes(app) {
        ORDER BY checked_in_at ASC`,
       [request.user.id, request.params.id],
     )
-    reply.send({
+    return reply.send({
       checkins: rows.map((r) => ({
         dayIndex:      r.day_index,
         activityIndex: r.activity_index,
@@ -1127,7 +1127,7 @@ export async function itinerariesRoutes(app) {
       values,
     )
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /itineraries/:id/collaborators — list collaborators
@@ -1145,7 +1145,7 @@ export async function itinerariesRoutes(app) {
        ORDER BY ic.created_at ASC`,
       [request.params.id],
     )
-    reply.send({
+    return reply.send({
       collaborators: rows.map((r) => ({
         userId:      r.user_id,
         username:    r.username,
@@ -1195,7 +1195,7 @@ export async function itinerariesRoutes(app) {
     )
     if (global._io) global._io.to(`user:${parsed.data.userId}`).emit('new_notification', { type: 'collab_invite' })
 
-    reply.status(201).send({ ok: true, username: target[0].username })
+    return reply.status(201).send({ ok: true, username: target[0].username })
   })
 
   // DELETE /itineraries/:id/collaborators/:userId — remove collaborator
@@ -1210,7 +1210,7 @@ export async function itinerariesRoutes(app) {
       'DELETE FROM itinerary_collaborators WHERE itinerary_id = $1 AND user_id = $2',
       [request.params.id, request.params.userId],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /itineraries/:id/fork — clone a public itinerary to the current user
@@ -1251,7 +1251,7 @@ export async function itinerariesRoutes(app) {
     // Increment forks_count on the source (fire-and-forget)
     query('UPDATE itineraries SET forks_count = forks_count + 1 WHERE id = $1', [src.id]).catch(() => {})
 
-    reply.status(201).send({ id: inserted[0].id })
+    return reply.status(201).send({ id: inserted[0].id })
   })
 
   // DELETE /itineraries/:id
@@ -1261,7 +1261,7 @@ export async function itinerariesRoutes(app) {
     if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
 
     await query('DELETE FROM itineraries WHERE id = $1', [request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // ── Itinerary comments ──────────────────────────────────────────────────────

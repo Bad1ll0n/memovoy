@@ -36,7 +36,7 @@ export async function notificationsRoutes(app) {
     const notifs      = rows.slice(0, limit)
 
     reply.header('Server-Timing', `db;dur=${Date.now() - t0}`)
-    reply.send({
+    return reply.send({
       notifications: notifs.map((n) => ({
         id:        n.id,
         type:      n.type,
@@ -58,7 +58,7 @@ export async function notificationsRoutes(app) {
       'SELECT COUNT(*) FROM notifications WHERE recipient_id = $1 AND NOT read',
       [request.user.id],
     )
-    reply.send({ count: Number(rows[0].count) })
+    return reply.send({ count: Number(rows[0].count) })
   })
 
   // PUT /notifications/read-all
@@ -67,7 +67,7 @@ export async function notificationsRoutes(app) {
       'UPDATE notifications SET read = TRUE WHERE recipient_id = $1 AND NOT read',
       [request.user.id],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // PUT /notifications/:id/read
@@ -76,14 +76,14 @@ export async function notificationsRoutes(app) {
       'UPDATE notifications SET read = TRUE WHERE id = $1 AND recipient_id = $2',
       [request.params.id, request.user.id],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /notifications/settings — ler preferências de notificação
   app.get('/settings', { preHandler: [app.authenticate] }, async (request, reply) => {
     const { rows } = await query('SELECT notif_prefs FROM users WHERE id = $1', [request.user.id])
     if (rows.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
-    reply.send({ ...PREFS_POR_OMISSAO, ...(rows[0].notif_prefs ?? {}) })
+    return reply.send({ ...PREFS_POR_OMISSAO, ...(rows[0].notif_prefs ?? {}) })
   })
 
   // PATCH /notifications/settings — guardar preferências de notificação
@@ -96,14 +96,14 @@ export async function notificationsRoutes(app) {
     const novas   = { ...PREFS_POR_OMISSAO, ...actuais, ...parsed.data }
 
     await query('UPDATE users SET notif_prefs = $1 WHERE id = $2', [JSON.stringify(novas), request.user.id])
-    reply.send(novas)
+    return reply.send(novas)
   })
 
   // GET /notifications/vapid-key — public VAPID key for push subscriptions
   app.get('/vapid-key', async (_request, reply) => {
     const key = getVapidPublicKey()
     if (!key) return reply.status(503).send({ message: 'Push notifications not configured.' })
-    reply.send({ publicKey: key })
+    return reply.send({ publicKey: key })
   })
 
   // POST /notifications/push-subscribe
@@ -122,7 +122,7 @@ export async function notificationsRoutes(app) {
        ON CONFLICT (user_id, endpoint) DO UPDATE SET p256dh = $3, auth = $4`,
       [request.user.id, parsed.data.endpoint, parsed.data.p256dh, parsed.data.auth],
     )
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /notifications/push-subscribe
@@ -135,6 +135,6 @@ export async function notificationsRoutes(app) {
       'DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2',
       [request.user.id, parsed.data.endpoint],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 }

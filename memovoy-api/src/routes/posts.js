@@ -120,7 +120,7 @@ export async function postsRoutes(app) {
 
     const hasMore = rows.length > 20
     const posts   = rows.slice(0, 20)
-    reply.send({
+    return reply.send({
       posts:      posts.map((r) => ({ ...postDto(r), distanceKm: Math.round(r.distance_km * 10) / 10 })),
       nextCursor: hasMore ? String(posts[posts.length - 1].distance_km) : null,
     })
@@ -155,7 +155,7 @@ export async function postsRoutes(app) {
     )
 
     if (rows.length === 0) return reply.status(404).send({ message: 'Post não encontrado.' })
-    reply.send(postDto(rows[0]))
+    return reply.send(postDto(rows[0]))
   })
 
   // POST /posts
@@ -224,7 +224,7 @@ export async function postsRoutes(app) {
       }).catch(() => {})
     }
 
-    reply.status(201).send(postDto({
+    return reply.status(201).send(postDto({
       ...rows[0],
       likes_count: 0,
       comments_count: 0,
@@ -266,7 +266,7 @@ export async function postsRoutes(app) {
       `UPDATE posts SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${idx} RETURNING *`,
       values,
     )
-    reply.send(postDto({ ...rows[0], likes_count: 0, comments_count: 0 }))
+    return reply.send(postDto({ ...rows[0], likes_count: 0, comments_count: 0 }))
   })
 
   // DELETE /posts/:id
@@ -276,7 +276,7 @@ export async function postsRoutes(app) {
     if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
 
     await query('DELETE FROM posts WHERE id = $1', [request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /posts/:id/like
@@ -305,13 +305,13 @@ export async function postsRoutes(app) {
       checkFirstLike(authorId).catch(() => {})
     }
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /posts/:id/like
   app.delete('/:id/like', { preHandler: [app.authenticate] }, async (request, reply) => {
     await query('DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2', [request.params.id, request.user.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /posts/:id/comments
@@ -329,7 +329,7 @@ export async function postsRoutes(app) {
        ORDER BY c.created_at DESC`,
       [request.params.id, viewerId],
     )
-    reply.send({ comments: rows.map(commentDto) })
+    return reply.send({ comments: rows.map(commentDto) })
   })
 
   // POST /posts/:id/comments
@@ -379,7 +379,7 @@ export async function postsRoutes(app) {
     // Fetch display_name from DB (JWT payload só tem id e username)
     const { rows: userRows } = await query('SELECT display_name, avatar_url FROM users WHERE id = $1', [request.user.id])
     const u = userRows[0] ?? {}
-    reply.status(201).send(commentDto({ ...comment, username: request.user.username, display_name: u.display_name, avatar_url: u.avatar_url }))
+    return reply.status(201).send(commentDto({ ...comment, username: request.user.username, display_name: u.display_name, avatar_url: u.avatar_url }))
   })
 
   // POST /posts/suggest-caption — AI caption suggestion
@@ -395,9 +395,9 @@ export async function postsRoutes(app) {
 
     try {
       const result = await agentSuggestCaption(parsed.data)
-      reply.send({ caption: result.caption ?? '' })
+      return reply.send({ caption: result.caption ?? '' })
     } catch {
-      reply.status(500).send({ message: 'Erro ao gerar legenda. Tenta novamente.' })
+      return reply.status(500).send({ message: 'Erro ao gerar legenda. Tenta novamente.' })
     }
   })
 
@@ -440,14 +440,14 @@ export async function postsRoutes(app) {
       [request.params.id, request.user.id],
     )
     const { rows } = await query('SELECT COUNT(*) AS n FROM comment_likes WHERE comment_id = $1', [request.params.id])
-    reply.status(201).send({ ok: true, likes: Number(rows[0].n) })
+    return reply.status(201).send({ ok: true, likes: Number(rows[0].n) })
   })
 
   // DELETE /posts/comments/:id/like
   app.delete('/comments/:id/like', { preHandler: [app.authenticate] }, async (request, reply) => {
     await query('DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [request.params.id, request.user.id])
     const { rows } = await query('SELECT COUNT(*) AS n FROM comment_likes WHERE comment_id = $1', [request.params.id])
-    reply.send({ ok: true, likes: Number(rows[0].n) })
+    return reply.send({ ok: true, likes: Number(rows[0].n) })
   })
 
   // DELETE /posts/comments/:id — apagar comentário próprio
@@ -456,6 +456,6 @@ export async function postsRoutes(app) {
     if (rows.length === 0) return reply.status(404).send({ message: 'Comentário não encontrado.' })
     if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
     await query('DELETE FROM post_comments WHERE id = $1', [request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 }

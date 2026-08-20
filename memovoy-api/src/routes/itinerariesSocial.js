@@ -18,7 +18,7 @@ export async function itinerariesSocialRoutes(app) {
        ORDER BY c.created_at DESC`,
       [request.params.id],
     )
-    reply.send({
+    return reply.send({
       comments: rows.map((r) => ({
         id:          r.id,
         userId:      r.user_id,
@@ -81,7 +81,7 @@ export async function itinerariesSocialRoutes(app) {
     )
     const u = userRows[0] ?? {}
 
-    reply.status(201).send({
+    return reply.status(201).send({
       id:          comment.id,
       userId:      comment.user_id,
       username:    request.user.username,
@@ -102,7 +102,7 @@ export async function itinerariesSocialRoutes(app) {
     if (rows.length === 0) return reply.status(404).send({ message: 'Comentário não encontrado.' })
     if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
     await query('DELETE FROM itinerary_comments WHERE id = $1', [request.params.commentId])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // ── Itinerary Reactions ─────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ export async function itinerariesSocialRoutes(app) {
       [request.params.id, viewerId],
     )
     const r = rows[0] ?? {}
-    reply.send({
+    return reply.send({
       queroIr:        Number(r.quero_ir_count ?? 0),
       jaFui:          Number(r.ja_fui_count   ?? 0),
       viewerReaction: r.viewer_reaction ?? null,
@@ -156,7 +156,7 @@ export async function itinerariesSocialRoutes(app) {
       if (global._io) global._io.to(`user:${itiRows[0].user_id}`).emit('new_notification', { type: 'reaction' })
     }
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /itineraries/:id/reactions — remove reaction
@@ -165,7 +165,7 @@ export async function itinerariesSocialRoutes(app) {
       'DELETE FROM itinerary_reactions WHERE itinerary_id = $1 AND user_id = $2',
       [request.params.id, request.user.id],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // ── Fork lineage ────────────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ export async function itinerariesSocialRoutes(app) {
       author:      { username: r.username, avatarUrl: r.avatar_url },
     })
 
-    reply.send({
+    return reply.send({
       parent:   parentRows[0] ? toNode(parentRows[0]) : null,
       children: childRows.map(toNode),
     })

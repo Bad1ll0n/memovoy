@@ -36,7 +36,7 @@ export async function bookmarksRoutes(app) {
       }
     }
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /bookmarks/post/:postId
@@ -45,7 +45,7 @@ export async function bookmarksRoutes(app) {
       'DELETE FROM bookmarks WHERE user_id = $1 AND post_id = $2',
       [request.user.id, request.params.postId],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // DELETE /bookmarks/itinerary/:itineraryId
@@ -58,6 +58,6 @@ export async function bookmarksRoutes(app) {
       'UPDATE itineraries SET saves_count = GREATEST(saves_count - 1, 0) WHERE id = $1',
       [request.params.itineraryId],
     )
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 }

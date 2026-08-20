@@ -85,7 +85,7 @@ export async function uploadsRoutes(app) {
       ? `${ENDPOINT}/${BUCKET}/${key}`
       : `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`
 
-    reply.send({ publicUrl, key })
+    return reply.send({ publicUrl, key })
   })
 
   // POST /uploads/presign — returns a pre-signed PUT URL for direct browser upload
@@ -125,7 +125,7 @@ export async function uploadsRoutes(app) {
       ? `${ENDPOINT}/${BUCKET}/${key}`
       : `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`
 
-    reply.send({ uploadUrl, publicUrl, key })
+    return reply.send({ uploadUrl, publicUrl, key })
   })
 
   // POST /uploads/recognize-destination — identify travel destination from photo URL
@@ -144,9 +144,9 @@ export async function uploadsRoutes(app) {
 
     try {
       const result = await agentIdentifyDestinationFromPhoto(parsed.data.imageUrl)
-      reply.send(result)
+      return reply.send(result)
     } catch {
-      reply.status(500).send({ message: 'Não foi possível identificar o destino. Tenta novamente.' })
+      return reply.status(500).send({ message: 'Não foi possível identificar o destino. Tenta novamente.' })
     }
   })
 }

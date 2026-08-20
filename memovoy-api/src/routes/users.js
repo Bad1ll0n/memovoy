@@ -75,7 +75,7 @@ export async function usersRoutes(app) {
       [request.user.id],
     )
     if (rows.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
-    reply.send(userDto(rows[0], request.user.id))
+    return reply.send(userDto(rows[0], request.user.id))
   })
 
   // GET /users/buddies — travel buddy matching by compatible travel styles
@@ -128,9 +128,9 @@ export async function usersRoutes(app) {
         score:       profileMap[m.userId]?.score,
       }))
 
-      reply.send({ matches: enriched })
+      return reply.send({ matches: enriched })
     } catch {
-      reply.send({ matches: [] })
+      return reply.send({ matches: [] })
     }
   })
 
@@ -157,7 +157,7 @@ export async function usersRoutes(app) {
       [viewerId, limit],
     )
 
-    reply.send(rows.map((r) => userDto(r, viewerId)))
+    return reply.send(rows.map((r) => userDto(r, viewerId)))
   })
 
   // GET /users/:id
@@ -187,7 +187,7 @@ export async function usersRoutes(app) {
     )
 
     if (rows.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
-    reply.send(userDto(rows[0], viewerId))
+    return reply.send(userDto(rows[0], viewerId))
   })
 
   // PATCH /users/me
@@ -221,7 +221,7 @@ export async function usersRoutes(app) {
       values,
     )
 
-    reply.send({ user: userDto(rows[0], request.user.id) })
+    return reply.send({ user: userDto(rows[0], request.user.id) })
   })
 
   // DELETE /users/me
@@ -232,7 +232,7 @@ export async function usersRoutes(app) {
     await logAudit(request.user.id, 'account_delete', {}, request.headers['x-forwarded-for'] ?? null)
     await query('DELETE FROM users WHERE id = $1', [request.user.id])
     reply.clearCookie('refreshToken', { path: '/auth' })
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /users/:id/follow
@@ -257,14 +257,14 @@ export async function usersRoutes(app) {
 
     checkFirstFollower(id).catch(() => {})
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /users/:id/follow
   app.delete('/:id/follow', { preHandler: [app.authenticate] }, async (request, reply) => {
     const { id } = request.params
     await query('DELETE FROM follows WHERE follower_id = $1 AND following_id = $2', [request.user.id, id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /users/:id/followers
@@ -281,7 +281,7 @@ export async function usersRoutes(app) {
        ORDER BY f.created_at DESC`,
       [request.params.id, viewerId],
     )
-    reply.send({ users: rows.map((r) => userDto(r, viewerId)) })
+    return reply.send({ users: rows.map((r) => userDto(r, viewerId)) })
   })
 
   // GET /users/:id/following
@@ -298,7 +298,7 @@ export async function usersRoutes(app) {
        ORDER BY f.created_at DESC`,
       [request.params.id, viewerId],
     )
-    reply.send({ users: rows.map((r) => userDto(r, viewerId)) })
+    return reply.send({ users: rows.map((r) => userDto(r, viewerId)) })
   })
 
   // GET /users/:id/posts
@@ -341,7 +341,7 @@ export async function usersRoutes(app) {
     const hasMore = rows.length > limit
     const posts   = rows.slice(0, limit)
 
-    reply.send({
+    return reply.send({
       posts: posts.map(postDto),
       nextCursor: hasMore ? posts[posts.length - 1].id : null,
     })
@@ -407,7 +407,7 @@ export async function usersRoutes(app) {
       } : null,
     }))
 
-    reply.send({
+    return reply.send({
       items,
       nextCursor: hasMore ? items[items.length - 1].bookmarkId : null,
     })
@@ -455,7 +455,7 @@ export async function usersRoutes(app) {
     const hasMore = rows.length > limit
     const posts   = rows.slice(0, limit)
 
-    reply.send({
+    return reply.send({
       posts:      posts.map(postDto),
       nextCursor: hasMore ? posts[posts.length - 1].id : null,
     })
@@ -482,7 +482,7 @@ export async function usersRoutes(app) {
     const hasMore = rows.length > limit
     const items   = rows.slice(0, limit)
 
-    reply.send({
+    return reply.send({
       itineraries: items.map((r) => ({
         id:          r.id,
         title:       r.title,
@@ -510,7 +510,7 @@ export async function usersRoutes(app) {
        ORDER BY last_seen_at DESC`,
       [request.user.id],
     )
-    reply.send({
+    return reply.send({
       sessions: rows.map((r) => ({
         id:         r.id,
         jti:        r.jti,
@@ -540,7 +540,7 @@ export async function usersRoutes(app) {
         [request.params.jti, expiresAt],
       ),
     ])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // ── GDPR export ─────────────────────────────────────────────────────────────
@@ -569,7 +569,7 @@ export async function usersRoutes(app) {
       messages:     messagesRows.rows,
     }
 
-    reply
+    return reply
       .header('Content-Type', 'application/json; charset=utf-8')
       .header('Content-Disposition', `attachment; filename="memovoy-export-${uid}.json"`)
       .send(JSON.stringify(exportData, null, 2))
@@ -591,7 +591,7 @@ export async function usersRoutes(app) {
       [id, limit],
     )
 
-    reply.send({
+    return reply.send({
       checkins: rows.map((r) => ({
         itineraryId:    r.itinerary_id,
         itineraryTitle: r.itinerary_title,
@@ -643,7 +643,7 @@ export async function usersRoutes(app) {
       ),
     ])
 
-    reply.send({
+    return reply.send({
       byYear:          yearlyRows.rows.map((r) => ({
         year:         r.year,
         itineraries:  Number(r.itineraries),

@@ -50,7 +50,7 @@ export async function exploreRoutes(app) {
       // not critical — return empty
     }
 
-    reply.send({
+    return reply.send({
       itineraries: similar.map((r) => ({
         id:          r.id,
         title:       r.title,
@@ -98,7 +98,7 @@ export async function exploreRoutes(app) {
     const hasMore = rows.length > limit
     const posts   = rows.slice(0, limit)
 
-    reply.send({
+    return reply.send({
       posts: posts.map((row) => ({
         id:            row.id,
         userId:        row.user_id,

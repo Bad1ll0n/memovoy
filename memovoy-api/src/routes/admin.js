@@ -87,7 +87,7 @@ export async function adminRoutes(app) {
       for (const e of encontrados) excertos[`${tipo}:${e.id}`] = e
     }
 
-    reply.send({
+    return reply.send({
       reports: rows.map((r) => {
         const alvo = excertos[`${r.target_type}:${r.target_id}`]
         return {
@@ -119,7 +119,7 @@ export async function adminRoutes(app) {
          COUNT(*) FILTER (WHERE status = 'pending' AND ai_severity = 'critical')::int AS criticas
        FROM content_reports`,
     )
-    reply.send(rows[0])
+    return reply.send(rows[0])
   })
 
   // ─── POST /admin/reports/resolve ────────────────────────────────────────
@@ -179,6 +179,6 @@ export async function adminRoutes(app) {
       targetType, targetId, resolution, reports: rowCount,
     }, request.ip)
 
-    reply.send({ ok: true, resolvidas: rowCount, resolution })
+    return reply.send({ ok: true, resolvidas: rowCount, resolution })
   })
 }

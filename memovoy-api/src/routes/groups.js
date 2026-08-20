@@ -47,7 +47,7 @@ export async function groupsRoutes(app) {
     const groupId = rows[0].id
     // Auto-join owner
     await query('INSERT INTO group_members (group_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [groupId, request.user.id])
-    reply.status(201).send({ id: groupId })
+    return reply.status(201).send({ id: groupId })
   })
 
   // GET /groups — list public groups + groups the user belongs to
@@ -73,7 +73,7 @@ export async function groupsRoutes(app) {
        LIMIT $3`,
       [viewerId, search, limit],
     )
-    reply.send({ groups: rows.map((r) => groupDto(r, viewerId)) })
+    return reply.send({ groups: rows.map((r) => groupDto(r, viewerId)) })
   })
 
   // GET /groups/:id — group detail
@@ -110,7 +110,7 @@ export async function groupsRoutes(app) {
       [request.params.id],
     )
 
-    reply.send({ ...group, recentMembers: memberRows.map((m) => ({
+    return reply.send({ ...group, recentMembers: memberRows.map((m) => ({
       id: m.id, username: m.username, displayName: m.display_name ?? m.username, avatarUrl: m.avatar_url,
     })) })
   })
@@ -140,7 +140,7 @@ export async function groupsRoutes(app) {
     if (updates.length === 0) return reply.send({ ok: true })
 
     await query(`UPDATE travel_groups SET ${updates.join(', ')} WHERE id = $1`, values)
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /groups/:id/join
@@ -163,7 +163,7 @@ export async function groupsRoutes(app) {
       }).catch(() => {})
     }
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /groups/:id/leave
@@ -174,7 +174,7 @@ export async function groupsRoutes(app) {
       return reply.status(400).send({ message: 'O dono não pode sair. Elimina o grupo ou transfere a propriedade.' })
     }
     await query('DELETE FROM group_members WHERE group_id = $1 AND user_id = $2', [request.params.id, request.user.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // PATCH /groups/:id/transfer — transfer ownership to another member (owner only)
@@ -196,7 +196,7 @@ export async function groupsRoutes(app) {
     if (memberCheck.length === 0) return reply.status(400).send({ message: 'O utilizador não é membro do grupo.' })
 
     await query('UPDATE travel_groups SET owner_id = $1 WHERE id = $2', [parsed.data.userId, request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /groups/:id/invite — invite a user to a private group (owner or member)
@@ -240,7 +240,7 @@ export async function groupsRoutes(app) {
       targetUrl:   `/groups/${groupId}`,
     }).catch(() => {})
 
-    reply.status(201).send({ token: invite[0].token })
+    return reply.status(201).send({ token: invite[0].token })
   })
 
   // GET /groups/:id/invites — list pending invites for this group (owner only)
@@ -261,7 +261,7 @@ export async function groupsRoutes(app) {
       [request.params.id],
     )
 
-    reply.send({ invites: rows.map((r) => ({
+    return reply.send({ invites: rows.map((r) => ({
       id:         r.id,
       token:      r.token,
       status:     r.status,
@@ -285,7 +285,7 @@ export async function groupsRoutes(app) {
     await query('INSERT INTO group_members (group_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [request.params.id, request.user.id])
     await query("UPDATE group_invites SET status = 'accepted' WHERE token = $1", [request.params.token])
 
-    reply.status(201).send({ ok: true })
+    return reply.status(201).send({ ok: true })
   })
 
   // DELETE /groups/:id — delete group (owner only)
@@ -294,7 +294,7 @@ export async function groupsRoutes(app) {
     if (rows.length === 0) return reply.status(404).send({ message: 'Grupo não encontrado.' })
     if (rows[0].owner_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
     await query('DELETE FROM travel_groups WHERE id = $1', [request.params.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /groups/:id/feed — posts shared to this group
@@ -333,7 +333,7 @@ export async function groupsRoutes(app) {
     )
 
     const hasMore = rows.length > limit
-    reply.send({ posts: rows.slice(0, limit).map((r) => ({
+    return reply.send({ posts: rows.slice(0, limit).map((r) => ({
       id: r.id, userId: r.user_id, username: r.username, displayName: r.display_name ?? r.username,
       avatarUrl: r.avatar_url, isVerified: r.is_verified ?? false, caption: r.caption,
       images: r.images ?? [], destination: r.destination, likesCount: Number(r.likes_count ?? 0),

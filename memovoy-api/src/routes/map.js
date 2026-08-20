@@ -55,7 +55,7 @@ export async function mapRoutes(app) {
        ORDER BY count DESC`,
     )
 
-    reply.send(
+    return reply.send(
       rows.map((r) => ({
         countryCode: toCountryCode(r.country),
         countryName: r.country,
@@ -75,7 +75,7 @@ export async function mapRoutes(app) {
       [request.user.id],
     )
 
-    reply.send(
+    return reply.send(
       rows.map((r) => ({
         countryCode: toCountryCode(r.country),
         countryName: r.country,
@@ -95,7 +95,7 @@ export async function mapRoutes(app) {
       [request.params.id],
     )
 
-    reply.send(
+    return reply.send(
       rows.map((r) => ({
         countryCode: toCountryCode(r.country),
         countryName: r.country,

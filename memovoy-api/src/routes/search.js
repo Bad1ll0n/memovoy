@@ -14,9 +14,9 @@ export async function searchRoutes(app) {
 
     try {
       const result = await agentSearchDestinations(parsed.data.query)
-      reply.send(result)
+      return reply.send(result)
     } catch {
-      reply.status(503).send({ message: 'Pesquisa com IA indisponível. Tenta novamente.' })
+      return reply.status(503).send({ message: 'Pesquisa com IA indisponível. Tenta novamente.' })
     }
   })
 
@@ -77,7 +77,7 @@ export async function searchRoutes(app) {
     ])
 
     reply.header('Server-Timing', `db;dur=${Date.now() - t0}`)
-    reply.send({
+    return reply.send({
       users: usersRes.rows.map((u) => ({
         id:             u.id,
         username:       u.username,

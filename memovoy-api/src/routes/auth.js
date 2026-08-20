@@ -157,7 +157,7 @@ export async function authRoutes(app) {
     setRefreshCookie(reply, refreshToken)
     recordSession(user.id, jti, request)
 
-    reply.send({ user: userDto(user), accessToken })
+    return reply.send({ user: userDto(user), accessToken })
   })
 
   // POST /auth/login
@@ -238,7 +238,7 @@ export async function authRoutes(app) {
     setRefreshCookie(reply, rt2)
     recordSession(user.id, jti2, request)
 
-    reply.send({ user: userDto(user), accessToken })
+    return reply.send({ user: userDto(user), accessToken })
   })
 
   // POST /auth/2fa/authenticate — exchange tempToken + TOTP code for a real session
@@ -270,7 +270,7 @@ export async function authRoutes(app) {
     const { accessToken, refreshToken: rt2fa, jti: jti2fa } = makeTokens(user.id, user.username)
     setRefreshCookie(reply, rt2fa)
     recordSession(user.id, jti2fa, request)
-    reply.send({ user: userDto(user), accessToken })
+    return reply.send({ user: userDto(user), accessToken })
   })
 
   // POST /auth/2fa/setup — generate a new TOTP secret (not yet active)
@@ -285,7 +285,7 @@ export async function authRoutes(app) {
     const uri = otpauthUrl(secret, rows[0].email)
     const qrCodeDataUrl = await QRCode.toDataURL(uri, { width: 200, margin: 1 })
 
-    reply.send({ secret, qrCodeDataUrl })
+    return reply.send({ secret, qrCodeDataUrl })
   })
 
   // POST /auth/2fa/confirm — verify first TOTP code and activate 2FA
@@ -303,7 +303,7 @@ export async function authRoutes(app) {
     }
 
     await query('UPDATE users SET totp_enabled = TRUE WHERE id = $1', [request.user.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // DELETE /auth/2fa — disable 2FA (requires valid TOTP code or current password)
@@ -320,7 +320,7 @@ export async function authRoutes(app) {
     }
 
     await query('UPDATE users SET totp_secret = NULL, totp_enabled = FALSE WHERE id = $1', [request.user.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // GET /auth/verify-email?token=xxx
@@ -347,7 +347,7 @@ export async function authRoutes(app) {
       [rows[0].id],
     )
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /auth/resend-verification
@@ -368,7 +368,7 @@ export async function authRoutes(app) {
     )
 
     sendVerificationEmail(rows[0].email, token).catch(() => {})
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /auth/refresh
@@ -412,7 +412,7 @@ export async function authRoutes(app) {
     setRefreshCookie(reply, refreshToken)
     recordSession(user.id, newJti, request)
 
-    reply.send({ user: userDto(user), accessToken })
+    return reply.send({ user: userDto(user), accessToken })
   })
 
   // POST /auth/change-password
@@ -441,13 +441,13 @@ export async function authRoutes(app) {
 
     logAudit(request.user.id, 'password_change', {}, getClientIp(request))
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /auth/complete-onboarding
   app.post('/complete-onboarding', { preHandler: [app.authenticate] }, async (request, reply) => {
     await query('UPDATE users SET onboarding_completed = TRUE WHERE id = $1', [request.user.id])
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /auth/logout — revoke refresh token
@@ -466,7 +466,7 @@ export async function authRoutes(app) {
       } catch { /* token invalid — nothing to revoke */ }
     }
     reply.clearCookie('refreshToken', { path: '/auth' })
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /auth/forgot-password
@@ -493,7 +493,7 @@ export async function authRoutes(app) {
     )
 
     sendPasswordResetEmail(user.email, token).catch(() => {})
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 
   // POST /auth/reset-password
@@ -524,6 +524,6 @@ export async function authRoutes(app) {
       [hash, rows[0].id],
     )
 
-    reply.send({ ok: true })
+    return reply.send({ ok: true })
   })
 }

@@ -39,7 +39,7 @@ export async function conversationsRoutes(app) {
       [userId],
     )
 
-    reply.send(
+    return reply.send(
       rows.map((r) => ({
         id: r.id,
         otherUser: {
@@ -93,7 +93,7 @@ export async function conversationsRoutes(app) {
 
     const other = otherRows[0]
 
-    reply.send({
+    return reply.send({
       id: convId,
       otherUser: {
         id:        other.id,
@@ -143,6 +143,6 @@ export async function conversationsRoutes(app) {
       [convId, myId, targetId],
     )
 
-    reply.status(201).send({ id: convId })
+    return reply.status(201).send({ id: convId })
   })
 }
