@@ -186,7 +186,7 @@ export default function SearchPage() {
             onClick={() => aiSearchMutation.mutate()}
             disabled={aiSearchMutation.isPending}
             className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: '#fff' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {aiSearchMutation.isPending ? <Spinner size="sm" /> : <Sparkles className="w-3 h-3" />}
             {aiSearchMutation.isPending ? '' : 'Pesquisar'}

@@ -60,6 +60,11 @@ export function AuthBrandPanel({ tagline }: { tagline?: string }) {
   return (
     <div
       className="hidden md:flex flex-col items-center justify-between p-12 text-center relative overflow-hidden select-none"
+      // Cores literais de propósito, e as únicas do projecto que ficam assim.
+      // Este painel tem fundo fixo e não segue o tema: é a face de marca das
+      // páginas de entrada, e mudar de cor conforme as definições do sistema
+      // tirava-lhe a identidade. Todas as cores usadas aqui foram verificadas
+      // contra este fundo — a mais fraca dá 5,33:1, acima do mínimo de 4,5.
       style={{ background: '#0D1824' }}
     >
       {/* Dot grid texture */}

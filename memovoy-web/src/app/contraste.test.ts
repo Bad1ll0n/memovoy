@@ -104,15 +104,43 @@ describe.each([
   ['claro', '[data-theme="light"] {', CLARO],
 ] as const)('cores de estado no tema %s', (nome, selector, paleta) => {
   // Cada uma destas aparece sobre a sua própria versão translúcida: o
-  // .btn-danger e a pastilha LIVE num caso, o banner de sucesso no outro.
-  test.each(['danger', 'success'] as const)('--%s legível sobre a sua versão subtil', (cor) => {
+  // .btn-danger e a pastilha LIVE, o banner de sucesso, as cores do tempo no
+  // TripCompanion e o ícone das notificações de seguidor.
+  //
+  // Todas elas nasceram escritas à mão dentro dos componentes, e nenhuma
+  // passava — o padrão repetia-se cinco vezes porque não havia token para o
+  // caso. Agora há, e é aqui que se verifica.
+  test.each(['danger', 'success', 'info', 'warning', 'violet'] as const)(
+    '--%s legível sobre a sua versão subtil', (cor) => {
     const fundo = compor(tokenRgba(selector, `${cor}-subtle`), paleta['bg-card'])
     const r = contraste(paleta[cor], fundo)
 
     expect(r, `--${cor} ${paleta[cor]} sobre ${fundo} no tema ${nome}: ${r.toFixed(2)}:1`)
       .toBeGreaterThanOrEqual(MINIMO)
-  })
+  },
+  )
 })
+
+// Texto por cima de uma cor sólida da marca.
+//
+// O accent inverte entre temas: sobre o #47A3CB do escuro o branco dá 2,85:1 e
+// o escuro dá 6,28; sobre o #1A6B9F do claro é exactamente ao contrário. O
+// .btn-primary já resolvia isto com uma regra por tema, mas oito componentes
+// escreviam o estilo inline, contornavam a classe e ficavam com uma cor fixa —
+// errada num dos temas, sempre. Daí os tokens --on-accent e --on-danger.
+describe.each([['escuro', ESCURO], ['claro', CLARO]] as const)(
+  'texto sobre cor sólida no tema %s', (nome, paleta) => {
+    test.each([
+      ['on-accent', 'accent'],
+      ['on-danger', 'danger'],
+    ] as const)('--%s legível sobre --%s', (frente, fundo) => {
+      const r = contraste(paleta[frente], paleta[fundo])
+
+      expect(r, `--${frente} ${paleta[frente]} sobre --${fundo} ${paleta[fundo]} no tema ${nome}: ${r.toFixed(2)}:1`)
+        .toBeGreaterThanOrEqual(MINIMO)
+    })
+  },
+)
 
 describe('o cálculo em si', () => {
   // Sem isto, um erro na fórmula fazia o teste passar sempre e não protegia nada.

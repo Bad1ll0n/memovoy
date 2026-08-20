@@ -370,7 +370,7 @@ export default function GroupDetailPage() {
                   onClick={() => { if (confirm(`Transferir propriedade para @${transferFound.username}?`)) transferMutation.mutate(transferFound.id) }}
                   disabled={transferMutation.isPending}
                   className="btn text-xs px-3"
-                  style={{ background: 'var(--danger)', color: '#fff' }}
+                  style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
                 >
                   Confirmar
                 </button>

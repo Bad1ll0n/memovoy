@@ -58,7 +58,7 @@ export function BottomNav() {
                   {count > 0 && (
                     <span
                       className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full text-[9px] font-bold flex items-center justify-center px-0.5"
-                      style={{ background: '#ff4757', color: '#fff' }}
+                      style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
                     >
                       {count > 99 ? '99+' : count}
                     </span>

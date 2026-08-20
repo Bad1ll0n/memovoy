@@ -288,7 +288,7 @@ export default function PostDetailClient() {
                           onClick={() => deleteMutation.mutate()}
                           disabled={deleteMutation.isPending}
                           className="btn text-xs py-0.5 px-2.5 rounded-md"
-                          style={{ background: 'var(--danger)', color: '#fff' }}
+                          style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
                         >
                           {deleteMutation.isPending ? '…' : 'Sim'}
                         </button>

@@ -57,6 +57,14 @@
   --border:         #253D54;
   --accent:         #47A3CB;
   --accent-hover:   #3791B8;
+  /* Texto por cima do accent e do danger.
+     O accent inverte-se entre temas: sobre #47A3CB o branco dá 2,85:1 e o
+     escuro dá 6,28; sobre o #1A6B9F do tema claro é ao contrário. O .btn-primary
+     já tratava disto com uma regra por tema, mas os componentes que escrevem o
+     estilo inline contornavam a classe e ficavam com uma cor fixa — errada num
+     dos temas, sempre. */
+  --on-accent:      #0D1824;
+  --on-danger:      #0D1824;
   --text-primary:   #CBE0F2;
   --text-secondary: #8AAECB;
   /* #7090AA on #0D1824 → 5.4:1 (WCAG AA ✓) */
@@ -69,6 +77,17 @@
   --danger-subtle:  rgba(248, 113, 113, 0.12);
   --success:        #68BCA0;
   --success-subtle: rgba(104, 188, 160, 0.10);
+  /* Estados que só existiam escritos à mão nos componentes: azul de informação,
+     âmbar de aviso e violeta das notificações de seguidor. Cada um aparece
+     sobre um tinto de si próprio, e nenhum passava os 4,5:1 — tal como o
+     --danger e o --success antes de serem corrigidos. Escolhidos por busca:
+     o tom mais próximo do original que passa. */
+  --info:           #5F99F8;
+  --info-subtle:    rgba(95, 153, 248, 0.12);
+  --warning:        #DB7E12;
+  --warning-subtle: rgba(219, 126, 18, 0.12);
+  --violet:         #BB7AF9;
+  --violet-subtle:  rgba(187, 122, 249, 0.12);
   --gold:           #ffd700;
   --silver:         #c0c0c0;
   --bronze:         #cd7f32;
@@ -85,6 +104,8 @@
   --border:         #CCDAE8;
   --accent:         #1A6B9F;
   --accent-hover:   #155A89;
+  --on-accent:      #FFFFFF;
+  --on-danger:      #FFFFFF;
   --text-primary:   #192736;
   /* #3E5D78 on #F2F6FA → 5.8:1 (WCAG AA ✓) */
   --text-secondary: #3E5D78;
@@ -101,6 +122,13 @@
      claro precisa de um tom mais escuro do que o escuro. */
   --success:        #276E56;
   --success-subtle: rgba(39, 110, 86, 0.10);
+  /* Mais escuros do que os do tema escuro, pela mesma razão do --danger. */
+  --info:           #2E66C1;
+  --info-subtle:    rgba(46, 102, 193, 0.12);
+  --warning:        #9F5704;
+  --warning-subtle: rgba(159, 87, 4, 0.12);
+  --violet:         #8945CA;
+  --violet-subtle:  rgba(137, 69, 202, 0.12);
 }
 
 /* ─── Tailwind v4 theme tokens ─── */
@@ -111,12 +139,20 @@
   --color-bg-card:        var(--bg-card);
   --color-surface2:       var(--surface2);
   --color-border-base:    var(--border);
+  --color-on-accent:      var(--on-accent);
+  --color-on-danger:      var(--on-danger);
   --color-accent:         var(--accent);
   --color-accent-hover:   var(--accent-hover);
   --color-text-primary:   var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted:     var(--text-muted);
   --color-success-subtle: var(--success-subtle);
+  --color-info:           var(--info);
+  --color-info-subtle:    var(--info-subtle);
+  --color-warning:        var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-violet:         var(--violet);
+  --color-violet-subtle:  var(--violet-subtle);
   --color-danger:         var(--danger);
   --color-danger-subtle:  var(--danger-subtle);
   --color-success:        var(--success);
@@ -260,10 +296,9 @@ mark {
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .btn-primary { background: var(--accent); color: #000; }
+  /* Uma regra em vez de duas: o token já traz o valor certo de cada tema. */
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
   .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-  /* Light mode: dark accent (#1A6B9F) needs white text to meet WCAG AA (5.1:1 vs 4.3:1) */
-  [data-theme="light"] .btn-primary { color: #fff; }
 
   .btn-secondary {
     background: transparent;
@@ -494,7 +529,10 @@ mark {
     border-radius: 99px;
     font-size: 0.65rem;
     font-weight: 700;
-    background: #ff4757;
+    /* Era #ff4757, de uma paleta antiga: com texto branco dá 3,34:1 nos dois
+       temas. O --danger tem valor próprio por tema e o --on-danger acompanha. */
+    background: var(--danger);
+    color: var(--on-danger);
     color: #fff;
     line-height: 1;
   }

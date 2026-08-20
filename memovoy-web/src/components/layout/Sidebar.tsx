@@ -30,7 +30,7 @@ function Badge({ count }: { count: number }) {
   return (
     <span
       className="ml-auto min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center px-1"
-      style={{ background: '#ff4757', color: '#fff' }}
+      style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
     >
       {count > 99 ? '99+' : count}
     </span>

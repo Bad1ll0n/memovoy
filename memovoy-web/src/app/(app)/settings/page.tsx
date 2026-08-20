@@ -160,7 +160,7 @@ export default function SettingsPage() {
         </div>
         <button
           className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 cursor-not-allowed opacity-70"
-          style={{ background: 'var(--accent)', color: '#fff' }}
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           disabled
           title="Em breve"
         >

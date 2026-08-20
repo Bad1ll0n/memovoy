@@ -202,7 +202,9 @@ export function PostCard({ post, queryKey, index = 0 }: { post: Post; queryKey: 
               {estaAoVivo && (
                 <span
                   className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1"
-                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+                  // A mesma pastilha LIVE do LiveTripButton, duplicada aqui com
+                  // as cores em código. Dava 3,75:1 no escuro e 3,10 no claro.
+                  style={{ background: 'var(--danger-subtle)', color: 'var(--danger)' }}
                 >
                   <Radio className="w-2.5 h-2.5" />
                   LIVE

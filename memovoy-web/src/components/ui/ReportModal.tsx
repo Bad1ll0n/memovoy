@@ -126,7 +126,7 @@ export function ReportModal({ targetType, targetId, onClose }: Props) {
               onClick={handleSubmit}
               disabled={!reason || loading}
               className="btn w-full text-sm disabled:opacity-40"
-              style={{ background: 'var(--danger)', color: '#fff' }}
+              style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
             >
               {loading ? <Spinner size="sm" /> : 'Enviar reporte'}
             </button>

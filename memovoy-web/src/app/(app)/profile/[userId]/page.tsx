@@ -428,7 +428,7 @@ export default function ProfilePage() {
                 Mapa de viagens
               </span>
               {(mapCountries?.length ?? 0) > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent)', color: '#fff' }}>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}>
                   {mapCountries!.length} {mapCountries!.length === 1 ? 'país' : 'países'}
                 </span>
               )}

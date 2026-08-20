@@ -37,7 +37,7 @@ interface NotifPage {
 function notifMeta(type: NotifType) {
   switch (type) {
     case 'like':    return { Icon: Heart,       bg: 'rgba(248,113,113,0.15)',  color: 'var(--danger)' }
-    case 'follow':  return { Icon: UserPlus,    bg: 'rgba(168,85,247,0.15)',   color: '#c084fc' }
+    case 'follow':  return { Icon: UserPlus,    bg: 'var(--violet-subtle)',    color: 'var(--violet)' }
     case 'comment': return { Icon: MessageCircle, bg: 'rgba(252,163,17,0.15)', color: 'var(--accent)' }
     case 'badge':   return { Icon: Trophy,      bg: 'rgba(34,197,94,0.15)',    color: 'var(--success)' }
     default:        return { Icon: Bell,        bg: 'rgba(252,163,17,0.1)',    color: 'var(--accent)' }

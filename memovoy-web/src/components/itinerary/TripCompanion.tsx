@@ -56,10 +56,10 @@ function weatherLabel(code: number) {
 }
 
 function alertColor(code: number) {
-  if (code >= 95) return { bg: 'rgba(220,38,38,0.1)', color: '#dc2626', border: 'rgba(220,38,38,0.2)' }
-  if (code >= 61) return { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: 'rgba(59,130,246,0.2)' }
+  if (code >= 95) return { bg: 'var(--danger-subtle)', color: 'var(--danger)', border: 'color-mix(in srgb, var(--danger) 25%, transparent)' }
+  if (code >= 61) return { bg: 'var(--info-subtle)', color: 'var(--info)', border: 'color-mix(in srgb, var(--info) 25%, transparent)' }
   if (code >= 45) return { bg: 'rgba(156,163,175,0.1)', color: 'var(--text-secondary)', border: 'rgba(156,163,175,0.15)' }
-  return { bg: 'rgba(252,211,77,0.08)', color: '#d97706', border: 'rgba(252,211,77,0.15)' }
+  return { bg: 'var(--warning-subtle)', color: 'var(--warning)', border: 'color-mix(in srgb, var(--warning) 25%, transparent)' }
 }
 
 export function TripCompanion({ itineraryId, activeDay, activeDate, isOwner, onActivitiesAdapted }: Props) {

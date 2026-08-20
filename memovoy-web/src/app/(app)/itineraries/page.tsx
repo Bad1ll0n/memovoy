@@ -226,7 +226,7 @@ function ItineraryCard({ it }: { it: ItinerarySummary }) {
               onClick={() => deleteMutation.mutate()}
               disabled={deleteMutation.isPending}
               className="px-2 py-1 rounded-lg text-xs font-medium"
-              style={{ background: 'var(--danger)', color: '#fff' }}
+              style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
             >
               {deleteMutation.isPending ? '…' : 'Sim'}
             </button>

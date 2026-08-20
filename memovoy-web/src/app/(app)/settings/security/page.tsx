@@ -239,7 +239,7 @@ export default function SecuritySettingsPage() {
               type="submit"
               disabled={code.length !== 6 || loading}
               className="btn text-sm w-full"
-              style={{ background: 'var(--danger)', color: '#fff' }}
+              style={{ background: 'var(--danger)', color: 'var(--on-danger)' }}
             >
               {loading ? <Spinner size="sm" /> : 'Desactivar 2FA'}
             </button>
