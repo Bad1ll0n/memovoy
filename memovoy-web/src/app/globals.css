@@ -139,7 +139,8 @@
 
 /* ─── Tailwind v4 theme tokens ─── */
 @theme inline {
-  --font-sans: var(--font-poppins);
+  --font-sans: var(--font-app);
+  --font-display: var(--font-display);
 
   --color-bg-body:        var(--bg-body);
   --color-bg-card:        var(--bg-card);
@@ -182,9 +183,15 @@ html[data-theme="light"] { color-scheme: light; }
 body {
   background-color: var(--bg-body);
   color: var(--text-primary);
-  font-family: var(--font-poppins, system-ui, sans-serif);
+  font-family: var(--font-app, system-ui, sans-serif);
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Títulos na serifada; tudo o resto herda a sans do corpo. */
+h1, h2, h3 {
+  font-family: var(--font-display, Georgia, serif);
+  letter-spacing: -0.015em;
 }
 
 ::-webkit-scrollbar       { width: 5px; height: 5px; }

@@ -1,27 +1,29 @@
 import type { Metadata, Viewport } from 'next'
-import { Poppins, Syne, DM_Sans } from 'next/font/google'
+import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google'
 import './globals.css'
 import { ServiceWorkerRegistrar } from '@/components/ui/ServiceWorkerRegistrar'
 import { WebVitalsReporter } from '@/components/ui/WebVitalsReporter'
 
-const poppins = Poppins({
+// Plus Jakarta Sans, humanista: as letras têm inclinação e cortes menos
+// mecânicos do que a Poppins, que é geométrica. Lê-se com menos esforço em
+// texto corrido — e o feed é texto corrido.
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '700', '900'],
-  variable: '--font-poppins',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-app',
   display: 'swap',
 })
 
-const syne = Syne({
+// Fraunces nos títulos. É uma serifada com eixo óptico — redesenha-se conforme
+// o tamanho —, e é isso que a faz aguentar um título de 14px sem se desfazer,
+// que é onde a maioria das serifadas falha.
+//
+// Uma serifada ao lado de uma sans diz "isto é um título" sem precisar de peso
+// nem de tamanho. Duas sans a competir uma com a outra não conseguem isso.
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
-  variable: '--font-syne',
-  display: 'swap',
-})
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500'],
-  variable: '--font-dm-sans',
+  weight: ['600', '700'],
+  variable: '--font-display',
   display: 'swap',
 })
 
@@ -44,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="pt"
       suppressHydrationWarning
-      className={`${poppins.variable} ${syne.variable} ${dmSans.variable} h-full`}
+      className={`${jakarta.variable} ${fraunces.variable} h-full`}
     >
       <head>
         {/* Prevent theme flash */}

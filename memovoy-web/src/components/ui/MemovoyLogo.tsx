@@ -15,61 +15,32 @@ export function MemovoyMark({ size = 32, color = 'currentColor', className }: Ma
       className={className}
       aria-hidden="true"
     >
-      {/* Orbit ring — dashed, suggests continuous journey */}
-      <circle
-        cx="16"
-        cy="16"
-        r="13"
-        stroke={color}
-        strokeWidth="1.25"
-        strokeDasharray="3.2 2.4"
-        opacity="0.35"
-      />
+      {/*
+        Duas formas, e nada mais.
 
-      {/* South arm — where you came from (faded) */}
-      <line
-        x1="16" y1="17.5"
-        x2="11" y2="26"
-        stroke={color}
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        opacity="0.22"
-      />
+        A versão anterior tinha sete elementos e quatro opacidades — anel
+        tracejado, quatro braços de 0,18 a 1,0, ponto e núcleo. A ideia era boa
+        (uma bússola onde o braço forte aponta para onde vais e o esbatido para
+        onde vieste), mas o símbolo é desenhado a 16 e 20px na navegação, e a
+        essa escala uma linha a 18% não existe e um tracejado de 3,2/2,4 fecha
+        numa mancha. Todo esse detalhe era invisível onde importava.
 
-      {/* West stub */}
-      <line
-        x1="14.5" y1="16"
-        x2="7" y2="13.5"
+        Agora: a silhueta de um pino, que se reconhece de longe, com uma onda
+        dentro que lhe dá o assunto. Traço grosso e uniforme, para aguentar
+        16px sem se desfazer.
+      */}
+      <path
+        d="M16 3 C 10.5 3, 6 7.5, 6 13 C 6 20, 16 29, 16 29 C 16 29, 26 20, 26 13 C 26 7.5, 21.5 3, 16 3 Z"
         stroke={color}
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.18"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
       />
-
-      {/* East stub */}
-      <line
-        x1="17.5" y1="16"
-        x2="25" y2="19"
+      <path
+        d="M9.5 14.5 C 12 11.5, 14.5 17, 17 14 C 19 11.5, 21 14, 22.5 12.5"
         stroke={color}
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.18"
-      />
-
-      {/* North arm — where you're going (dominant) */}
-      <line
-        x1="16" y1="14.5"
-        x2="21.5" y2="6"
-        stroke={color}
-        strokeWidth="2.25"
+        strokeWidth="2.2"
         strokeLinecap="round"
       />
-
-      {/* North tip — location pin dot (the destination) */}
-      <circle cx="21.5" cy="5.5" r="3" fill={color} />
-
-      {/* Center hub */}
-      <circle cx="16" cy="16" r="2" fill={color} opacity="0.45" />
     </svg>
   )
 }
