@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { autorVisivel, autorVisivelPorId } from '../db/visibilidade.js'
 import { limparCampos } from '../services/sanitize.js'
 import { checkFirstPost, checkFirstLike } from '../services/badges.js'
 import { agentSuggestCaption, agentStreamCaption, agentIdentifyDestinationFromPhoto } from '../services/aiAgent.js'
@@ -99,7 +100,8 @@ export async function postsRoutes(app) {
        JOIN users u ON u.id = p.user_id
        LEFT JOIN post_likes pl    ON pl.post_id = p.id
        LEFT JOIN post_comments pc ON pc.post_id = p.id
-       WHERE p.lat IS NOT NULL AND p.lon IS NOT NULL
+       WHERE ${autorVisivel('u', '$3')}
+         AND p.lat IS NOT NULL AND p.lon IS NOT NULL
          AND (6371 * acos(
            cos(radians($1)) * cos(radians(p.lat)) *
            cos(radians(p.lon) - radians($2)) +
@@ -150,6 +152,7 @@ export async function postsRoutes(app) {
        LEFT JOIN post_comments pc ON pc.post_id = p.id
        LEFT JOIN itineraries i    ON i.id = p.itinerary_id
        WHERE p.id = $1
+         AND ${autorVisivel('u', '$2')}
        GROUP BY p.id, u.id, i.id`,
       [request.params.id, viewerId],
     )
@@ -325,6 +328,13 @@ export async function postsRoutes(app) {
        JOIN users u ON u.id = c.user_id
        LEFT JOIN comment_likes cl ON cl.comment_id = c.id
        WHERE c.post_id = $1
+         -- Os comentarios seguem a visibilidade da publicacao a que pertencem:
+         -- de nada serve esconder o post se a conversa por baixo dele fica a
+         -- descoberto, com os nomes de quem la comentou.
+         AND EXISTS (
+           SELECT 1 FROM posts pai
+            WHERE pai.id = $1 AND ${autorVisivelPorId('pai.user_id', '$2')}
+         )
        GROUP BY c.id, u.id
        ORDER BY c.created_at DESC`,
       [request.params.id, viewerId],

@@ -83,6 +83,14 @@ export default function ProfilePage() {
     enabled: !!userId,
   })
 
+  // Só pedimos o conteúdo depois de sabermos que temos direito a vê-lo.
+  //
+  // Até aqui o pedido era sempre feito, o servidor respondia com tudo, e era
+  // esta página que decidia não o desenhar. Quem abrisse o separador de rede
+  // via as publicações de uma conta privada na resposta. O servidor passou a
+  // recusar, e a interface deixa de bater a uma porta que sabe estar fechada.
+  const podeVerConteudo = !!profile && (!profile.isPrivate || profile.viewerFollows || isOwn)
+
   const followMutation = useMutation({
     mutationFn: () =>
       profile?.viewerFollows
@@ -108,7 +116,7 @@ export default function ProfilePage() {
       api.get(`/users/${userId}/posts${pageParam ? `?cursor=${pageParam}` : ''}`),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
-    enabled: tab === 'posts' && !!userId,
+    enabled: tab === 'posts' && !!userId && podeVerConteudo,
   })
 
   // Itineraries
@@ -123,7 +131,7 @@ export default function ProfilePage() {
       api.get(`/users/${userId}/itineraries${pageParam ? `?cursor=${pageParam}` : ''}`),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
-    enabled: tab === 'itineraries' && !!userId,
+    enabled: tab === 'itineraries' && !!userId && podeVerConteudo,
   })
 
   // Saved
@@ -145,7 +153,7 @@ export default function ProfilePage() {
       api.get(`/users/${userId}/saved${pageParam ? `?cursor=${pageParam}` : ''}`),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
-    enabled: tab === 'saved' && !!userId,
+    enabled: tab === 'saved' && !!userId && podeVerConteudo,
   })
 
   // Liked posts (only own)
@@ -169,7 +177,7 @@ export default function ProfilePage() {
   }>({
     queryKey: ['profile-checkins', userId],
     queryFn:  () => api.get(`/users/${userId}/checkins`),
-    enabled:  tab === 'checkins' && !!userId,
+    enabled:  tab === 'checkins' && !!userId && podeVerConteudo,
   })
 
   // Travel stats
@@ -183,7 +191,7 @@ export default function ProfilePage() {
   const { data: travelStats } = useQuery<TravelStats>({
     queryKey: ['travel-stats', userId],
     queryFn:  () => api.get(`/users/${userId}/travel-stats`),
-    enabled:  showStats && !!userId,
+    enabled:  showStats && !!userId && podeVerConteudo,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -191,7 +199,7 @@ export default function ProfilePage() {
   const { data: mapCountries } = useQuery<{ countryCode: string; countryName: string; count: number }[]>({
     queryKey: ['profile-map', userId, isOwn],
     queryFn: () => api.get(isOwn ? '/map/mine' : `/map/users/${userId}`),
-    enabled: showMap && !!userId,
+    enabled: showMap && !!userId && podeVerConteudo,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -215,7 +223,6 @@ export default function ProfilePage() {
 
   if (!profile) return null
 
-  const canSeeContent = !profile.isPrivate || profile.viewerFollows || isOwn
 
   // Badge definitions (threshold-based, derived from public data)
   const BADGES = [
@@ -554,7 +561,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Private account gate */}
-      {!canSeeContent && (
+      {!podeVerConteudo && (
         <div className="py-12 text-center">
           <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
           <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -567,7 +574,7 @@ export default function ProfilePage() {
       )}
 
       {/* Posts grid */}
-      {canSeeContent && tab === 'posts' && (
+      {podeVerConteudo && tab === 'posts' && (
         <>
           {loadingPosts ? (
             <div className="flex justify-center py-8"><Spinner /></div>
@@ -618,7 +625,7 @@ export default function ProfilePage() {
       )}
 
       {/* Itineraries */}
-      {canSeeContent && tab === 'itineraries' && (
+      {podeVerConteudo && tab === 'itineraries' && (
         <>
           {loadingIti ? (
             <div className="flex justify-center py-8"><Spinner /></div>
@@ -661,7 +668,7 @@ export default function ProfilePage() {
       )}
 
       {/* Saved */}
-      {canSeeContent && tab === 'saved' && (
+      {podeVerConteudo && tab === 'saved' && (
         <>
           {loadingSaved ? (
             <div className="flex justify-center py-8"><Spinner /></div>
@@ -788,7 +795,7 @@ export default function ProfilePage() {
       )}
 
       {/* Check-ins */}
-      {canSeeContent && tab === 'checkins' && (
+      {podeVerConteudo && tab === 'checkins' && (
         <>
           {loadingCheckins ? (
             <div className="flex justify-center py-8"><Spinner /></div>

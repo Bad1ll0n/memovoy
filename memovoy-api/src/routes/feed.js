@@ -1,4 +1,5 @@
 import { query } from '../db/pool.js'
+import { autorVisivel, autorVisivelPorId } from '../db/visibilidade.js'
 
 export async function feedRoutes(app) {
   // GET /feed?cursor=
@@ -62,7 +63,9 @@ export async function feedRoutes(app) {
         // tabela. Limitar primeiro deixa o trabalho constante, e "popular entre
         // o que é recente" é melhor conteúdo do que "popular desde sempre".
         `WITH candidatos AS (
-           SELECT id FROM posts WHERE user_id <> $1 ORDER BY created_at DESC LIMIT 200
+           SELECT id FROM posts
+            WHERE user_id <> $1 AND ${autorVisivelPorId('user_id', '$1')}
+            ORDER BY created_at DESC LIMIT 200
          )
          SELECT
           p.*,
@@ -83,6 +86,7 @@ export async function feedRoutes(app) {
          JOIN users u ON u.id = p.user_id
          LEFT JOIN itineraries   i  ON i.id = p.itinerary_id
          WHERE p.user_id <> $1
+           AND ${autorVisivel('u', '$1')}
            AND p.id IN (SELECT id FROM candidatos)
          ORDER BY (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) DESC, p.created_at DESC
          LIMIT $2`,

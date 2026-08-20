@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { autorVisivelPara } from '../db/visibilidade.js'
 import { limparCampos } from '../services/sanitize.js'
 import { checkFirstFollower } from '../services/badges.js'
 import { logAudit } from '../services/audit.js'
@@ -306,6 +307,13 @@ export async function usersRoutes(app) {
     const { id } = request.params
     const cursor = request.query.cursor
     const limit = 12
+    const viewerId = request.user?.id ?? null
+
+    const { rows: existe } = await query('SELECT 1 FROM users WHERE id = $1', [id])
+    if (existe.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+    if (!(await autorVisivelPara(id, viewerId))) {
+      return reply.status(403).send({ message: 'Conta privada.' })
+    }
 
     const { rows } = await query(
       `SELECT p.*,
@@ -354,22 +362,9 @@ export async function usersRoutes(app) {
     const cursor = request.query.cursor
     const limit = 12
 
-    // Only viewable if own profile or public account
-    const { rows: profileRows } = await query(
-      'SELECT is_private FROM users WHERE id = $1',
-      [id],
-    )
-    if (profileRows.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
-    const isPrivate = profileRows[0].is_private
-    const isOwn = viewerId === id
-    const isFollower = viewerId
-      ? (await query(
-          'SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2',
-          [viewerId, id],
-        )).rows.length > 0
-      : false
-
-    if (isPrivate && !isOwn && !isFollower) {
+    const { rows: existe } = await query('SELECT 1 FROM users WHERE id = $1', [id])
+    if (existe.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+    if (!(await autorVisivelPara(id, viewerId))) {
       return reply.status(403).send({ message: 'Conta privada.' })
     }
 
@@ -577,6 +572,13 @@ export async function usersRoutes(app) {
 
   // GET /users/:id/checkins — public check-in history
   app.get('/:id/checkins', async (request, reply) => {
+    const viewerId = request.user?.id ?? null
+    const { rows: existe } = await query('SELECT 1 FROM users WHERE id = $1', [request.params.id])
+    if (existe.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+    if (!(await autorVisivelPara(request.params.id, viewerId))) {
+      return reply.status(403).send({ message: 'Conta privada.' })
+    }
+
     const { id } = request.params
     const limit  = 20
 
@@ -606,6 +608,13 @@ export async function usersRoutes(app) {
 
   // GET /users/:id/travel-stats — temporal travel statistics grouped by year
   app.get('/:id/travel-stats', async (request, reply) => {
+    const viewerId = request.user?.id ?? null
+    const { rows: existe } = await query('SELECT 1 FROM users WHERE id = $1', [request.params.id])
+    if (existe.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+    if (!(await autorVisivelPara(request.params.id, viewerId))) {
+      return reply.status(403).send({ message: 'Conta privada.' })
+    }
+
     const { id } = request.params
 
     const [yearlyRows, totalRow, topDestRow] = await Promise.all([

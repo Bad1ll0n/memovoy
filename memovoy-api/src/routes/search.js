@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { autorVisivelPorId } from '../db/visibilidade.js'
 import { agentSearchDestinations } from '../services/aiAgent.js'
 
 export async function searchRoutes(app) {
@@ -65,14 +66,17 @@ export async function searchRoutes(app) {
           COUNT(pl.user_id) AS likes_count
          FROM posts p
          LEFT JOIN post_likes pl ON pl.post_id = p.id
-         WHERE lower(p.caption) % lower($1) OR lower(p.destination) % lower($1)
-            OR lower(p.caption) LIKE lower($2) OR lower(p.destination) LIKE lower($2)
+         WHERE ${autorVisivelPorId('p.user_id', '$3')}
+           AND (
+             lower(p.caption) % lower($1) OR lower(p.destination) % lower($1)
+             OR lower(p.caption) LIKE lower($2) OR lower(p.destination) LIKE lower($2)
+           )
          GROUP BY p.id
          ORDER BY
            similarity(lower(p.caption), lower($1)) DESC,
            likes_count DESC
          LIMIT 12`,
-        [q, pattern],
+        [q, pattern, viewerId],
       ),
     ])
 

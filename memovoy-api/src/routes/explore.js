@@ -1,4 +1,5 @@
 import { query } from '../db/pool.js'
+import { autorVisivel } from '../db/visibilidade.js'
 import { agentSuggestDestinations } from '../services/aiAgent.js'
 
 export async function exploreRoutes(app) {
@@ -87,7 +88,8 @@ export async function exploreRoutes(app) {
         EXISTS(SELECT 1 FROM bookmarks  WHERE post_id = p.id AND user_id = $3)  AS viewer_saved
        FROM posts p
        JOIN users u ON u.id = p.user_id
-       WHERE ($1::text IS NULL OR lower(p.region) = lower($1))
+       WHERE ${autorVisivel('u', '$3')}
+         AND ($1::text IS NULL OR lower(p.region) = lower($1))
          AND ($2::uuid IS NULL OR p.created_at < (SELECT created_at FROM posts WHERE id = $2))
          AND jsonb_array_length(p.images) > 0
        ORDER BY p.created_at DESC

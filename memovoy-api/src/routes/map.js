@@ -1,4 +1,5 @@
 import { query } from '../db/pool.js'
+import { autorVisivelPara } from '../db/visibilidade.js'
 
 // ISO 3166-1 alpha-2 lookup for common English country names returned by the AI
 const COUNTRY_CODES = {
@@ -86,6 +87,13 @@ export async function mapRoutes(app) {
 
   // GET /map/users/:id — public itineraries of a specific user, grouped by country
   app.get('/users/:id', async (request, reply) => {
+    const viewerId = request.user?.id ?? null
+    const { rows: existe } = await query('SELECT 1 FROM users WHERE id = $1', [request.params.id])
+    if (existe.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+    if (!(await autorVisivelPara(request.params.id, viewerId))) {
+      return reply.status(403).send({ message: 'Conta privada.' })
+    }
+
     const { rows } = await query(
       `SELECT country, COUNT(*) AS count
        FROM itineraries
