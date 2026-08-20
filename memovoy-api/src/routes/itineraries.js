@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { datasDoRoteiro, datasVisiveis, datasVisiveisPara } from '../db/visibilidade.js'
 import { agentValidateDestination, agentGenerateDays, agentGenerateTips, agentSuggestActivity, agentStreamSuggestActivity, agentSuggestForDay, agentRecommendDuration, agentRefineDays, agentAdaptDayForWeather, agentMoodTrip } from '../services/aiAgent.js'
 
 async function getUserPreferences(userId) {
@@ -395,6 +396,7 @@ export async function itinerariesRoutes(app) {
       `SELECT i.*,
         u.username, u.display_name, u.avatar_url,
         COALESCE(jsonb_array_length(i.data->'days'), 0) AS days_count,
+        ${datasVisiveis('u', 'i', '$2')} AS pode_ver_datas,
         EXISTS(SELECT 1 FROM bookmarks WHERE itinerary_id = i.id AND user_id = $2) AS viewer_saved
        FROM itineraries i
        JOIN users u ON u.id = i.user_id
@@ -425,8 +427,7 @@ export async function itinerariesRoutes(app) {
       totalEstimatedCost: data.totalEstimatedCost ?? null,
       groupType:          row.group_type,
       travelStyle:        row.travel_style ?? [],
-      startDate:          row.start_date,
-      endDate:            row.end_date,
+      ...datasDoRoteiro(row),
       budget:             row.budget,
       aiGenerated:        row.ai_generated,
       days:               data.days ?? [],
@@ -470,6 +471,12 @@ export async function itinerariesRoutes(app) {
       return viewerId
         ? reply.status(403).send({ message: 'Sem permissão para exportar este roteiro.' })
         : reply.status(401).send({ message: 'Autenticação necessária para exportar roteiros privados.' })
+    }
+
+    if (!(await datasVisiveisPara(itinerary.user_id, viewerId, itinerary.end_date))) {
+      return reply.status(403).send({
+        message: 'As datas desta viagem só estão disponíveis para quem segue o autor.',
+      })
     }
 
     const row  = itinerary

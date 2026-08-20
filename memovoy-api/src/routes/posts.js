@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
-import { autorVisivel, autorVisivelPorId } from '../db/visibilidade.js'
+import { autorVisivel, autorVisivelPorId, datasDoRoteiro, datasVisiveis } from '../db/visibilidade.js'
 import { limparCampos } from '../services/sanitize.js'
 import { checkFirstPost, checkFirstLike } from '../services/badges.js'
 import { agentSuggestCaption, agentStreamCaption, agentIdentifyDestinationFromPhoto } from '../services/aiAgent.js'
@@ -29,8 +29,7 @@ function postDto(row) {
       id:          row.iti_id,
       title:       row.iti_title,
       destination: row.iti_destination,
-      startDate:   row.iti_start_date,
-      endDate:     row.iti_end_date,
+      ...datasDoRoteiro(row, 'iti_'),
       coverUrl:    row.iti_cover_url,
       daysCount:   Number(row.iti_days_count ?? 0),
     } : null,
@@ -142,6 +141,7 @@ export async function postsRoutes(app) {
         i.id          AS iti_id,
         i.title       AS iti_title,
         i.destination AS iti_destination,
+        ${datasVisiveis('u', 'i', '$2')} AS pode_ver_datas,
         i.start_date  AS iti_start_date,
         i.end_date    AS iti_end_date,
         i.cover_url   AS iti_cover_url,

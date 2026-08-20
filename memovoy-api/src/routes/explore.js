@@ -1,5 +1,5 @@
 import { query } from '../db/pool.js'
-import { autorVisivel } from '../db/visibilidade.js'
+import { autorVisivel, datasDoRoteiro, datasVisiveis } from '../db/visibilidade.js'
 import { agentSuggestDestinations } from '../services/aiAgent.js'
 
 export async function exploreRoutes(app) {
@@ -30,6 +30,7 @@ export async function exploreRoutes(app) {
     const { rows: similar } = await query(
       `SELECT i.id, i.title, i.destination, i.cover_url, i.start_date, i.end_date,
               COALESCE(jsonb_array_length(i.data->'days'), 0) AS days_count,
+              ${datasVisiveis('u', 'i', '$1')} AS pode_ver_datas,
               u.username, u.avatar_url
        FROM itineraries i
        JOIN users u ON u.id = i.user_id
@@ -57,8 +58,7 @@ export async function exploreRoutes(app) {
         title:       r.title,
         destination: r.destination,
         coverUrl:    r.cover_url,
-        startDate:   r.start_date,
-        endDate:     r.end_date,
+        ...datasDoRoteiro(r),
         daysCount:   Number(r.days_count),
         username:    r.username,
         avatarUrl:   r.avatar_url,

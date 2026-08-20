@@ -1,5 +1,5 @@
 import { query } from '../db/pool.js'
-import { autorVisivel, autorVisivelPorId } from '../db/visibilidade.js'
+import { autorVisivel, autorVisivelPorId, datasDoRoteiro, datasVisiveis } from '../db/visibilidade.js'
 
 export async function feedRoutes(app) {
   // GET /feed?cursor=
@@ -31,6 +31,7 @@ export async function feedRoutes(app) {
         i.id          AS iti_id,
         i.title       AS iti_title,
         i.destination AS iti_destination,
+        ${datasVisiveis('u', 'i', '$1')} AS pode_ver_datas,
         i.start_date  AS iti_start_date,
         i.end_date    AS iti_end_date,
         i.cover_url   AS iti_cover_url,
@@ -78,7 +79,8 @@ export async function feedRoutes(app) {
           i.id          AS iti_id,
           i.title       AS iti_title,
           i.destination AS iti_destination,
-          i.start_date  AS iti_start_date,
+          ${datasVisiveis('u', 'i', '$1')} AS pode_ver_datas,
+        i.start_date  AS iti_start_date,
           i.end_date    AS iti_end_date,
           i.cover_url   AS iti_cover_url,
           COALESCE(jsonb_array_length(i.data->'days'), 0) AS iti_days_count
@@ -117,8 +119,7 @@ export async function feedRoutes(app) {
           id:          row.iti_id,
           title:       row.iti_title,
           destination: row.iti_destination,
-          startDate:   row.iti_start_date,
-          endDate:     row.iti_end_date,
+          ...datasDoRoteiro(row, 'iti_'),
           coverUrl:    row.iti_cover_url,
           daysCount:   Number(row.iti_days_count ?? 0),
         } : null,

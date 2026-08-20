@@ -11,6 +11,9 @@ export interface AuthUser {
   location: string | null
   website: string | null
   isPrivate: boolean
+  /** Datas de viagens por terminar visíveis para toda a gente. Ver a página
+   *  de privacidade — por omissão é false. */
+  shareUpcomingTrips: boolean
   isVerified: boolean
   score: number
   emailVerified: boolean

@@ -89,6 +89,7 @@ function userDto(row) {
     location:            row.location ?? null,
     website:             row.website ?? null,
     isPrivate:           row.is_private,
+    shareUpcomingTrips:  row.share_upcoming_trips ?? false,
     isVerified:          row.is_verified,
     score:               Number(row.score ?? 0),
     emailVerified:       row.email_verified ?? false,

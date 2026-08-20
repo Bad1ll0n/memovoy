@@ -13,7 +13,8 @@ const TOUR_KEY = 'memovoy-tour-v1'
 const UTILIZADOR: AuthUser = {
   id: 'u1', username: 'ana', email: 'ana@exemplo.pt', displayName: 'Ana',
   avatarUrl: null, coverUrl: null, bio: null, location: null, website: null,
-  isPrivate: false, isVerified: false, score: 0,
+  isPrivate: false,
+  shareUpcomingTrips: false, isVerified: false, score: 0,
   emailVerified: true, onboardingCompleted: true,
 }
 

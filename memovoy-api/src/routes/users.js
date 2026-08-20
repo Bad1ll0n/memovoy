@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
-import { autorVisivelPara } from '../db/visibilidade.js'
+import { autorVisivelPara, datasDoRoteiro, datasVisiveis } from '../db/visibilidade.js'
 import { limparCampos } from '../services/sanitize.js'
 import { checkFirstFollower } from '../services/badges.js'
 import { logAudit } from '../services/audit.js'
@@ -27,6 +27,7 @@ function userDto(row, viewerId) {
     coverUrl:          row.cover_url,
     isVerified:        row.is_verified,
     isPrivate:         row.is_private,
+    shareUpcomingTrips: row.share_upcoming_trips ?? false,
     score:             Number(row.score ?? 0),
     postsCount:        Number(row.posts_count ?? 0),
     followersCount:    Number(row.followers_count ?? 0),
@@ -52,6 +53,7 @@ const updateSchema = z.object({
   location:    z.string().max(100).optional().nullable(),
   website:     z.string().url().max(300).optional().nullable(),
   isPrivate:   z.boolean().optional(),
+  shareUpcomingTrips: z.boolean().optional(),
   avatarUrl:   z.string().url().optional().nullable(),
   coverUrl:    z.string().url().optional().nullable(),
 })
@@ -200,7 +202,7 @@ export async function usersRoutes(app) {
 
     // Campos de texto livre: retirar markup antes de guardar. As URLs e o
     // booleano ficam intactos.
-    const { displayName, bio, location, website, isPrivate, avatarUrl, coverUrl } =
+    const { displayName, bio, location, website, isPrivate, shareUpcomingTrips, avatarUrl, coverUrl } =
       limparCampos(parsed.data, ['displayName', 'bio', 'location'])
     const updates = []
     const values = []
@@ -211,6 +213,7 @@ export async function usersRoutes(app) {
     if (location !== undefined)    { updates.push(`location = $${idx++}`);     values.push(location) }
     if (website !== undefined)     { updates.push(`website = $${idx++}`);      values.push(website ?? null) }
     if (isPrivate !== undefined)   { updates.push(`is_private = $${idx++}`);   values.push(isPrivate) }
+    if (shareUpcomingTrips !== undefined) { updates.push(`share_upcoming_trips = $${idx++}`); values.push(shareUpcomingTrips) }
     if (avatarUrl !== undefined)   { updates.push(`avatar_url = $${idx++}`);   values.push(avatarUrl) }
     if (coverUrl !== undefined)    { updates.push(`cover_url = $${idx++}`);    values.push(coverUrl) }
 
@@ -329,6 +332,7 @@ export async function usersRoutes(app) {
         i.id          AS iti_id,
         i.title       AS iti_title,
         i.destination AS iti_destination,
+        ${datasVisiveis('u', 'i', '$3')} AS pode_ver_datas,
         i.start_date  AS iti_start_date,
         i.end_date    AS iti_end_date,
         i.cover_url   AS iti_cover_url,
@@ -340,7 +344,12 @@ export async function usersRoutes(app) {
        LEFT JOIN itineraries i  ON i.id = p.itinerary_id
        WHERE p.user_id = $1
          AND ($2::uuid IS NULL OR p.created_at < (SELECT created_at FROM posts WHERE id = $2))
-       GROUP BY p.id, u.username, u.display_name, u.avatar_url, u.is_verified, i.id
+       -- u.id no GROUP BY, não a lista de colunas uma a uma: é a chave
+       -- primária, e agrupar por ela dá acesso a todas as outras sem as
+       -- enumerar. Enumeradas, qualquer coluna nova de users usada no SELECT
+       -- rebenta a consulta — foi o que aconteceu ao acrescentar aqui a regra
+       -- das datas, que lê u.share_upcoming_trips.
+       GROUP BY p.id, u.id, i.id
        ORDER BY p.created_at DESC
        LIMIT $4`,
       [id, cursor ?? null, request.user?.id ?? null, limit + 1],
@@ -587,10 +596,12 @@ export async function usersRoutes(app) {
               i.title AS itinerary_title, i.cover_url
        FROM activity_checkins ac
        JOIN itineraries i ON i.id = ac.itinerary_id
+       JOIN users u       ON u.id = ac.user_id
        WHERE ac.user_id = $1
+         AND ${datasVisiveis('u', 'i', '$3')}
        ORDER BY ac.checked_in_at DESC
        LIMIT $2`,
-      [id, limit],
+      [id, limit, viewerId],
     )
 
     return reply.send({
@@ -689,8 +700,7 @@ function postDto(row) {
       id:          row.iti_id,
       title:       row.iti_title,
       destination: row.iti_destination,
-      startDate:   row.iti_start_date,
-      endDate:     row.iti_end_date,
+      ...datasDoRoteiro(row, 'iti_'),
       coverUrl:    row.iti_cover_url,
       daysCount:   Number(row.iti_days_count ?? 0),
     } : null,
