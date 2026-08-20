@@ -21,7 +21,7 @@ export default function ErroGlobal({ error, reset }: { error: Error & { digest?:
         nem ter chegado a carregar. São os valores actuais da paleta Brisa —
         --bg-body, --accent e --on-accent — copiados à mão de propósito.
       */}
-      <body style={{ margin: 0, background: '#0D1824', color: '#CBE0F2', fontFamily: 'system-ui, sans-serif' }}>
+      <body style={{ margin: 0, background: '#131518', color: '#E9EBEE', fontFamily: 'system-ui, sans-serif' }}>
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
           <p style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>
             Alguma coisa correu mal
@@ -31,7 +31,7 @@ export default function ErroGlobal({ error, reset }: { error: Error & { digest?:
           </p>
           <button
             onClick={reset}
-            style={{ background: '#47A3CB', color: '#0D1824', border: 0, borderRadius: '0.5rem', padding: '0.625rem 1.25rem', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+            style={{ background: '#47A3CB', color: '#131518', border: 0, borderRadius: '0.5rem', padding: '0.625rem 1.25rem', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
           >
             Tentar outra vez
           </button>

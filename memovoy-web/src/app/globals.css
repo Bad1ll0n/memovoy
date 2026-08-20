@@ -50,11 +50,22 @@
 }
 
 /* ─── Design Tokens — Dark mode (default) — Paleta Brisa ─── */
+/* As superfícies e o texto do tema escuro eram todos azuis: matizes entre 207°
+   e 213°, com saturações de 28% a 60% — o texto principal estava a 60%. Com o
+   fundo, os cartões, as linhas e as letras todos azuis, o acento (que também é
+   azul) não tinha contra o que se destacar e dissolvia-se.
+
+   Passaram a neutros com um resto de frio — 11 a 13% de saturação em vez de
+   40 a 47%. Cinzento puro a 0% fica morto; a 12% mantém temperatura sem se ler
+   como azul. O --accent fica exactamente como estava: é agora a única coisa
+   saturada no ecrã, que é o que um acento deve ser.
+
+   O tema claro não foi tocado. */
 :root {
-  --bg-body:        #0D1824;
-  --bg-card:        #132234;
-  --surface2:       #1B2E44;
-  --border:         #253D54;
+  --bg-body:        #131518;
+  --bg-card:        #1A1D21;
+  --surface2:       #24282D;
+  --border:         #333940;
   --accent:         #47A3CB;
   --accent-hover:   #3791B8;
   /* Texto por cima do accent e do danger.
@@ -63,16 +74,11 @@
      já tratava disto com uma regra por tema, mas os componentes que escrevem o
      estilo inline contornavam a classe e ficavam com uma cor fixa — errada num
      dos temas, sempre. */
-  --on-accent:      #0D1824;
-  --on-danger:      #0D1824;
-  --text-primary:   #CBE0F2;
-  --text-secondary: #8AAECB;
-  /* #7090AA on #0D1824 → 5.4:1 (WCAG AA ✓) */
-  /* Era #7090AA, que dá 4,12:1 sobre --surface2 e falha o mínimo de 4,5 da
-     WCAG AA. Passava sobre --bg-card (4,79) e era isso que escondia o
-     problema: só falhava nos sítios com o fundo mais claro, como o botão de
-     publicar no feed. #7D9CB6 dá 4,80 sobre surface2 e 5,59 sobre bg-card. */
-  --text-muted:     #7D9CB6;
+  --on-accent:      #131518;
+  --on-danger:      #131518;
+  --text-primary:   #E9EBEE;
+  --text-secondary: #B2B8BF;
+  --text-muted:     #8E959D;
   --danger:         #F87171;
   --danger-subtle:  rgba(248, 113, 113, 0.12);
   --success:        #68BCA0;
@@ -222,9 +228,9 @@ mark {
 
 /* ─── Leaflet popup override (dark theme) ─── */
 .map-popup-memovoy .leaflet-popup-content-wrapper {
-  background: var(--bg-card, #132234);
-  color: var(--text-primary, #CBE0F2);
-  border: 1px solid var(--border, #253D54);
+  background: var(--bg-card, #1A1D21);
+  color: var(--text-primary, #E9EBEE);
+  border: 1px solid var(--border, #333940);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,.4);
   padding: 0;
@@ -233,7 +239,7 @@ mark {
   margin: 8px 12px;
 }
 .map-popup-memovoy .leaflet-popup-tip {
-  background: var(--bg-card, #132234);
+  background: var(--bg-card, #1A1D21);
 }
 
 /* ─── Keyframes (must stay outside @layer) ─── */

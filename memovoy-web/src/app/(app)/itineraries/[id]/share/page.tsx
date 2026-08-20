@@ -168,7 +168,7 @@ export default function SharePage() {
           <div className="flex items-center gap-3 mb-4">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
-              style={{ background: 'var(--accent)', color: '#0D1824' }}
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               {day.day}
             </div>
