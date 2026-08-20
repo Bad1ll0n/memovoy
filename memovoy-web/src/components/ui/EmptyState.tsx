@@ -215,7 +215,7 @@ export function EmptyState({
       ) : Icon ? (
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-          style={{ background: 'rgba(252,163,17,0.1)' }}
+          style={{ background: 'var(--accent-faint)' }}
         >
           <Icon className="w-7 h-7" style={{ color: 'var(--accent)' }} />
         </div>

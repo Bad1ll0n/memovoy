@@ -533,7 +533,7 @@ export default function NewItineraryPage() {
     return (
       <div className="py-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(252,163,17,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--accent-subtle)' }}>
             <Check className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           </div>
           <div>

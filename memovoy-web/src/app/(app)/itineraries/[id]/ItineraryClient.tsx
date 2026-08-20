@@ -285,7 +285,7 @@ function AiEditModal({
               <div
                 key={i}
                 className="rounded-xl p-4 space-y-1.5"
-                style={{ background: 'rgba(252,163,17,0.05)', border: '1px solid rgba(252,163,17,0.2)' }}
+                style={{ background: 'var(--accent-faint)', border: '1px solid var(--accent-subtle)' }}
               >
                 {s.whyThisOne && (
                   <p className="text-[11px] italic mb-1" style={{ color: 'var(--accent)' }}>
@@ -897,7 +897,7 @@ export default function ItineraryClient() {
       <div
         className="relative rounded-2xl overflow-hidden mb-6 p-8 text-white"
         style={{
-          background: 'radial-gradient(ellipse at top, rgba(252,163,17,0.25) 0%, transparent 60%), var(--bg-card)',
+          background: 'radial-gradient(ellipse at top, var(--accent-border) 0%, transparent 60%), var(--bg-card)',
           minHeight: 220,
         }}
       >
@@ -905,8 +905,8 @@ export default function ItineraryClient() {
           <div
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium mb-4"
             style={{
-              background: 'rgba(252,163,17,0.12)',
-              border: '1px solid rgba(252,163,17,0.3)',
+              background: 'var(--accent-subtle)',
+              border: '1px solid var(--accent-border)',
               color: 'var(--accent)',
             }}
           >

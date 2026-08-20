@@ -4,6 +4,17 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+/** O Leaflet monta os marcadores em HTML solto e em opções JavaScript, onde
+ *  var(--accent) não resolve. Lê-se o valor calculado do documento para o mapa
+ *  acompanhar o tema em vez de ficar preso a uma cor fixa — que foi como o
+ *  laranja da paleta antiga aqui sobreviveu. */
+function corDoTema(nome: string, alternativa: string) {
+  if (typeof window === 'undefined') return alternativa
+  const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim()
+  return v || alternativa
+}
+
+
 interface CountryData {
   countryCode: string
   countryName: string
@@ -200,8 +211,8 @@ export default function WorldMap({ countries, onSelectCountry }: Props) {
 
       const marker = L.circleMarker(coords, {
         radius: Math.min(4 + c.count * 2, 20),
-        fillColor: '#fca311',
-        color: '#e08c00',
+        fillColor: corDoTema('--accent', '#47A3CB'),
+        color:     corDoTema('--accent-hover', '#3791B8'),
         weight: 1.5,
         opacity: 0.9,
         fillOpacity: 0.7,

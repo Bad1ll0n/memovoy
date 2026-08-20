@@ -82,7 +82,7 @@ export default function NearbyPage() {
         <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
-            style={{ background: 'rgba(252,163,17,0.08)', border: '1px solid rgba(252,163,17,0.15)' }}
+            style={{ background: 'var(--accent-faint)', border: '1px solid var(--accent-subtle)' }}
           >
             <MapPin className="w-8 h-8" style={{ color: 'var(--accent)' }} />
           </div>

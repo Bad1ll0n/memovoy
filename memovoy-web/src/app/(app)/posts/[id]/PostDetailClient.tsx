@@ -507,7 +507,7 @@ export default function PostDetailClient() {
           {replyTo && (
             <div
               className="flex items-center gap-2 mb-2 text-xs rounded-lg px-2 py-1"
-              style={{ background: 'rgba(252,163,17,0.08)', color: 'var(--text-muted)' }}
+              style={{ background: 'var(--accent-faint)', color: 'var(--text-muted)' }}
             >
               <CornerDownRight className="w-3 h-3" />
               <span>A responder a @{replyTo.username}</span>

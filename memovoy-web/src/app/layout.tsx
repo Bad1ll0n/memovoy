@@ -69,17 +69,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         */}
         <div className="page-loader" id="__page-loader" suppressHydrationWarning>
           <svg width="34" height="40" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
-            <rect x="0" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
+            <rect x="0" y="10" width="4" height="10" fill="var(--accent, #47A3CB)" opacity="0.2">
               <animate attributeName="opacity" values="0.2;1;0.2" dur="0.8s" begin="0s" repeatCount="indefinite" />
               <animate attributeName="height" values="10;20;10" dur="0.8s" begin="0s" repeatCount="indefinite" />
               <animate attributeName="y" values="10;5;10" dur="0.8s" begin="0s" repeatCount="indefinite" />
             </rect>
-            <rect x="8" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
+            <rect x="8" y="10" width="4" height="10" fill="var(--accent, #47A3CB)" opacity="0.2">
               <animate attributeName="opacity" values="0.2;1;0.2" dur="0.8s" begin="0.15s" repeatCount="indefinite" />
               <animate attributeName="height" values="10;20;10" dur="0.8s" begin="0.15s" repeatCount="indefinite" />
               <animate attributeName="y" values="10;5;10" dur="0.8s" begin="0.15s" repeatCount="indefinite" />
             </rect>
-            <rect x="16" y="10" width="4" height="10" fill="#fca311" opacity="0.2">
+            <rect x="16" y="10" width="4" height="10" fill="var(--accent, #47A3CB)" opacity="0.2">
               <animate attributeName="opacity" values="0.2;1;0.2" dur="0.8s" begin="0.3s" repeatCount="indefinite" />
               <animate attributeName="height" values="10;20;10" dur="0.8s" begin="0.3s" repeatCount="indefinite" />
               <animate attributeName="y" values="10;5;10" dur="0.8s" begin="0.3s" repeatCount="indefinite" />

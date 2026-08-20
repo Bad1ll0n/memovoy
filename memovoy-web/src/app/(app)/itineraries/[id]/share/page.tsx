@@ -101,7 +101,7 @@ export default function SharePage() {
           {it.aiGenerated && (
             <span
               className="inline-flex self-start items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium mb-3"
-              style={{ background: 'rgba(252,163,17,0.18)', border: '1px solid rgba(252,163,17,0.35)', color: 'var(--accent)' }}
+              style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}
             >
               <Sparkles className="w-3 h-3" /> Gerado por IA
             </span>

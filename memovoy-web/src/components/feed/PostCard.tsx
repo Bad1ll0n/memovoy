@@ -184,8 +184,8 @@ export function PostCard({ post, queryKey, index = 0 }: { post: Post; queryKey: 
               <span
                 className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                 style={{
-                  background: 'rgba(252,163,17,0.12)',
-                  border: '1px solid rgba(252,163,17,0.3)',
+                  background: 'var(--accent-subtle)',
+                  border: '1px solid var(--accent-border)',
                   color: 'var(--accent)',
                 }}
               >

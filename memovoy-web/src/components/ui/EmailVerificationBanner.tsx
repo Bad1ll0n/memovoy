@@ -22,8 +22,8 @@ export function EmailVerificationBanner() {
     <div
       className="flex items-center gap-3 px-4 py-2.5 text-sm"
       style={{
-        background:  'rgba(252,163,17,0.12)',
-        borderBottom: '1px solid rgba(252,163,17,0.3)',
+        background:  'var(--accent-subtle)',
+        borderBottom: '1px solid var(--accent-border)',
       }}
     >
       <Mail className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />

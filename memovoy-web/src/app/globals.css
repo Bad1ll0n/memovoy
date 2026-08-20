@@ -68,6 +68,17 @@
   --border:         #333940;
   --accent:         #47A3CB;
   --accent-hover:   #3791B8;
+  /* Tintos do acento.
+     Havia -subtle para o danger, o success, o info, o warning e o violeta — e
+     não para o acento, que é o mais usado dos seis. Consequência: todos os
+     fundos e contornos de acento na app estavam escritos à mão em rgba, e
+     quando a marca deixou de ser laranja ficaram os 30 e tal fixos no tom
+     antigo. Não foi distracção de ninguém: não havia onde os pôr.
+     -faint para fundos quase impercetíveis, -subtle para os cheios,
+     -border para contornos. */
+  --accent-faint:   rgba(71, 163, 203, 0.07);
+  --accent-subtle:  rgba(71, 163, 203, 0.14);
+  --accent-border:  rgba(71, 163, 203, 0.30);
   /* Texto por cima do accent e do danger.
      O accent inverte-se entre temas: sobre #47A3CB o branco dá 2,85:1 e o
      escuro dá 6,28; sobre o #1A6B9F do tema claro é ao contrário. O .btn-primary
@@ -110,6 +121,11 @@
   --border:         #CCDAE8;
   --accent:         #1A6B9F;
   --accent-hover:   #155A89;
+  /* O acento claro é bastante mais escuro, por isso os mesmos alfas pesariam
+     mais. Baixados para o tinto se ler como sugestão e não como bloco. */
+  --accent-faint:   rgba(26, 107, 159, 0.06);
+  --accent-subtle:  rgba(26, 107, 159, 0.10);
+  --accent-border:  rgba(26, 107, 159, 0.24);
   --on-accent:      #FFFFFF;
   --on-danger:      #FFFFFF;
   --text-primary:   #192736;
@@ -162,6 +178,9 @@
   --color-violet-subtle:  var(--violet-subtle);
   --color-danger:         var(--danger);
   --color-danger-subtle:  var(--danger-subtle);
+  --color-accent-faint:   var(--accent-faint);
+  --color-accent-subtle:  var(--accent-subtle);
+  --color-accent-border:  var(--accent-border);
   --color-success:        var(--success);
   --color-gold:           var(--gold);
   --color-silver:         var(--silver);

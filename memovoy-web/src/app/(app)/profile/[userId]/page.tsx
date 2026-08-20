@@ -379,7 +379,7 @@ export default function ProfilePage() {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center mb-0.5"
                 style={{
-                  background: unlocked ? 'rgba(252,163,17,0.15)' : 'var(--bg-body)',
+                  background: unlocked ? 'var(--accent-subtle)' : 'var(--bg-body)',
                 }}
               >
                 <Icon

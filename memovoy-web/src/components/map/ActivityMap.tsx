@@ -19,6 +19,16 @@ interface GeoMarker {
   type: string
 }
 
+/** O Leaflet monta os marcadores em HTML solto e em opções JavaScript, onde
+ *  var(--accent) não resolve. Lê-se o valor calculado do documento para o mapa
+ *  acompanhar o tema em vez de ficar preso a uma cor fixa — que foi como o
+ *  laranja da paleta antiga aqui sobreviveu. */
+function corDoTema(nome: string, alternativa: string) {
+  if (typeof window === 'undefined') return alternativa
+  const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim()
+  return v || alternativa
+}
+
 const TYPE_COLORS: Record<string, string> = {
   visit:     '#60a5fa',
   food:      '#4ade80',
@@ -147,7 +157,7 @@ export function ActivityMap({ activities }: Props) {
 
       if (cluster.length === 1) {
         const m     = cluster[0]
-        const color = TYPE_COLORS[m.type] ?? '#fca311'
+        const color = TYPE_COLORS[m.type] ?? '#94a3b8'
         const icon  = L.divIcon({
           className: '',
           html: `<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.45);line-height:1">${m.index + 1}</div>`,
@@ -160,7 +170,7 @@ export function ActivityMap({ activities }: Props) {
         const labels = cluster.map((m) => `${m.index + 1}. ${m.label}`).join('<br>')
         const icon   = L.divIcon({
           className: '',
-          html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:2.5px solid #fca311;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;box-shadow:0 2px 8px rgba(0,0,0,0.4);line-height:1">${cluster.length}</div>`,
+          html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:2.5px solid ${corDoTema('--accent', '#47A3CB')};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;box-shadow:0 2px 8px rgba(0,0,0,0.4);line-height:1">${cluster.length}</div>`,
           iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
         })
         const clusterMarker = L.marker([centLat, centLng], { icon }).addTo(map)

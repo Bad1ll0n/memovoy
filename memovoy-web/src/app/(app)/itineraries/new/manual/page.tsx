@@ -634,7 +634,7 @@ function SortableDay({
     >
       <div
         className="card overflow-hidden"
-        style={{ border: expanded ? '1px solid rgba(252,163,17,0.3)' : '1px solid var(--border)' }}
+        style={{ border: expanded ? '1px solid var(--accent-border)' : '1px solid var(--border)' }}
       >
         {/* Day header */}
         <div className="flex items-center gap-2 px-3 py-2.5">
@@ -746,7 +746,7 @@ function SortableDay({
                 onClick={handleSuggestAi}
                 disabled={suggesting}
                 className="btn btn-secondary text-xs gap-1.5 py-1.5 px-3"
-                style={{ color: 'var(--accent)', borderColor: 'rgba(252,163,17,0.4)' }}
+                style={{ color: 'var(--accent)', borderColor: 'var(--accent-border)' }}
               >
                 {suggesting ? <Spinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
                 {suggesting ? '' : 'IA'}
@@ -766,7 +766,7 @@ function SortableDay({
                   <div
                     key={i}
                     className="rounded-xl p-3 flex gap-2 items-start"
-                    style={{ background: 'rgba(252,163,17,0.06)', border: '1px solid rgba(252,163,17,0.2)' }}
+                    style={{ background: 'var(--accent-faint)', border: '1px solid var(--accent-subtle)' }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
@@ -843,7 +843,7 @@ function SortableActivity({
       <button
         onClick={onEdit}
         className="text-[10px] px-2 py-0.5 rounded hover:opacity-80"
-        style={{ background: 'rgba(252,163,17,0.12)', color: 'var(--accent)' }}
+        style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
       >
         Editar
       </button>

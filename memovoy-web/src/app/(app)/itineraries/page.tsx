@@ -198,7 +198,7 @@ function ItineraryCard({ it }: { it: ItinerarySummary }) {
           className="w-full flex items-center justify-center"
           style={{
             height: 120,
-            background: 'radial-gradient(ellipse at top, rgba(252,163,17,0.15) 0%, transparent 70%), var(--surface2)',
+            background: 'radial-gradient(ellipse at top, var(--accent-subtle) 0%, transparent 70%), var(--surface2)',
           }}
         >
           <Map className="w-10 h-10" style={{ color: 'var(--accent)', opacity: 0.7 }} />
@@ -259,8 +259,8 @@ function ItineraryCard({ it }: { it: ItinerarySummary }) {
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0"
               style={{
-                background: 'rgba(252,163,17,0.12)',
-                border: '1px solid rgba(252,163,17,0.3)',
+                background: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
                 color: 'var(--accent)',
               }}
             >

@@ -66,7 +66,7 @@ export default function MessagesPage() {
               href={`/messages/${conv.id}`}
               className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:opacity-90"
               style={{
-                background: conv.unreadCount > 0 ? 'rgba(252,163,17,0.05)' : 'var(--bg-card)',
+                background: conv.unreadCount > 0 ? 'var(--accent-faint)' : 'var(--bg-card)',
                 borderLeft: conv.unreadCount > 0 ? '3px solid var(--accent)' : '3px solid transparent',
               }}
             >
