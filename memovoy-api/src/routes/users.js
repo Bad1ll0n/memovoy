@@ -35,6 +35,7 @@ function userDto(row, viewerId) {
     countriesCount:    Number(row.countries_count ?? 0),
     itinerariesCount:  Number(row.itineraries_count ?? 0),
     viewerFollows:     row.viewer_follows ?? false,
+    viewerRequested:   row.viewer_requested ?? false,
     ...(proprio ? {
       email:               row.email,
       emailVerified:       row.email_verified ?? false,
@@ -177,7 +178,10 @@ export async function usersRoutes(app) {
         COUNT(DISTINCT it2.id)         AS itineraries_count,
         EXISTS(
           SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = u.id
-        ) AS viewer_follows
+        ) AS viewer_follows,
+        EXISTS(
+          SELECT 1 FROM follow_requests WHERE requester_id = $2 AND target_id = u.id
+        ) AS viewer_requested
        FROM users u
        LEFT JOIN posts p         ON p.user_id = u.id
        LEFT JOIN follows fl      ON fl.following_id = u.id
@@ -246,6 +250,34 @@ export async function usersRoutes(app) {
 
     if (id === followerId) return reply.status(400).send({ message: 'Não podes seguir-te a ti próprio.' })
 
+    const { rows: alvo } = await query('SELECT is_private FROM users WHERE id = $1', [id])
+    if (alvo.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+
+    // Já seguir tem precedência sobre tudo: quem passou a conta a privada
+    // depois de já ter seguidores não os transforma em pedidos pendentes.
+    const { rows: jaSegue } = await query(
+      'SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2',
+      [followerId, id],
+    )
+
+    if (alvo[0].is_private && jaSegue.length === 0) {
+      await query(
+        `INSERT INTO follow_requests (requester_id, target_id) VALUES ($1, $2)
+         ON CONFLICT (requester_id, target_id) DO NOTHING`,
+        [followerId, id],
+      )
+
+      await notifyUser({
+        recipientId: id,
+        actorId:     followerId,
+        type:        'follow_request',
+        message:     `${request.user.username} quer seguir-te.`,
+        targetUrl:   `/profile/${followerId}`,
+      })
+
+      return reply.status(202).send({ status: 'requested' })
+    }
+
     await query(
       'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
       [followerId, id],
@@ -261,13 +293,98 @@ export async function usersRoutes(app) {
 
     checkFirstFollower(id).catch(() => {})
 
-    return reply.status(201).send({ ok: true })
+    return reply.status(201).send({ status: 'following' })
   })
 
   // DELETE /users/:id/follow
   app.delete('/:id/follow', { preHandler: [app.authenticate] }, async (request, reply) => {
     const { id } = request.params
     await query('DELETE FROM follows WHERE follower_id = $1 AND following_id = $2', [request.user.id, id])
+    // O mesmo botão serve para retirar um pedido ainda por responder — para
+    // quem carrega, "deixar de seguir" e "afinal já não quero" são a mesma
+    // intenção, e obrigá-lo a descobrir um segundo sítio seria absurdo.
+    await query('DELETE FROM follow_requests WHERE requester_id = $1 AND target_id = $2', [request.user.id, id])
+    return reply.send({ ok: true })
+  })
+
+  // GET /users/me/follow-requests — a fila de quem pediu para me seguir
+  //
+  // O router do Fastify dá precedência a segmentos estáticos sobre os
+  // paramétricos, por isso "me" ganha ao /:id independentemente da ordem em
+  // que estão escritos. Ficam juntas aqui só para se lerem em conjunto.
+  app.get('/me/follow-requests', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const { rows } = await query(
+      `SELECT fr.id, fr.created_at,
+              u.id AS user_id, u.username, u.display_name, u.avatar_url, u.is_verified,
+              (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS followers_count
+         FROM follow_requests fr
+         JOIN users u ON u.id = fr.requester_id
+        WHERE fr.target_id = $1
+        ORDER BY fr.created_at DESC
+        LIMIT 100`,
+      [request.user.id],
+    )
+
+    return reply.send({
+      requests: rows.map((r) => ({
+        id:             r.id,
+        createdAt:      r.created_at,
+        userId:         r.user_id,
+        username:       r.username,
+        displayName:    r.display_name ?? r.username,
+        avatarUrl:      r.avatar_url,
+        isVerified:     r.is_verified,
+        followersCount: Number(r.followers_count),
+      })),
+    })
+  })
+
+  // POST /users/me/follow-requests/:requesterId — aceitar
+  //
+  // O id no caminho é o de quem pediu, não o da linha do pedido: quem responde
+  // vem de uma notificação, e a notificação tem o utilizador.
+  app.post('/me/follow-requests/:requesterId', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const { requesterId } = request.params
+    const meuId = request.user.id
+
+    // Apagar e ver quantas linhas saíram, em vez de ler-e-depois-apagar: dois
+    // toques no botão em cima um do outro só podem aceitar uma vez, e o
+    // segundo recebe 404 em vez de criar uma segunda notificação.
+    const { rowCount } = await query(
+      'DELETE FROM follow_requests WHERE requester_id = $1 AND target_id = $2',
+      [requesterId, meuId],
+    )
+    if (rowCount === 0) return reply.status(404).send({ message: 'Não há pedido pendente.' })
+
+    await query(
+      'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [requesterId, meuId],
+    )
+
+    await notifyUser({
+      recipientId: requesterId,
+      actorId:     meuId,
+      type:        'follow_accepted',
+      message:     `${request.user.username} aceitou o teu pedido.`,
+      targetUrl:   `/profile/${meuId}`,
+    })
+
+    checkFirstFollower(meuId).catch(() => {})
+
+    return reply.send({ status: 'following' })
+  })
+
+  // DELETE /users/me/follow-requests/:requesterId — recusar
+  app.delete('/me/follow-requests/:requesterId', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const { rowCount } = await query(
+      'DELETE FROM follow_requests WHERE requester_id = $1 AND target_id = $2',
+      [request.params.requesterId, request.user.id],
+    )
+    if (rowCount === 0) return reply.status(404).send({ message: 'Não há pedido pendente.' })
+
+    // De propósito, sem notificação: dizer a alguém que foi recusado não lhe
+    // serve para nada e convida a insistir. O pedido desaparece e o botão
+    // volta a "Seguir".
     return reply.send({ ok: true })
   })
 

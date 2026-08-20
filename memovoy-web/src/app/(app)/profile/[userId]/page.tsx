@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { useState, useCallback, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
-import { Lock, Camera, BadgeCheck, Map, Heart, MessageCircle, Bookmark, MapPin, Globe, Star, Award, Zap, Compass, UserPlus, UserCheck, BarChart2 } from 'lucide-react'
+import { Lock, Camera, BadgeCheck, Map, Heart, MessageCircle, Bookmark, MapPin, Globe, Star, Award, Zap, Compass, UserPlus, UserCheck, Clock, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
@@ -46,6 +46,9 @@ interface ProfileUser {
   countriesCount:   number
   itinerariesCount: number
   viewerFollows:    boolean
+  /** Pedido enviado e ainda por responder. Distinto de viewerFollows: pedir
+   *  não dá acesso a nada até a outra pessoa aceitar. */
+  viewerRequested:  boolean
 }
 
 interface ItinerarySummary {
@@ -93,7 +96,9 @@ export default function ProfilePage() {
 
   const followMutation = useMutation({
     mutationFn: () =>
-      profile?.viewerFollows
+      // O mesmo DELETE serve para deixar de seguir e para retirar um pedido
+      // por responder — do lado de quem carrega é a mesma intenção.
+      profile?.viewerFollows || profile?.viewerRequested
         ? api.delete(`/users/${userId}/follow`)
         : api.post(`/users/${userId}/follow`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['profile', userId] }),
@@ -277,12 +282,16 @@ export default function ProfilePage() {
               <button
                 onClick={() => followMutation.mutate()}
                 disabled={followMutation.isPending}
-                className={`btn text-sm gap-1.5 transition-all ${profile.viewerFollows ? 'btn-secondary animate-follow-pop' : 'btn-primary'}`}
+                className={`btn text-sm gap-1.5 transition-all ${profile.viewerFollows || profile.viewerRequested ? 'btn-secondary' : 'btn-primary'} ${profile.viewerFollows ? 'animate-follow-pop' : ''}`}
               >
                 {followMutation.isPending ? (
                   <span className="text-sm">…</span>
                 ) : profile.viewerFollows ? (
                   <><UserCheck className="w-3.5 h-3.5" />A seguir</>
+                ) : profile.viewerRequested ? (
+                  // Não é "A seguir": não se vê nada até a outra pessoa
+                  // responder, e dizer o contrário seria mentir ao utilizador.
+                  <><Clock className="w-3.5 h-3.5" />Pedido enviado</>
                 ) : (
                   <><UserPlus className="w-3.5 h-3.5" />Seguir</>
                 )}
@@ -568,7 +577,9 @@ export default function ProfilePage() {
             Conta privada
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Segue para ver o conteúdo.
+            {profile.viewerRequested
+              ? 'Pedido enviado. Vais ver o conteúdo assim que for aceite.'
+              : 'Pede para seguir e vê o conteúdo assim que for aceite.'}
           </p>
         </div>
       )}

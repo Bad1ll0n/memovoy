@@ -11,9 +11,10 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { NotificationsSkeleton } from '@/components/ui/Skeleton'
+import { PedidosDeSeguimento, usePedidosDeSeguimento } from '@/components/notifications/PedidosDeSeguimento'
 import { useCallback } from 'react'
 
-type NotifType = 'like' | 'follow' | 'comment' | 'badge' | 'mention'
+type NotifType = 'like' | 'follow' | 'follow_request' | 'follow_accepted' | 'comment' | 'badge' | 'mention'
 
 interface Notification {
   id: string
@@ -34,13 +35,22 @@ interface NotifPage {
   nextCursor: string | null
 }
 
+/** Tintas derivadas do acento. Estavam aqui laranjas fixos da paleta antiga,
+ *  que não acompanhavam a mudança de tema nem a da marca. */
+const ACENTO_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
+const ACENTO_10 = 'color-mix(in srgb, var(--accent) 10%, transparent)'
+
 function notifMeta(type: NotifType) {
   switch (type) {
     case 'like':    return { Icon: Heart,       bg: 'rgba(248,113,113,0.15)',  color: 'var(--danger)' }
     case 'follow':  return { Icon: UserPlus,    bg: 'var(--violet-subtle)',    color: 'var(--violet)' }
-    case 'comment': return { Icon: MessageCircle, bg: 'rgba(252,163,17,0.15)', color: 'var(--accent)' }
+    // O aviso de pedido continua a aparecer na lista com o histórico todo, mas
+    // a resposta dá-se na secção do topo — esta linha é o registo, não a acção.
+    case 'follow_request':  return { Icon: UserPlus, bg: 'var(--violet-subtle)', color: 'var(--violet)' }
+    case 'follow_accepted': return { Icon: UserPlus, bg: 'rgba(34,197,94,0.15)', color: 'var(--success)' }
+    case 'comment': return { Icon: MessageCircle, bg: ACENTO_15, color: 'var(--accent)' }
     case 'badge':   return { Icon: Trophy,      bg: 'rgba(34,197,94,0.15)',    color: 'var(--success)' }
-    default:        return { Icon: Bell,        bg: 'rgba(252,163,17,0.1)',    color: 'var(--accent)' }
+    default:        return { Icon: Bell,        bg: ACENTO_10, color: 'var(--accent)' }
   }
 }
 
@@ -95,6 +105,9 @@ export default function NotificationsPage() {
   const handleLoadMore = useCallback(() => fetchNextPage(), [fetchNextPage])
   const sentinelRef = useInfiniteScroll({ hasMore: !!hasNextPage, onLoadMore: handleLoadMore })
 
+  const { data: pedidosData } = usePedidosDeSeguimento(isReady)
+  const pedidosPendentes = pedidosData?.requests.length ?? 0
+
   const notifications = data?.pages.flatMap((p) => p.notifications) ?? []
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -115,9 +128,9 @@ export default function NotificationsPage() {
               disabled={push.loading}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
               style={{
-                background:   push.state === 'subscribed' ? 'rgba(34,152,206,0.12)' : 'var(--surface2)',
+                background:   push.state === 'subscribed' ? ACENTO_15 : 'var(--surface2)',
                 color:        push.state === 'subscribed' ? 'var(--accent)' : 'var(--text-secondary)',
-                border:       push.state === 'subscribed' ? '1px solid rgba(34,152,206,0.3)' : '1px solid var(--border)',
+                border:       push.state === 'subscribed' ? '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' : '1px solid var(--border)',
               }}
               title={push.state === 'subscribed' ? 'Desativar notificações push' : 'Ativar notificações push'}
             >
@@ -143,7 +156,9 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {notifications.length === 0 ? (
+      <PedidosDeSeguimento activo={isReady} />
+
+      {notifications.length === 0 && pedidosPendentes === 0 ? (
         <EmptyState
           illustration="notifications"
           title="Sem notificações"
@@ -157,7 +172,7 @@ export default function NotificationsPage() {
               <div
                 className={`flex items-start gap-3 p-3 rounded-xl transition-colors ${!n.read ? 'border-l-2' : ''}`}
                 style={{
-                  background: n.read ? 'transparent' : 'rgba(252,163,17,0.05)',
+                  background: n.read ? 'transparent' : 'color-mix(in srgb, var(--accent) 6%, transparent)',
                   borderLeftColor: n.read ? 'transparent' : 'var(--accent)',
                 }}
               >

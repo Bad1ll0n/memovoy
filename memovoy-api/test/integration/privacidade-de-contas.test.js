@@ -163,9 +163,16 @@ describe('quem tem direito a ver', () => {
   })
 
   test('quem já a segue continua a ver', async () => {
+    // Carregar em Seguir numa conta privada já não chega: cria um pedido, e o
+    // acesso só vem depois de a dona o aceitar. Este teste assumia o contrário
+    // porque, quando foi escrito, seguir era imediato — era esse o defeito.
     await app.inject({
       method: 'POST', url: `/users/${privada.user.id}/follow`,
       headers: comToken(estranho.accessToken),
+    })
+    await app.inject({
+      method: 'POST', url: `/users/me/follow-requests/${estranho.user.id}`,
+      headers: comToken(privada.accessToken),
     })
 
     const perfil = await app.inject({
