@@ -79,13 +79,8 @@ export function Sidebar() {
       </div>
 
       {/* Nav items */}
-      <nav className="flex flex-col gap-0.5 flex-1">
-        <p
-          className="px-3 mb-1 text-xs font-semibold uppercase tracking-widest"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Menu
-        </p>
+      <nav className="flex flex-col gap-1.5 flex-1">
+        <p className="menu-seccao px-3 mb-1">Menu</p>
         {navItems.map(({ href, label, Icon, badge }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (

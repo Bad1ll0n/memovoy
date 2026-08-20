@@ -480,12 +480,30 @@ mark {
   }
   .progress-segment-done { background: var(--accent); }
 
-  /* Sidebar menu item */
+  /* Rotulo de seccao do menu. A serifada aqui confirma a hierarquia -- isto e
+     um cabecalho, nao um destino -- sem competir com os itens, que ficam na
+     sans para se varrerem depressa. */
+  .menu-seccao {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Sidebar menu item.
+     O padding vertical desceu de 0.75rem para 0.625rem e o espaco que saiu
+     daqui foi para o gap do <nav>. Nao e uma poupanca: e uma troca deliberada,
+     porque o padding fica DENTRO do fundo do hover e o gap fica FORA. Com
+     2px entre fundos os itens leem-se como uma lista colada; com 6px leem-se
+     como destinos separados. A altura total da barra fica na mesma (-4px),
+     o que importa porque ela ja transborda em ecras baixos. */
   .menu-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 0.875rem;
+    padding: 0.625rem 0.875rem;
     border-radius: 12px;
     color: var(--text-secondary);
     font-size: 0.9rem;
