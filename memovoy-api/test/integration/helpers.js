@@ -1,5 +1,6 @@
 import { buildApp } from '../../src/app.js'
 import { pool, query } from '../../src/db/pool.js'
+import { aguardarSegundoPlano } from '../../src/lib/emSegundoPlano.js'
 
 /**
  * Instância da app partilhada por todos os testes de um ficheiro.
@@ -32,6 +33,18 @@ export async function fecharApp(app) {
  * sobrevivem de propósito por serem um registo de auditoria.
  */
 export async function limparBaseDeDados() {
+  // Esperar primeiro pelo que ficou em voo do teste anterior.
+  //
+  // A app tem duas dúzias de escritas que correm depois da resposta — subir a
+  // pontuação, contar vistas, atribuir emblemas. Chegavam depois deste DELETE e
+  // rebentavam numa chave estrangeira, e a falha aparecia uma vez em cada quatro
+  // ou cinco corridas, sempre noutro teste e nunca no que a causou.
+  //
+  // Este é o tipo de intermitência que se costuma "resolver" com um sleep. Um
+  // sleep esconde-a: continua lá, só passa a falhar menos vezes e numa máquina
+  // mais lenta volta. Aqui espera-se pelo trabalho concreto, que a app agora
+  // sabe enumerar.
+  await aguardarSegundoPlano()
   await query('DELETE FROM users')
   await query('DELETE FROM audit_logs')
 }

@@ -6,6 +6,7 @@ import { checkFirstFollower } from '../services/badges.js'
 import { logAudit } from '../services/audit.js'
 import { notifyUser } from '../services/notifyUser.js'
 import { agentTravelBuddyMatch } from '../services/aiAgent.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 function userDto(row, viewerId) {
   // Private fields only when the row belongs to the viewer: this DTO also
@@ -291,7 +292,7 @@ export async function usersRoutes(app) {
       targetUrl:   `/profile/${followerId}`,
     })
 
-    checkFirstFollower(id).catch(() => {})
+    emSegundoPlano(checkFirstFollower(id))
 
     return reply.status(201).send({ status: 'following' })
   })
@@ -369,7 +370,7 @@ export async function usersRoutes(app) {
       targetUrl:   `/profile/${meuId}`,
     })
 
-    checkFirstFollower(meuId).catch(() => {})
+    emSegundoPlano(checkFirstFollower(meuId))
 
     return reply.send({ status: 'following' })
   })
@@ -587,6 +588,13 @@ export async function usersRoutes(app) {
     const { id } = request.params
     const cursor = request.query.cursor
     const limit  = 10
+    const viewerId = request.user?.id ?? null
+
+    const { rows: existe } = await query('SELECT 1 FROM users WHERE id = $1', [id])
+    if (existe.length === 0) return reply.status(404).send({ message: 'Utilizador não encontrado.' })
+    if (!(await autorVisivelPara(id, viewerId))) {
+      return reply.status(403).send({ message: 'Conta privada.' })
+    }
 
     const { rows } = await query(
       `SELECT id, title, destination, start_date, end_date,

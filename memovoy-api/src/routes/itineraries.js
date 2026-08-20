@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
-import { datasDoRoteiro, datasVisiveis, datasVisiveisPara } from '../db/visibilidade.js'
+import { autorVisivel, autorVisivelPara, autorVisivelPorId, datasDoRoteiro, datasVisiveis, datasVisiveisPara } from '../db/visibilidade.js'
 import { agentValidateDestination, agentGenerateDays, agentGenerateTips, agentSuggestActivity, agentStreamSuggestActivity, agentSuggestForDay, agentRecommendDuration, agentRefineDays, agentAdaptDayForWeather, agentMoodTrip } from '../services/aiAgent.js'
 
 async function getUserPreferences(userId) {
@@ -15,6 +15,7 @@ async function getUserPreferences(userId) {
 }
 import { checkItineraryBadges } from '../services/badges.js'
 import { difundirNaSala } from '../services/socket.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 const generateSchema = z.object({
   destination:    z.string().min(2).max(100),
@@ -130,8 +131,8 @@ export async function itinerariesRoutes(app) {
     )
 
     // +10 score ao criar itinerário (fire-and-forget)
-    query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]).catch(() => {})
-    checkItineraryBadges(request.user.id).catch(() => {})
+    emSegundoPlano(query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]))
+    emSegundoPlano(checkItineraryBadges(request.user.id))
 
     return reply.status(201).send({ id: rows[0].id })
   })
@@ -247,8 +248,8 @@ export async function itinerariesRoutes(app) {
         ],
       )
 
-      query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]).catch(() => {})
-      checkItineraryBadges(request.user.id).catch(() => {})
+      emSegundoPlano(query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]))
+      emSegundoPlano(checkItineraryBadges(request.user.id))
 
       send('done', { id: rows[0].id, tips: tipsData })
     } catch (err) {
@@ -356,8 +357,8 @@ export async function itinerariesRoutes(app) {
     )
 
     // +10 score ao criar itinerário IA (fire-and-forget)
-    query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]).catch(() => {})
-    checkItineraryBadges(request.user.id).catch(() => {})
+    emSegundoPlano(query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]))
+    emSegundoPlano(checkItineraryBadges(request.user.id))
 
     return reply.status(201).send({ id: rows[0].id })
   })
@@ -400,7 +401,9 @@ export async function itinerariesRoutes(app) {
         EXISTS(SELECT 1 FROM bookmarks WHERE itinerary_id = i.id AND user_id = $2) AS viewer_saved
        FROM itineraries i
        JOIN users u ON u.id = i.user_id
-       WHERE i.id = $1 AND (i.is_public = TRUE OR i.user_id = $2)`,
+       WHERE i.id = $1
+         AND (i.is_public = TRUE OR i.user_id = $2)
+         AND ${autorVisivel('u', '$2')}`,
       [request.params.id, viewerId],
     )
 
@@ -410,7 +413,7 @@ export async function itinerariesRoutes(app) {
     const data = row.data ?? {}
 
     // Increment view count (fire-and-forget)
-    query('UPDATE itineraries SET views_count = views_count + 1 WHERE id = $1', [row.id]).catch(() => {})
+    emSegundoPlano(query('UPDATE itineraries SET views_count = views_count + 1 WHERE id = $1', [row.id]))
 
     return reply.send({
       id:                 row.id,
@@ -471,6 +474,10 @@ export async function itinerariesRoutes(app) {
       return viewerId
         ? reply.status(403).send({ message: 'Sem permissão para exportar este roteiro.' })
         : reply.status(401).send({ message: 'Autenticação necessária para exportar roteiros privados.' })
+    }
+
+    if (!(await autorVisivelPara(itinerary.user_id, viewerId))) {
+      return reply.status(403).send({ message: 'Conta privada.' })
     }
 
     if (!(await datasVisiveisPara(itinerary.user_id, viewerId, itinerary.end_date))) {
@@ -543,10 +550,11 @@ export async function itinerariesRoutes(app) {
       `SELECT id, title, destination
        FROM itineraries
        WHERE is_public = TRUE
+         AND ${autorVisivelPorId('user_id', '$3')}
          AND ($1::text IS NULL OR lower(country) = lower($1))
        ORDER BY created_at DESC
        LIMIT $2`,
-      [country ?? null, limit],
+      [country ?? null, limit, request.user?.id ?? null],
     )
 
     return reply.send(rows.map((r) => ({ id: r.id, title: r.title, destination: r.destination })))
@@ -1042,7 +1050,7 @@ export async function itinerariesRoutes(app) {
       [request.user.id, request.params.id, dayIndex, activityIndex, activityName ?? null, destination ?? null],
     )
 
-    query('UPDATE users SET score = score + 2 WHERE id = $1', [request.user.id]).catch(() => {})
+    emSegundoPlano(query('UPDATE users SET score = score + 2 WHERE id = $1', [request.user.id]))
 
     return reply.status(201).send({ ok: true })
   })
@@ -1256,7 +1264,7 @@ export async function itinerariesRoutes(app) {
     )
 
     // Increment forks_count on the source (fire-and-forget)
-    query('UPDATE itineraries SET forks_count = forks_count + 1 WHERE id = $1', [src.id]).catch(() => {})
+    emSegundoPlano(query('UPDATE itineraries SET forks_count = forks_count + 1 WHERE id = $1', [src.id]))
 
     return reply.status(201).send({ id: inserted[0].id })
   })

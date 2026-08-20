@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 const createSchema = z.union([
   z.object({ postId: z.string().uuid() }),
@@ -32,7 +33,7 @@ export async function bookmarksRoutes(app) {
       )
       const itiAuthorId = itiRows[0]?.user_id
       if (itiAuthorId && itiAuthorId !== userId) {
-        query('UPDATE users SET score = score + 5 WHERE id = $1', [itiAuthorId]).catch(() => {})
+        emSegundoPlano(query('UPDATE users SET score = score + 5 WHERE id = $1', [itiAuthorId]))
       }
     }
 

@@ -5,6 +5,7 @@ import { limparCampos } from '../services/sanitize.js'
 import { checkFirstPost, checkFirstLike } from '../services/badges.js'
 import { agentSuggestCaption, agentStreamCaption, agentIdentifyDestinationFromPhoto } from '../services/aiAgent.js'
 import { notifyUser } from '../services/notifyUser.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 function postDto(row) {
   return {
@@ -211,20 +212,23 @@ export async function postsRoutes(app) {
     }
 
     // +3 score ao publicar post (fire-and-forget)
-    query('UPDATE users SET score = score + 3 WHERE id = $1', [request.user.id]).catch(() => {})
-    checkFirstPost(request.user.id).catch(() => {})
+    emSegundoPlano(query('UPDATE users SET score = score + 3 WHERE id = $1', [request.user.id]))
+    emSegundoPlano(checkFirstPost(request.user.id))
 
     // Auto-tag destination from first image if user didn't specify one
     if (!destination && images.length > 0) {
       const postId = rows[0].id
-      agentIdentifyDestinationFromPhoto(images[0]).then(async (result) => {
+      emSegundoPlano(agentIdentifyDestinationFromPhoto(images[0]).then(async (result) => {
         if (result?.destination && result.confidence !== 'low') {
+          // Sem emSegundoPlano aqui: esta escrita e aguardada dentro da
+          // promessa que ja esta registada em cima, portanto o registo dela
+          // seria de um valor ja resolvido.
           await query(
             'UPDATE posts SET destination = $1 WHERE id = $2 AND destination IS NULL',
             [result.destination, postId],
-          ).catch(() => {})
+          )
         }
-      }).catch(() => {})
+      }))
     }
 
     return reply.status(201).send(postDto({
@@ -304,8 +308,8 @@ export async function postsRoutes(app) {
         targetUrl:   `/posts/${id}`,
       })
       // +1 score ao autor por receber like (fire-and-forget)
-      query('UPDATE users SET score = score + 1 WHERE id = $1', [authorId]).catch(() => {})
-      checkFirstLike(authorId).catch(() => {})
+      emSegundoPlano(query('UPDATE users SET score = score + 1 WHERE id = $1', [authorId]))
+      emSegundoPlano(checkFirstLike(authorId))
     }
 
     return reply.status(201).send({ ok: true })

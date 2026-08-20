@@ -51,15 +51,17 @@ export async function searchRoutes(app) {
       query(
         `SELECT id, title, destination, cover_url, saves_count, views_count
          FROM itineraries
-         WHERE is_public = TRUE AND (
-           lower(title) % lower($1) OR lower(destination) % lower($1)
-           OR lower(title) LIKE lower($2) OR lower(destination) LIKE lower($2)
-         )
+         WHERE is_public = TRUE
+           AND ${autorVisivelPorId('user_id', '$3')}
+           AND (
+             lower(title) % lower($1) OR lower(destination) % lower($1)
+             OR lower(title) LIKE lower($2) OR lower(destination) LIKE lower($2)
+           )
          ORDER BY
            similarity(lower(title), lower($1)) DESC,
            saves_count DESC
          LIMIT 10`,
-        [q, pattern],
+        [q, pattern, viewerId],
       ),
       query(
         `SELECT p.id, p.images, p.caption,

@@ -4,6 +4,8 @@ import { createAdapter }      from '@socket.io/redis-adapter'
 import { buildApp }           from './app.js'
 import { setupSocket }        from './services/socket.js'
 import { configureWebPush }   from './services/webPush.js'
+import { aguardarSegundoPlano, pendentesEmSegundoPlano } from './lib/emSegundoPlano.js'
+import { pool }               from './db/pool.js'
 
 // Process entry point. All app construction lives in app.js so tests can build
 // an instance without a listening server or a job queue.
@@ -39,3 +41,54 @@ setupSocket(io, SECRET)
 configureWebPush()
 
 console.log(`[server] Memovoy API → http://localhost:${PORT}`)
+
+
+// ─── Encerramento gracioso ───────────────────────────────────────────────────
+//
+// Não havia nenhum: um SIGTERM matava o processo a meio do que estivesse a
+// acontecer. Numa plataforma que reinicia contentores a cada deploy isso é
+// todos os dias, e o que se perde são as escritas que correm depois da resposta
+// — pontuações, contagens de vistas, emblemas. Nada crítico isoladamente, mas
+// desaparece em silêncio e ninguém consegue explicar porquê.
+//
+// A ordem importa: primeiro parar de aceitar pedidos novos, só depois esperar
+// pelo que ficou em voo. Ao contrário, o trabalho pendente cresce enquanto se
+// espera por ele.
+let aEncerrar = false
+
+for (const sinal of ['SIGTERM', 'SIGINT']) {
+  process.on(sinal, async () => {
+    if (aEncerrar) return   // segundo Ctrl+C não deve atropelar o primeiro
+    aEncerrar = true
+    console.info(`[server] ${sinal} — a encerrar`)
+
+    const limite = setTimeout(() => {
+      console.warn('[server] o encerramento demorou de mais, a sair à força')
+      process.exit(1)
+    }, 10_000)
+    limite.unref()
+
+    try {
+      await app.close()
+      io.close()
+
+      const pendentes = pendentesEmSegundoPlano()
+      if (pendentes > 0) {
+        console.info(`[server] a aguardar ${pendentes} tarefa(s) em segundo plano`)
+        const acabou = await aguardarSegundoPlano()
+        if (!acabou) console.warn('[server] ficou trabalho por terminar')
+      }
+
+      await Promise.allSettled([
+        redisClient?.quit(),
+        redisSub?.quit(),
+        pool.end(),
+      ])
+      console.info('[server] encerrado')
+      process.exit(0)
+    } catch (err) {
+      console.error('[server] falha ao encerrar:', err.message)
+      process.exit(1)
+    }
+  })
+}

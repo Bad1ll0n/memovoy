@@ -58,7 +58,14 @@ export function Sidebar() {
 
   return (
     <aside
-      className="hidden lg:flex flex-col py-5 px-3 h-screen sticky top-0 overflow-y-auto"
+      // overflow-hidden aqui e overflow-y-auto no <nav>, e não o contrário.
+      //
+      // Era o <aside> inteiro que deslizava, por isso num ecrã baixo subiam com
+      // ele a marca, o botão "Novo Roteiro" e o cartão do utilizador — as três
+      // coisas que têm de estar sempre à mão. A coluna precisa de 883px e um
+      // portátil de 1366x768 dá cerca de 640 de viewport, portanto isto não é
+      // um caso extremo: é o ecrã mais comum que há.
+      className="hidden lg:flex flex-col py-5 px-3 h-screen sticky top-0 overflow-hidden"
       style={{
         width: 'var(--sidebar-width)',
         borderRight: '1px solid var(--border)',
@@ -66,12 +73,12 @@ export function Sidebar() {
       }}
     >
       {/* Brand */}
-      <Link href="/feed" className="px-3 mb-6">
+      <Link href="/feed" className="px-3 mb-6 shrink-0">
         <MemovoyWordmark color="var(--accent)" size="sm" />
       </Link>
 
       {/* Create button */}
-      <div className="px-1 mb-5">
+      <div className="px-1 mb-5 shrink-0">
         <Link href="/itineraries/new" className="btn btn-primary w-full gap-2 justify-center">
           <Plus className="w-4 h-4" />
           Novo Roteiro
@@ -79,7 +86,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav items */}
-      <nav className="flex flex-col gap-1.5 flex-1">
+      <nav className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto">
         <p className="menu-seccao px-3 mb-1">Menu</p>
         {navItems.map(({ href, label, Icon, badge }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
@@ -118,7 +125,7 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom: theme + user */}
-      <div className="mt-auto pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+      <div className="shrink-0 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
           onClick={toggle}
           className="menu-item w-full text-left mb-2"

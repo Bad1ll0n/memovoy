@@ -35,6 +35,7 @@ export async function exploreRoutes(app) {
        FROM itineraries i
        JOIN users u ON u.id = i.user_id
        WHERE i.is_public = TRUE
+         AND ${autorVisivel('u', '$1')}
          AND i.user_id <> $1
          AND i.travel_style && $2
          AND i.destination NOT IN (SELECT destination FROM itineraries WHERE user_id = $1 AND destination IS NOT NULL)

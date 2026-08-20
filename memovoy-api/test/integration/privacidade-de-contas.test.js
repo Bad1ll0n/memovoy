@@ -146,6 +146,57 @@ describe('publicações de uma conta privada', () => {
   })
 })
 
+describe('roteiros de uma conta privada', () => {
+  // A página de privacidade promete, com estas palavras, que "os teus roteiros
+  // ficam visíveis apenas para ti e para quem te segue". Não era verdade: os
+  // roteiros têm is_public por item e esse flag ganhava sozinho, portanto um
+  // roteiro publicado antes de a conta fechar continuava aberto a toda a gente.
+  //
+  // A decisão é que o interruptor da conta ganha ao flag do roteiro. O is_public
+  // escolhe QUAIS os roteiros que são partilháveis; a conta privada escolhe A
+  // QUEM a conta está aberta. Entre os dois, vale o mais restritivo — e era o
+  // que o texto já dizia.
+  test('não saem em nenhum caminho, mesmo marcados como públicos', async () => {
+    const criar = await app.inject({
+      method: 'POST', url: '/itineraries',
+      headers: comToken(privada.accessToken),
+      payload: { title: 'roteiro-de-conta-privada', destination: 'Açores', data: { days: [] } },
+    })
+    assert.ok(criar.statusCode < 300, `criação falhou: ${criar.body}`)
+    const roteiro = JSON.parse(criar.body)
+
+    const falhas = []
+    for (const url of ['/itineraries', '/search?q=roteiro', `/itineraries/${roteiro.id}`,
+                       `/users/${privada.user.id}/itineraries`]) {
+      const res = await app.inject({ method: 'GET', url })
+      if (res.body.includes('roteiro-de-conta-privada')) falhas.push(`${url} → ${res.statusCode}`)
+    }
+    assert.deepEqual(falhas, [], 'roteiros de uma conta privada escaparam')
+
+    // E o autor continua a ver o que é dele.
+    const proprio = await app.inject({
+      method: 'GET', url: `/itineraries/${roteiro.id}`, headers: comToken(privada.accessToken),
+    })
+    assert.equal(proprio.statusCode, 200)
+  })
+
+  test('os de uma conta pública continuam visíveis', async () => {
+    const criar = await app.inject({
+      method: 'POST', url: '/itineraries',
+      headers: comToken(publica.accessToken),
+      payload: { title: 'roteiro-de-conta-publica', destination: 'Açores', data: { days: [] } },
+    })
+    const roteiro = JSON.parse(criar.body)
+
+    const res = await app.inject({ method: 'GET', url: `/itineraries/${roteiro.id}` })
+    assert.equal(res.statusCode, 200)
+    assert.ok(res.body.includes('roteiro-de-conta-publica'))
+
+    const listagem = await app.inject({ method: 'GET', url: '/itineraries' })
+    assert.ok(listagem.body.includes('roteiro-de-conta-publica'), 'a listagem pública esvaziou')
+  })
+})
+
 describe('quem tem direito a ver', () => {
   test('o próprio autor continua a ver as suas publicações', async () => {
     const perfil = await app.inject({

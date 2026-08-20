@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { query } from '../db/pool.js'
 import { limparCampos } from '../services/sanitize.js'
 import { notifyUser } from '../services/notifyUser.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 function groupDto(row, viewerId) {
   return {
@@ -154,13 +155,13 @@ export async function groupsRoutes(app) {
     // Notify owner
     const ownerId = rows[0].owner_id
     if (ownerId !== request.user.id) {
-      notifyUser({
+      emSegundoPlano(notifyUser({
         recipientId: ownerId,
         actorId:     request.user.id,
         type:        'follow',
         message:     `${request.user.username} entrou no teu grupo.`,
         targetUrl:   `/groups/${request.params.id}`,
-      }).catch(() => {})
+      }))
     }
 
     return reply.status(201).send({ ok: true })
@@ -232,13 +233,13 @@ export async function groupsRoutes(app) {
       [groupId, inviterId, inviteeId],
     )
 
-    notifyUser({
+    emSegundoPlano(notifyUser({
       recipientId: inviteeId,
       actorId:     inviterId,
       type:        'follow',
       message:     `${request.user.username} convidou-te para um grupo.`,
       targetUrl:   `/groups/${groupId}`,
-    }).catch(() => {})
+    }))
 
     return reply.status(201).send({ token: invite[0].token })
   })

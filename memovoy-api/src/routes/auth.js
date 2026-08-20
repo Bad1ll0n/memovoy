@@ -8,6 +8,7 @@ import { query } from '../db/pool.js'
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.js'
 import { logAudit } from '../services/audit.js'
 import { generateTotpSecret, verifyTotp, otpauthUrl } from '../services/totp.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 const SALT_ROUNDS   = 12
 
@@ -59,12 +60,12 @@ function recordSession(userId, jti, request) {
   const ua        = request.headers['user-agent'] ?? null
   const ip        = request.ip ?? null
   const expiresAt = new Date(Date.now() + REFRESH_MS)
-  query(
+  emSegundoPlano(query(
     `INSERT INTO device_sessions (user_id, jti, device_name, ip_address, user_agent, expires_at)
      VALUES ($1, $2, $3, $4::inet, $5, $6)
      ON CONFLICT (jti) DO UPDATE SET last_seen_at = NOW()`,
     [userId, jti, ua?.slice(0, 200) ?? null, ip, ua, expiresAt],
-  ).catch(() => {})
+  ))
 }
 
 function setRefreshCookie(reply, token) {
@@ -220,9 +221,9 @@ export async function authRoutes(app) {
 
     // Lazy argon2id migration: if the stored hash was bcrypt, rehash with argon2id now
     if (needsRehash) {
-      hashPassword(password).then((newHash) =>
+      emSegundoPlano(hashPassword(password).then((newHash) =>
         query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]).catch(() => {}),
-      ).catch(() => {})
+      ))
     }
 
     // If 2FA is enabled, issue a short-lived temp token instead of full session
@@ -407,7 +408,7 @@ export async function authRoutes(app) {
       [payload.jti, expiresAt],
     )
     // Remove the old session record
-    query('DELETE FROM device_sessions WHERE jti = $1', [payload.jti]).catch(() => {})
+    emSegundoPlano(query('DELETE FROM device_sessions WHERE jti = $1', [payload.jti]))
 
     const { accessToken, refreshToken, jti: newJti } = makeTokens(user.id, user.username)
     setRefreshCookie(reply, refreshToken)
