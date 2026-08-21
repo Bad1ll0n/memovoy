@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import OpenAI from 'openai'
 import { query } from '../db/pool.js'
+import { resolverConfigLlm } from './llmConfig.js'
 
 // Strip HTML tags and null-bytes from any string that comes out of the LLM
 export function sanitizeText(value) {
@@ -46,13 +47,12 @@ let clienteLlm = null
  * precisam de IA nenhuma, e recusar arrancar por causa disto seria pior.
  */
 function avisarSeChaveSuspeita() {
-  const chave = process.env.GROQ_API_KEY ?? ''
-  if (!chave) {
-    console.warn('[ai] GROQ_API_KEY vazia — as funcionalidades de IA vão falhar.')
-  } else if (chave.length < 20) {
+  if (!cfg.apiKey) {
+    console.warn(`[ai] sem chave para o fornecedor "${cfg.provider}" — as funcionalidades de IA vão falhar.`)
+  } else if (cfg.apiKey.length < 20) {
     console.warn(
-      `[ai] GROQ_API_KEY tem ${chave.length} caracteres e uma chave real tem cerca de 56. ` +
-      'Parece um marcador de lugar — as funcionalidades de IA vão devolver 401.',
+      `[ai] a chave tem ${cfg.apiKey.length} caracteres e parece um marcador de lugar. ` +
+      `As funcionalidades de IA vão devolver 401. Fornecedor: ${cfg.provider}.`,
     )
   }
 }
@@ -61,9 +61,11 @@ function obterCliente() {
   if (clienteLlm === null) {
     avisarSeChaveSuspeita()
     clienteLlm = new OpenAI({
-      apiKey:     process.env.GROQ_API_KEY,
-      baseURL:    'https://api.groq.com/openai/v1',
-      timeout:    30_000,
+      apiKey:     cfg.apiKey,
+      baseURL:    cfg.baseURL,
+      // Um pouco acima do AbortSignal, para o abort ganhar e a mensagem de erro
+      // ser a nossa e não a do SDK.
+      timeout:    cfg.timeoutMs + 5_000,
       maxRetries: 0,
     })
   }
@@ -78,8 +80,14 @@ function obterCliente() {
 export function definirClienteLlm(cliente) {
   clienteLlm = cliente
 }
-const MODEL       = 'llama-3.3-70b-versatile'
-const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
+// Os identificadores vinham escritos aqui, e a 16 de Agosto de 2026 a Groq
+// desligou os dois — o principal e o de recurso, no mesmo dia. Um identificador
+// de modelo é um valor que caduca, e valores que caducam não pertencem ao
+// código-fonte. Agora vêm do ambiente, com omissões que funcionam sem
+// configuração nenhuma. Ver llmConfig.js.
+const cfg = resolverConfigLlm()
+const MODEL        = cfg.modelo
+const VISION_MODEL = cfg.visao
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 // ── Prompt injection ─────────────────────────────────────────────────────────
@@ -259,7 +267,7 @@ async function setCache(key, response) {
 //   - Tokens were logged and forgotten. You could read one call in the console
 //     but never answer "how much did this cost today".
 
-const MODELO_DE_RECURSO = 'llama-3.1-8b-instant'
+const MODELO_DE_RECURSO = cfg.recurso
 const TENTATIVAS_MAX    = 3
 
 /** Running totals since process start. Read by GET /health. */
@@ -319,7 +327,9 @@ async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperatu
   async function run(modelo) {
     const completion = await obterCliente().chat.completions.create(
       { ...params, model: modelo },
-      { signal: AbortSignal.timeout(25_000) },
+      // O limite acompanha o fornecedor: é uma consequência do débito dele e
+      // do tamanho da resposta, não um número escolhido a olho.
+      { signal: AbortSignal.timeout(cfg.timeoutMs) },
     )
 
     if (completion.usage) {

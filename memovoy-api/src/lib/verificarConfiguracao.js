@@ -64,7 +64,10 @@ export const VERIFICACOES = [
   { nome: 'JWT_SECRET',         paraQue: 'autenticação',       obrigatoria: true,  minimo: 16 },
   { nome: 'JWT_REFRESH_SECRET', paraQue: 'autenticação',       obrigatoria: true,  minimo: 16 },
 
-  { nome: 'GROQ_API_KEY', paraQue: 'geração com IA', obrigatoria: false, minimo: 40, prefixo: 'gsk_' },
+  // Sem prefixo fixo: o fornecedor de IA deixou de estar preso ao código, e
+  // cada um usa o seu (gsk_ na Groq, sk- na DeepSeek). O comprimento chega para
+  // apanhar um marcador de lugar, que é o que isto existe para apanhar.
+  { nome: 'LLM_API_KEY',  paraQue: 'geração com IA', obrigatoria: false, minimo: 20, alternativa: 'GROQ_API_KEY' },
   { nome: 'SMTP_HOST',    paraQue: 'envio de email', obrigatoria: false, minimo: 4 },
   { nome: 'SMTP_USER',    paraQue: 'envio de email', obrigatoria: false, minimo: 3 },
   { nome: 'SMTP_PASS',    paraQue: 'envio de email', obrigatoria: false, minimo: 8 },
@@ -107,7 +110,7 @@ export function verificarConfiguracao(ambiente = process.env) {
     nome: v.nome,
     paraQue: v.paraQue,
     obrigatoria: v.obrigatoria,
-    ...avaliar(v, (ambiente[v.nome] ?? '').trim()),
+    ...avaliar(v, (ambiente[v.nome] ?? ambiente[v.alternativa] ?? '').trim()),
   }))
 }
 

@@ -9,7 +9,7 @@ const VALIDO = {
   DATABASE_URL:       'postgresql://postgres:postgres@localhost:5432/memovoy',
   JWT_SECRET:         'um-segredo-suficientemente-longo-para-servir',
   JWT_REFRESH_SECRET: 'outro-segredo-suficientemente-longo-tambem',
-  GROQ_API_KEY:       'gsk_' + 'a'.repeat(52),
+  LLM_API_KEY:        'gsk_' + 'a'.repeat(52),
   SMTP_HOST:          'smtp.gmail.com',
   SMTP_USER:          'alguem@gmail.com',
   SMTP_PASS:          'abcd efgh ijkl mnop',
@@ -68,14 +68,14 @@ describe('o relatório de arranque', () => {
     // A decisão: trinta e tal páginas não precisam de IA nem de email, e
     // recusar arrancar seria pior do que o problema.
     const avisos = []
-    const ambiente = { ...VALIDO, GROQ_API_KEY: 'gsk_abc', SMTP_PASS: 'a-tua-password' }
+    const ambiente = { ...VALIDO, LLM_API_KEY: 'gsk_abc', SMTP_PASS: 'a-tua-password' }
 
     assert.doesNotThrow(() => relatarConfiguracao(ambiente, { warn: (m) => avisos.push(m) }))
 
     const texto = avisos.join('\n')
     assert.match(texto, /geração com IA/)
     assert.match(texto, /envio de email/)
-    assert.match(texto, /GROQ_API_KEY/)
+    assert.match(texto, /LLM_API_KEY/)
     assert.match(texto, /SMTP_PASS/)
   })
 
@@ -101,9 +101,19 @@ describe('o relatório de arranque', () => {
 
 describe('o estado real do projecto', () => {
   test('verificarConfiguracao lê o ambiente que lhe derem', () => {
-    const r = verificarConfiguracao({ ...VALIDO, GROQ_API_KEY: '' })
-    const groq = r.find((x) => x.nome === 'GROQ_API_KEY')
-    assert.equal(groq.estado, 'ausente')
-    assert.equal(groq.obrigatoria, false, 'a IA não pode ser obrigatória para a app arrancar')
+    const r = verificarConfiguracao({ ...VALIDO, LLM_API_KEY: '' })
+    const ia = r.find((x) => x.nome === 'LLM_API_KEY')
+    assert.equal(ia.estado, 'ausente')
+    assert.equal(ia.obrigatoria, false, 'a IA não pode ser obrigatória para a app arrancar')
+  })
+
+  test('o nome antigo GROQ_API_KEY continua a servir', () => {
+    // O fornecedor deixou de estar preso ao código e a variável passou a
+    // LLM_API_KEY. Partir instalações existentes por causa de um nome seria
+    // gratuito — o nome antigo continua a ser lido como alternativa.
+    const semNovo = { ...VALIDO }
+    delete semNovo.LLM_API_KEY
+    const r = verificarConfiguracao({ ...semNovo, GROQ_API_KEY: 'gsk_' + 'a'.repeat(52) })
+    assert.equal(r.find((x) => x.nome === 'LLM_API_KEY').estado, 'ok')
   })
 })
