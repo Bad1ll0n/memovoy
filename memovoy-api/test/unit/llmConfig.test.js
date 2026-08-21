@@ -60,6 +60,22 @@ describe('resolver o fornecedor', () => {
   })
 })
 
+describe('o mesmo modelo noutro fornecedor', () => {
+  test('a Cerebras corre exactamente o mesmo modelo que a Groq', () => {
+    // Este é o ponto todo: não é uma troca de modelo, são os mesmos pesos
+    // noutro hardware. A qualidade é idêntica por construção, e o ganho de
+    // velocidade não custa precisão nenhuma.
+    assert.equal(
+      PERFIS.cerebras.modelo.replace(/^openai\//, ''),
+      PERFIS.groq.modelo.replace(/^openai\//, ''),
+    )
+  })
+
+  test('e por isso pode ter um limite muito mais curto', () => {
+    assert.ok(PERFIS.cerebras.timeoutMs < PERFIS.groq.timeoutMs)
+  })
+})
+
 describe('o tempo limite tem de caber no que se pede', () => {
   // O agente que gera os dias pede 7000 tokens de saída. É este número que
   // decide se um fornecedor serve, e não a opinião de ninguém.
@@ -68,6 +84,28 @@ describe('o tempo limite tem de caber no que se pede', () => {
   test('a 500 t/s da Groq, 25 segundos chegam', () => {
     const preciso = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 500)
     assert.ok(preciso < PERFIS.groq.timeoutMs, `precisa de ${preciso}ms e tem ${PERFIS.groq.timeoutMs}ms`)
+  })
+
+  test('a 3000 t/s da Cerebras, dois segundos e meio chegam', () => {
+    const preciso = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 3000)
+    assert.ok(preciso < 3_000, `~${preciso}ms — seis vezes mais rápido que a Groq`)
+    assert.ok(preciso < PERFIS.cerebras.timeoutMs)
+  })
+
+  test('o plano gratuito da Cerebras deixa uma folga perigosamente pequena', () => {
+    // Escrevi primeiro que não cabia, e o teste desmentiu-me: 7000 de saída
+    // mais ~1000 de entrada dão 8000 contra 8192 de contexto. CABE — com 192
+    // tokens de folga, que é praticamente nada.
+    //
+    // O prompt cresce com o destino, os estilos de viagem e as preferências
+    // guardadas do utilizador. Basta um pedido um pouco mais rico para
+    // rebentar, e o erro que sai é de contexto, que não diz nada a quem o vê.
+    // O plano pago dá 131k e o problema desaparece.
+    const entradaTipica = 1000
+    const folga = PERFIS.cerebras.contextoNoPlanoGratuito - (TOKENS_DO_PEDIDO_MAIS_PESADO + entradaTipica)
+
+    assert.ok(folga > 0, 'com uma entrada típica ainda cabe')
+    assert.ok(folga < 500, `só ${folga} tokens de folga — o plano gratuito não serve para produção`)
   })
 
   test('a 83 t/s da DeepSeek, 25 segundos NÃO chegam', () => {

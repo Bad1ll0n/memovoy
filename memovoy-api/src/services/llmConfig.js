@@ -36,6 +36,27 @@ export const PERFIS = {
     timeoutMs: 25_000,
     prefixoDaChave: 'gsk_',
   },
+  cerebras: {
+    baseURL:  'https://api.cerebras.ai/v1',
+    // O MESMO modelo que o perfil da Groq. Não é uma troca de modelo: são os
+    // mesmos pesos noutro hardware. Por isso a qualidade é idêntica por
+    // construção — não há nada a testar nem a arriscar do lado da precisão.
+    modelo:   'gpt-oss-120b',
+    recurso:  'gemma-4-31b',
+    visao:    'gpt-oss-120b',
+    // ~3000 tokens/s. Os 7000 tokens do agente pesado saem em ~2,3 segundos,
+    // contra ~14 na Groq e ~84 na DeepSeek. 20s é oito vezes a estimativa, o
+    // que chega para absorver o TTFT e a rede sem deixar um pedido pendurado.
+    timeoutMs: 20_000,
+    prefixoDaChave: 'csk-',
+    // AVISO: o plano gratuito limita o contexto a 8192 tokens. O agente que
+    // gera os dias pede 7000 de saída e o prompt anda pelos 1000 — dá 8000, e
+    // portanto cabe, mas com 192 tokens de folga. O prompt cresce com o
+    // destino, os estilos e as preferências guardadas, por isso um pedido um
+    // pouco mais rico rebenta, com um erro de contexto que não diz nada a quem
+    // o vê. Para uso a sério, plano pago: 131k.
+    contextoNoPlanoGratuito: 8_192,
+  },
   deepseek: {
     baseURL:  'https://api.deepseek.com/v1',
     modelo:   'deepseek-v4-flash',
