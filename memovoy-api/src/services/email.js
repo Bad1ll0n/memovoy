@@ -35,6 +35,32 @@ const SOBRE_ACENTO = '#FFFFFF'
 
 /** As duas mensagens eram o mesmo HTML copiado, e foi por isso que a correcção
  *  da cor teve de ser feita em quatro sítios em vez de um. */
+/**
+ * Envia, e se não conseguir diz porquê e escreve o link na consola.
+ *
+ * Antes, o `sendVerificationEmail(...).catch(() => {})` de quem chamava engolia
+ * a falha por inteiro, e o fallback que escreve o link só disparava quando as
+ * variáveis SMTP estavam VAZIAS. Com um utilizador e uma password que existem
+ * mas não servem — que é o estado normal de um .env acabado de copiar — a app
+ * construía o transporter, tentava enviar contra um servidor que não responde,
+ * e não deixava rasto nenhum: nem email, nem link, nem erro.
+ *
+ * Registar-se ficava sem qualquer forma de verificar a conta, e sem nada nos
+ * logs que dissesse porquê. Agora a falha é sempre visível e o link aparece na
+ * mesma, para o desenvolvimento não depender de haver SMTP a funcionar.
+ */
+async function enviar(t, mensagem, ligacao, para) {
+  if (!t) {
+    console.warn(`[email] SMTP não configurado. Link para ${para}: ${ligacao}`)
+    return
+  }
+  try {
+    await t.sendMail(mensagem)
+  } catch (erro) {
+    console.warn(`[email] envio falhou (${erro.message}). Link para ${para}: ${ligacao}`)
+  }
+}
+
 function moldura({ texto, rotuloBotao, ligacao, rodape }) {
   return `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
@@ -55,14 +81,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:3000'
 
 export async function sendVerificationEmail(email, token) {
   const link = `${FRONTEND_URL}/auth/verify-email?token=${token}`
-  const t = getTransporter()
-
-  if (!t) {
-    console.log(`[email] SMTP not configured. Verification link for ${email}: ${link}`)
-    return
-  }
-
-  await t.sendMail({
+  await enviar(getTransporter(), {
     from: FROM,
     to: email,
     subject: 'Verifica o teu email — Memovoy',
@@ -72,19 +91,12 @@ export async function sendVerificationEmail(email, token) {
       ligacao:     link,
       rodape:      'Este link expira em 24 horas. Se não criaste esta conta, ignora este email.',
     }),
-  })
+  }, link, email)
 }
 
 export async function sendPasswordResetEmail(email, token) {
   const link = `${FRONTEND_URL}/auth/reset-password?token=${token}`
-  const t = getTransporter()
-
-  if (!t) {
-    console.log(`[email] SMTP not configured. Reset link for ${email}: ${link}`)
-    return
-  }
-
-  await t.sendMail({
+  await enviar(getTransporter(), {
     from: FROM,
     to: email,
     subject: 'Repõe a tua password — Memovoy',
@@ -94,5 +106,5 @@ export async function sendPasswordResetEmail(email, token) {
       ligacao:     link,
       rodape:      'Se não pediste uma reposição de password, ignora este email.',
     }),
-  })
+  }, link, email)
 }
