@@ -249,7 +249,7 @@ function DestinationInput({ value, onChange }: { value: string; onChange: (val: 
                 className="px-4 py-2.5 text-sm cursor-pointer flex items-center gap-2.5"
                 style={{
                   color: 'var(--text-primary)',
-                  background: i === activeIdx ? 'var(--bg-surface)' : 'var(--card-bg)',
+                  background: i === activeIdx ? 'var(--surface2)' : 'var(--bg-card)',
                   borderTop: i > 0 ? '1px solid var(--border)' : undefined,
                 }}
                 onMouseDown={() => select(s)}
@@ -468,7 +468,7 @@ export default function NewItineraryPage() {
               <div
                 key={d.day}
                 className="rounded-xl p-4 border"
-                style={{ background: 'var(--card-bg)', borderColor: 'var(--border)', animation: 'fadeInUp .35s ease' }}
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', animation: 'fadeInUp .35s ease' }}
               >
                 <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--accent)' }}>
                   Dia {d.day} · {d.theme}
@@ -494,7 +494,7 @@ export default function NewItineraryPage() {
         {(generatingSummary || generatingCost) && (
           <div
             className="rounded-xl p-4 border mb-4"
-            style={{ background: 'var(--card-bg)', borderColor: 'var(--accent)', animation: 'fadeInUp .35s ease' }}
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--accent)', animation: 'fadeInUp .35s ease' }}
           >
             {generatingSummary && (
               <p className="text-sm mb-2" style={{ color: 'var(--text-primary)' }}>{generatingSummary}</p>

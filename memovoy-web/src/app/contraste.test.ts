@@ -133,6 +133,9 @@ describe.each([['escuro', ESCURO], ['claro', CLARO]] as const)(
     test.each([
       ['on-accent', 'accent'],
       ['on-danger', 'danger'],
+      // Acrescentado depois de o ConfirmModal se descobrir a pedir um token
+      // inexistente (`--amber`): o par existia na interface e não aqui.
+      ['on-warning', 'warning'],
     ] as const)('--%s legível sobre --%s', (frente, fundo) => {
       const r = contraste(paleta[frente], paleta[fundo])
 

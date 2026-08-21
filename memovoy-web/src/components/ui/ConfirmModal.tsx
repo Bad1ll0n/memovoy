@@ -37,7 +37,12 @@ export function ConfirmModal({
 
   if (!open) return null
 
-  const accentColor = variant === 'danger' ? 'var(--danger)' : 'var(--amber, #F59E0B)'
+  // O `var(--amber, …)` nunca resolvia: esse token não existe em lado nenhum,
+  // por isso saía sempre o laranja fixo do fallback — o mesmo nos dois temas, e
+  // com texto branco por cima dava 2,15:1 no tema claro. O --warning existe,
+  // acompanha o tema e já passa o teste de contraste.
+  const corDeDestaque = variant === 'danger' ? 'var(--danger)' : 'var(--warning)'
+  const corDoTexto    = variant === 'danger' ? 'var(--on-danger)' : 'var(--on-warning)'
 
   return (
     <div
@@ -57,9 +62,9 @@ export function ConfirmModal({
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-              style={{ background: `color-mix(in srgb, ${accentColor} 12%, transparent)` }}
+              style={{ background: `color-mix(in srgb, ${corDeDestaque} 12%, transparent)` }}
             >
-              <AlertTriangle className="w-4.5 h-4.5" style={{ color: accentColor }} />
+              <AlertTriangle className="w-4.5 h-4.5" style={{ color: corDeDestaque }} />
             </div>
             <h2
               id="confirm-title"
@@ -97,12 +102,8 @@ export function ConfirmModal({
             disabled={loading}
             className="btn px-4 h-9 text-sm font-semibold"
             style={{
-              background: accentColor,
-              // Branco sobre o --danger dá 2,77:1 no tema escuro e 3,76:1 no
-              // claro, e sobre o âmbar 2,15:1. O --on-danger inverte-se com o
-              // tema e resolve o escuro; o claro fica a 3,76 e merece uma
-              // segunda vista ao próprio token.
-              color: 'var(--on-danger)',
+              background: corDeDestaque,
+              color: corDoTexto,
               border: 'none',
             }}
           >

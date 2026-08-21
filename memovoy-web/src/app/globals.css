@@ -87,6 +87,9 @@
      dos temas, sempre. */
   --on-accent:      #131518;
   --on-danger:      #131518;
+  /* Mesmo papel para o --warning. O ConfirmModal pedia um `--amber` que nunca
+     existiu e caía sempre no laranja fixo do fallback, igual nos dois temas. */
+  --on-warning:     #131518;
   --text-primary:   #E9EBEE;
   --text-secondary: #B2B8BF;
   --text-muted:     #8E959D;
@@ -128,6 +131,7 @@
   --accent-border:  rgba(26, 107, 159, 0.24);
   --on-accent:      #FFFFFF;
   --on-danger:      #FFFFFF;
+  --on-warning:     #FFFFFF;
   --text-primary:   #192736;
   /* #3E5D78 on #F2F6FA → 5.8:1 (WCAG AA ✓) */
   --text-secondary: #3E5D78;

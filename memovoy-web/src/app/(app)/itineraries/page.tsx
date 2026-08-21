@@ -310,8 +310,8 @@ export default function ItinerariesPage() {
     return (
       <div>
         <div className="flex items-center justify-between mb-5">
-          <div className="h-7 w-40 rounded-lg animate-pulse" style={{ background: 'var(--skeleton-bg, rgba(255,255,255,0.07))' }} />
-          <div className="h-9 w-20 rounded-lg animate-pulse" style={{ background: 'var(--skeleton-bg, rgba(255,255,255,0.07))' }} />
+          <div className="h-7 w-40 rounded-lg animate-pulse" style={{ background: 'var(--surface2)' }} />
+          <div className="h-9 w-20 rounded-lg animate-pulse" style={{ background: 'var(--surface2)' }} />
         </div>
         <ItineraryGridSkeleton count={6} />
       </div>

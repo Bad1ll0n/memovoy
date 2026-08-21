@@ -63,7 +63,7 @@ export function FeatureTour() {
     <div
       className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-50 w-72 animate-fade-in"
       style={{
-        background:   'var(--card-bg)',
+        background:   'var(--bg-card)',
         border:       '1px solid var(--border)',
         borderRadius: 16,
         boxShadow:    '0 8px 32px rgba(0,0,0,0.3)',

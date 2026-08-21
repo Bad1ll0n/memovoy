@@ -147,7 +147,7 @@ export default function ExplorePage() {
                       </div>
                     )}
                   </div>
-                  <div className="p-2" style={{ background: 'var(--card-bg)' }}>
+                  <div className="p-2" style={{ background: 'var(--bg-card)' }}>
                     <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
                       {iti.destination}
                     </p>

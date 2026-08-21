@@ -96,7 +96,7 @@ export default function OnboardingPage() {
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
                 style={{
-                  background: step >= s.num ? 'var(--accent)' : 'var(--surface)',
+                  background: step >= s.num ? 'var(--accent)' : 'var(--surface2)',
                   color:      step >= s.num ? 'var(--on-accent)' : 'var(--text-muted)',
                 }}
               >
@@ -130,7 +130,7 @@ export default function OnboardingPage() {
                     onClick={() => toggleInterest(interest.id)}
                     className="flex items-center gap-2 p-3 rounded-xl border text-left transition-all"
                     style={{
-                      background:   selected ? 'var(--accent)' : 'var(--card-bg)',
+                      background:   selected ? 'var(--accent)' : 'var(--bg-card)',
                       borderColor:  selected ? 'var(--accent)' : 'var(--border)',
                       color:        selected ? 'var(--on-accent)' : 'var(--text-primary)',
                     }}
@@ -166,7 +166,7 @@ export default function OnboardingPage() {
                 <div
                   key={u.id}
                   className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ background: 'var(--card-bg)', border: '1px solid var(--border)' }}
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
                 >
                   <Avatar src={u.avatarUrl} name={u.displayName} size="md" />
                   <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ export default function OnboardingPage() {
                     onClick={() => !followedIds.has(u.id) && followMutation.mutate(u.id)}
                     className="btn text-xs px-3 py-1.5 shrink-0"
                     style={{
-                      background: followedIds.has(u.id) ? 'var(--surface)' : 'var(--accent)',
+                      background: followedIds.has(u.id) ? 'var(--surface2)' : 'var(--accent)',
                       color:      followedIds.has(u.id) ? 'var(--text-muted)' : 'var(--on-accent)',
                     }}
                   >

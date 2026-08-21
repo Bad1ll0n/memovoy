@@ -12,7 +12,7 @@ export function Skeleton({ className = '', style }: SkeletonProps) {
   return (
     <div
       className={`rounded-lg animate-pulse ${className}`}
-      style={{ background: 'var(--skeleton-bg, rgba(255,255,255,0.07))', ...style }}
+      style={{ background: 'var(--surface2)', ...style }}
       aria-hidden="true"
     />
   )
@@ -21,7 +21,7 @@ export function Skeleton({ className = '', style }: SkeletonProps) {
 /** Skeleton for a post card */
 export function PostCardSkeleton() {
   return (
-    <div className="rounded-2xl p-4 space-y-3" style={{ background: 'var(--card-bg)' }}>
+    <div className="rounded-2xl p-4 space-y-3" style={{ background: 'var(--bg-card)' }}>
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10 rounded-full shrink-0" />
         <div className="flex-1 space-y-2">
@@ -39,7 +39,7 @@ export function PostCardSkeleton() {
 /** Skeleton for an itinerary summary card */
 export function ItineraryCardSkeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--card-bg)' }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)' }}>
       <Skeleton className="h-40 w-full rounded-none" />
       <div className="p-4 space-y-2">
         <Skeleton className="h-4 w-3/4" />

@@ -92,6 +92,69 @@ describe('a paleta antiga não volta a entrar', () => {
     expect(infractores, 'usar var(--on-accent) em vez de preto ou branco fixos').toEqual([])
   })
 
+  it('todos os tokens usados existem mesmo', () => {
+    // O bug que motivou isto: o ConfirmModal pedia `var(--amber, #F59E0B)` e
+    // esse token nunca existiu, por isso saía sempre o laranja do fallback,
+    // igual nos dois temas. E havia outros quatro — --card-bg, --surface,
+    // --bg-surface, --skeleton-bg — a maioria SEM fallback nenhum.
+    //
+    // Sem fallback, `background: var(--card-bg)` é declaração inválida e o
+    // elemento fica transparente. Confirmado no browser: o fundo efectivo dava
+    // rgba(0, 0, 0, 0). Eram 13 elementos — esqueletos, cartões do onboarding,
+    // o cartão do tour — desenhados sem fundo nenhum.
+    //
+    // Não há erro, não há aviso, não há teste vermelho. Escreve-se
+    // `var(--surface)` em vez de `var(--surface2)` e o cartão desaparece em
+    // silêncio.
+    const css = readFileSync(join(SRC, 'app/globals.css'), 'utf8')
+    const definidos = new Set(
+      [...css.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((m) => m[1]),
+    )
+
+    const fantasmas: string[] = []
+    for (const caminho of ficheirosDeCodigo(SRC)) {
+      if (caminho.endsWith('globals.css')) continue
+      const relativo = caminho.slice(SRC.length + 1).replace(/\\/g, '/')
+
+      readFileSync(caminho, 'utf8').split('\n').forEach((linha, i) => {
+        if (/^\s*(\/\/|\*|\/\*)/.test(linha)) return
+        for (const m of linha.matchAll(/var\(\s*(--[a-z0-9-]+)/g)) {
+          const token = m[1]
+          // O Tailwind gera os --color-* a partir do @theme e o next/font
+          // injecta os --font-*; nenhum dos dois está escrito no globals.css.
+          if (token.startsWith('--color-') || token.startsWith('--font-')) continue
+          if (!definidos.has(token)) fantasmas.push(`${relativo}:${i + 1}  ${token}`)
+        }
+      })
+    }
+
+    expect(fantasmas, 'estes tokens são usados mas não existem').toEqual([])
+  })
+
+  it('nenhum valor de CSS tem parênteses desequilibrados', () => {
+    // Escrito depois de eu proprio partir tres linhas ao substituir tokens: a
+    // expressao parou no primeiro ')' e esse estava dentro do rgba() aninhado,
+    // deixando 'var(--surface2))'. CSS invalido, elemento sem fundo.
+    //
+    // O TypeScript nao valida CSS dentro de uma string, o lint tambem nao, e os
+    // testes passaram na mesma. So se via a olho.
+    const partidos: string[] = []
+    for (const caminho of ficheirosDeCodigo(SRC)) {
+      if (!caminho.endsWith('.tsx')) continue
+      const relativo = caminho.slice(SRC.length + 1).replace(/\\/g, '/')
+
+      readFileSync(caminho, 'utf8').split('\n').forEach((linha, i) => {
+        for (const m of linha.matchAll(/'([^']*var\(--[^']*)'/g)) {
+          const valor = m[1]
+          const abre = (valor.match(/\(/g) ?? []).length
+          const fecha = (valor.match(/\)/g) ?? []).length
+          if (abre !== fecha) partidos.push(`${relativo}:${i + 1}  ${valor}`)
+        }
+      })
+    }
+    expect(partidos, 'valores de CSS com parênteses a mais ou a menos').toEqual([])
+  })
+
   it('o acento tem tokens de tinto, como as outras cores de estado', () => {
     // A causa raiz. Enquanto não houver onde pôr um fundo de acento, alguém
     // volta a escrevê-lo à mão — e volta a ficar para trás na próxima mudança.
