@@ -20,7 +20,7 @@ test.describe('acesso directo a URLs internos sem sessão', () => {
   test.use({ storageState: ANONIMO })
 
   // Estas exigem sessão e devem mandar para o login.
-  for (const url of ['/feed', '/itineraries', '/messages', '/notifications', '/settings', '/groups', '/rankings']) {
+  for (const url of ['/feed', '/itineraries', '/messages', '/notifications', '/settings', '/groups']) {
     test(`${url} redirecciona para o login`, async ({ page }) => {
       await page.goto(url)
       await expect(page).toHaveURL(/\/auth\/login/, { timeout: 20_000 })

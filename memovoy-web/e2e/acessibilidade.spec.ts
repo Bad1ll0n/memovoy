@@ -93,7 +93,6 @@ test.describe('páginas da aplicação', () => {
     ['notificações', '/notifications'],
     ['pesquisa', '/search'],
     ['definições', '/settings'],
-    ['rankings', '/rankings'],
   ] as const) {
     test(nome, async () => {
       await page.goto(url)

@@ -1,29 +1,15 @@
 import { query } from '../db/pool.js'
 
 export async function rankingsRoutes(app) {
-  // GET /rankings/travellers?limit=
-  app.get('/travellers', async (request, reply) => {
-    const limit = Math.min(Number(request.query.limit ?? 10), 50)
-
-    const { rows } = await query(
-      `SELECT id, username, avatar_url, score,
-        ROW_NUMBER() OVER (ORDER BY score DESC) AS rank
-       FROM users
-       ORDER BY score DESC
-       LIMIT $1`,
-      [limit],
-    )
-
-    return reply.send(
-      rows.map((u) => ({
-        id:        u.id,
-        username:  u.username,
-        avatarUrl: u.avatar_url,
-        score:     Number(u.score),
-        rank:      Number(u.rank),
-      })),
-    )
-  })
+  // Só sobra a lista de destinos em alta.
+  //
+  // O /travellers alimentava a página /rankings e o cartão "Top Viajantes", que
+  // foram removidos por decisão de produto — a app deixa de ter tabela
+  // classificativa de pessoas. Os destinos em alta são sobre sítios e não sobre
+  // quem pontua mais, por isso ficam.
+  //
+  // A coluna users.score continua a existir e a ser actualizada: é o que
+  // desbloqueia os badges, que se mantêm no perfil.
 
   // GET /rankings/trending?limit= — with week-over-week delta %
   app.get('/trending', async (request, reply) => {

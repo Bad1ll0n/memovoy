@@ -2,20 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, Trophy, UserPlus, UserCheck } from 'lucide-react'
+import { TrendingUp, TrendingDown, UserPlus, UserCheck } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { Avatar } from '@/components/ui/Avatar'
 import { Spinner } from '@/components/ui/Spinner'
-
-interface TopTraveller {
-  id: string
-  username: string
-  avatarUrl: string | null
-  score: number
-  rank: number
-}
 
 interface TrendingDest {
   destination: string
@@ -32,19 +24,8 @@ interface SuggestedUser {
   followersCount: number
 }
 
-const rankColors: Record<number, string> = {
-  1: 'var(--gold)',
-  2: 'var(--silver)',
-  3: 'var(--bronze)',
-}
-
 export function RightPanel() {
   const { isHydrated } = useAuthStore()
-
-  const { data: topTravellers, isLoading: loadingTop } = useQuery<TopTraveller[]>({
-    queryKey: ['right-panel', 'top-travellers'],
-    queryFn: () => api.get('/rankings/travellers?limit=5'),
-  })
 
   const { data: trending } = useQuery<TrendingDest[]>({
     queryKey: ['right-panel', 'trending'],
@@ -78,53 +59,6 @@ export function RightPanel() {
       }}
     >
       <div className="flex flex-col gap-4 py-5 px-3 flex-1 min-h-0 overflow-y-auto">
-      {/* Top Travellers */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4" style={{ color: 'var(--gold)' }} />
-          <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-            Top Viajantes
-          </h3>
-        </div>
-
-        {loadingTop ? (
-          <div className="flex justify-center py-4"><Spinner /></div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {(topTravellers ?? []).map((u) => (
-              <li key={u.id} className="flex items-center gap-2.5">
-                <span
-                  className="text-sm font-bold w-5 text-center"
-                  style={{ color: rankColors[u.rank] ?? 'var(--text-muted)' }}
-                >
-                  {u.rank}
-                </span>
-                <Avatar src={u.avatarUrl} name={u.username} size="sm" />
-                <Link
-                  href={`/profile/${u.id}`}
-                  className="flex-1 min-w-0 text-sm font-medium truncate hover:underline"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  @{u.username}
-                </Link>
-                <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                  {u.score}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-3 text-center">
-          <Link
-            href="/rankings"
-            className="text-xs font-medium hover:underline"
-            style={{ color: 'var(--accent)' }}
-          >
-            Ver ranking completo
-          </Link>
-        </div>
-      </div>
-
       {/* Trending Destinations */}
       {trending && trending.length > 0 && (
         <div className="card p-4">

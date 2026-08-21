@@ -12,7 +12,6 @@ import {
   Users,
   MessageCircle,
   Bell,
-  Trophy,
   User,
   Settings,
   Plus,
@@ -53,7 +52,6 @@ export function Sidebar() {
     { href: '/groups',        label: 'Grupos',        Icon: Users },
     { href: '/messages',      label: 'Mensagens',     Icon: MessageCircle, badge: msgCount },
     { href: '/notifications', label: 'Notificações',  Icon: Bell,          badge: notifCount },
-    { href: '/rankings',      label: 'Rankings',       Icon: Trophy },
   ]
 
   return (

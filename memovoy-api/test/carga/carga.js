@@ -148,7 +148,6 @@ const cenarios = [
   ['GET /health          (sem BD)',   () => app.inject({ method: 'GET', url: '/health' })],
   ['GET /feed            (auth, BD)', () => app.inject({ method: 'GET', url: '/feed', headers: auth })],
   ['GET /explore         (agregado)', () => app.inject({ method: 'GET', url: '/explore', headers: auth })],
-  ['GET /rankings/travellers',        () => app.inject({ method: 'GET', url: '/rankings/travellers', headers: auth })],
   ['GET /notifications   (auth, BD)', () => app.inject({ method: 'GET', url: '/notifications', headers: auth })],
   ['GET /users/me        (auth, BD)', () => app.inject({ method: 'GET', url: '/users/me', headers: auth })],
 ]

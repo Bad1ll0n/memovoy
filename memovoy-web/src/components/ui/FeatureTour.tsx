@@ -29,7 +29,7 @@ const STEPS = [
   {
     Icon:    Trophy,
     title:   'Conquistas e pontuação',
-    body:    'Publica posts, cria roteiros e faz check-in para ganhar pontos e desbloquear badges. Vê os teus rankings no separador Rankings.',
+    body:    'Publica posts, cria roteiros e faz check-in para ganhar pontos e desbloquear badges. Vê-os no teu perfil.',
   },
 ]
 

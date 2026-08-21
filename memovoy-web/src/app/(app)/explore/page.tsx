@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useCallback, useRef } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { Camera, Heart, MessageCircle, Sparkles, MapPin, Trophy, Map, Navigation } from 'lucide-react'
+import { Camera, Heart, MessageCircle, Sparkles, MapPin, Map, Navigation } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
@@ -65,7 +65,6 @@ export default function ExplorePage() {
       {/* Quick-access links (visible on all screen sizes, critical for mobile where sidebar is hidden) */}
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1 lg:hidden" style={{ scrollbarWidth: 'none' }}>
         {[
-          { href: '/rankings', Icon: Trophy, label: 'Rankings', color: 'var(--gold)' },
           { href: '/map',      Icon: Map,    label: 'Mapa',     color: 'var(--accent)' },
           { href: '/nearby',   Icon: Navigation, label: 'Perto de mim', color: 'var(--success)' },
         ].map(({ href, Icon, label, color }) => (
