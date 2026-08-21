@@ -30,8 +30,36 @@ export function sanitizeOutput(obj) {
 // real API.
 let clienteLlm = null
 
+/**
+ * Avisa se a chave nem sequer tem a forma de uma chave.
+ *
+ * Uma chave da Groq é `gsk_` seguido de umas cinquenta letras. O .env do
+ * projecto trazia `gsk_…` com sete caracteres — um marcador de lugar. Isso
+ * passa por qualquer verificação de "está preenchida?", a app arranca sem se
+ * queixar, e o problema só aparece quando alguém tenta gerar um roteiro e leva
+ * com um 401 do fornecedor.
+ *
+ * O mesmo aconteceu com o SMTP. O padrão a evitar é confiar em «a variável
+ * existe» quando o que interessa é «a variável serve».
+ *
+ * É só um aviso e não uma paragem: a app tem trinta e tal páginas que não
+ * precisam de IA nenhuma, e recusar arrancar por causa disto seria pior.
+ */
+function avisarSeChaveSuspeita() {
+  const chave = process.env.GROQ_API_KEY ?? ''
+  if (!chave) {
+    console.warn('[ai] GROQ_API_KEY vazia — as funcionalidades de IA vão falhar.')
+  } else if (chave.length < 20) {
+    console.warn(
+      `[ai] GROQ_API_KEY tem ${chave.length} caracteres e uma chave real tem cerca de 56. ` +
+      'Parece um marcador de lugar — as funcionalidades de IA vão devolver 401.',
+    )
+  }
+}
+
 function obterCliente() {
   if (clienteLlm === null) {
+    avisarSeChaveSuspeita()
     clienteLlm = new OpenAI({
       apiKey:     process.env.GROQ_API_KEY,
       baseURL:    'https://api.groq.com/openai/v1',

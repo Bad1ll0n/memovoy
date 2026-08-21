@@ -278,6 +278,21 @@ export async function itinerariesRoutes(app) {
     try {
       destinationMeta = await agentValidateDestination(params.destination)
     } catch (err) {
+      // Só um erro do próprio agente é 422. Uma falha da chamada ao modelo não
+      // é culpa do que o utilizador escreveu.
+      //
+      // Isto devolvia err.message tal e qual em qualquer caso, e por isso uma
+      // chave de API inválida chegava ao browser como «401 Invalid API Key»
+      // com estado 422. Para quem está a usar a app, é uma mensagem sobre uma
+      // chave que não é dele, num estado que diz que o problema é o que ele
+      // escreveu. E de caminho conta a um estranho que há um fornecedor de IA
+      // por trás e que está mal configurado.
+      if (err?.status || err?.statusCode) {
+        console.error('[generate] o modelo recusou a chamada:', err.status ?? err.statusCode, err.message)
+        return reply.status(503).send({
+          message: 'Serviço de IA temporariamente indisponível. Tenta novamente em alguns segundos.',
+        })
+      }
       return reply.status(422).send({ message: err.message })
     }
 
