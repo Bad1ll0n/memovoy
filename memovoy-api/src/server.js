@@ -6,12 +6,22 @@ import { setupSocket }        from './services/socket.js'
 import { configureWebPush }   from './services/webPush.js'
 import { aguardarSegundoPlano, pendentesEmSegundoPlano } from './lib/emSegundoPlano.js'
 import { pool }               from './db/pool.js'
+import { relatarConfiguracao } from './lib/verificarConfiguracao.js'
 
 // Process entry point. All app construction lives in app.js so tests can build
 // an instance without a listening server or a job queue.
 
 const PORT   = Number(process.env.PORT ?? 4000)
 const SECRET = process.env.JWT_SECRET
+
+// Antes de tudo o resto: dizer já o que não vai funcionar com este .env, em vez
+// de deixar cada funcionalidade descobri-lo sozinha na primeira utilização.
+try {
+  relatarConfiguracao()
+} catch (err) {
+  console.error('[server]', err.message)
+  process.exit(1)
+}
 
 let built
 try {
