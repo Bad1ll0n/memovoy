@@ -129,7 +129,7 @@ export default function FeedPage() {
           style={{ background: 'var(--accent)' }}
           aria-label="Criar post"
         >
-          <Camera className="w-4 h-4" style={{ color: '#000' }} />
+          <Camera className="w-4 h-4" style={{ color: 'var(--on-accent)' }} />
         </button>
       </div>
 

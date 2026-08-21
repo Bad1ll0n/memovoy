@@ -97,7 +97,7 @@ export default function OnboardingPage() {
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
                 style={{
                   background: step >= s.num ? 'var(--accent)' : 'var(--surface)',
-                  color:      step >= s.num ? '#000' : 'var(--text-muted)',
+                  color:      step >= s.num ? 'var(--on-accent)' : 'var(--text-muted)',
                 }}
               >
                 {step > s.num ? <Check className="w-4 h-4" /> : s.num}
@@ -132,7 +132,7 @@ export default function OnboardingPage() {
                     style={{
                       background:   selected ? 'var(--accent)' : 'var(--card-bg)',
                       borderColor:  selected ? 'var(--accent)' : 'var(--border)',
-                      color:        selected ? '#000' : 'var(--text-primary)',
+                      color:        selected ? 'var(--on-accent)' : 'var(--text-primary)',
                     }}
                   >
                     <span className="text-lg">{interest.emoji}</span>
@@ -182,7 +182,7 @@ export default function OnboardingPage() {
                     className="btn text-xs px-3 py-1.5 shrink-0"
                     style={{
                       background: followedIds.has(u.id) ? 'var(--surface)' : 'var(--accent)',
-                      color:      followedIds.has(u.id) ? 'var(--text-muted)' : '#000',
+                      color:      followedIds.has(u.id) ? 'var(--text-muted)' : 'var(--on-accent)',
                     }}
                   >
                     {followedIds.has(u.id) ? 'A seguir' : 'Seguir'}

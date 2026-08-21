@@ -60,6 +60,38 @@ describe('a paleta antiga não volta a entrar', () => {
     expect(infractores, 'o laranja da paleta antiga voltou ao código').toEqual([])
   })
 
+  it('não há preto nem branco fixos por cima do acento', () => {
+    // O --on-accent inverte-se entre temas: é quase preto sobre o azul claro do
+    // tema escuro, e branco sobre o azul escuro do tema claro. Escrever '#000'
+    // à mão acerta num tema e falha no outro, sempre.
+    //
+    // Estavam assim 15 sítios. No tema escuro o preto dava 7,37:1 e ninguém
+    // notava; no tema claro dava 3,65:1 e falhava os 4,5:1. É o modo de falha
+    // mais fácil de deixar passar: quem desenvolve num tema não vê o outro.
+    const infractores: string[] = []
+
+    for (const caminho of ficheirosDeCodigo(SRC)) {
+      if (!caminho.endsWith('.tsx')) continue
+      const relativo = caminho.slice(SRC.length + 1).replace(/\\/g, '/')
+
+      const linhas = readFileSync(caminho, 'utf8').split('\n')
+      linhas.forEach((linha, i) => {
+        if (/^\s*(\/\/|\*)/.test(linha)) return
+        if (!/color:[^,;]*['"]#(000|fff)(fff|000)?['"]/i.test(linha)) return
+
+        // Só interessa quando a cor assenta num token — accent, danger, âmbar.
+        // Branco por cima de uma foto com véu escuro, do Lightbox ou de um
+        // crachá vermelho está certo nos dois temas e não é para acusar.
+        const contexto = linhas.slice(Math.max(0, i - 3), i + 1).join(' ')
+        if (/background:[^;]*(var\(--accent|var\(--danger|accentColor|var\(--amber)/.test(contexto)) {
+          infractores.push(`${relativo}:${i + 1}`)
+        }
+      })
+    }
+
+    expect(infractores, 'usar var(--on-accent) em vez de preto ou branco fixos').toEqual([])
+  })
+
   it('o acento tem tokens de tinto, como as outras cores de estado', () => {
     // A causa raiz. Enquanto não houver onde pôr um fundo de acento, alguém
     // volta a escrevê-lo à mão — e volta a ficar para trás na próxima mudança.

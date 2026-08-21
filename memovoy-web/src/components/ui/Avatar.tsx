@@ -51,7 +51,7 @@ export function Avatar({
   return (
     <div
       className={`rounded-full shrink-0 flex items-center justify-center font-semibold select-none ${cls} ${className}`}
-      style={{ background: 'var(--accent)', color: '#000', ...style }}
+      style={{ background: 'var(--accent)', color: 'var(--on-accent)', ...style }}
       aria-label={name}
     >
       {initials(name)}

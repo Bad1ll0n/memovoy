@@ -235,7 +235,7 @@ export default function GroupDetailPage() {
                 className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
                 style={{
                   background: group.viewerIsMember ? 'var(--surface2)' : 'var(--accent)',
-                  color:      group.viewerIsMember ? 'var(--text-primary)' : '#fff',
+                  color:      group.viewerIsMember ? 'var(--text-primary)' : 'var(--on-accent)',
                   border:     group.viewerIsMember ? '1px solid var(--border)' : 'none',
                 }}
               >

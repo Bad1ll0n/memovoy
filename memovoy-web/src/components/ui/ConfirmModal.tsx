@@ -98,7 +98,11 @@ export function ConfirmModal({
             className="btn px-4 h-9 text-sm font-semibold"
             style={{
               background: accentColor,
-              color: '#fff',
+              // Branco sobre o --danger dá 2,77:1 no tema escuro e 3,76:1 no
+              // claro, e sobre o âmbar 2,15:1. O --on-danger inverte-se com o
+              // tema e resolve o escuro; o claro fica a 3,76 e merece uma
+              // segunda vista ao próprio token.
+              color: 'var(--on-danger)',
               border: 'none',
             }}
           >

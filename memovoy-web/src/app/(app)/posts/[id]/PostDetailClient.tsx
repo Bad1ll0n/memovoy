@@ -550,7 +550,7 @@ export default function PostDetailClient() {
               {submitting ? (
                 <Spinner size="sm" />
               ) : (
-                <Send className="w-4 h-4" style={{ color: '#000' }} />
+                <Send className="w-4 h-4" style={{ color: 'var(--on-accent)' }} />
               )}
             </button>
           </form>

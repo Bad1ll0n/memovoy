@@ -148,7 +148,7 @@ function GroupCard({ group }: { group: Group }) {
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg w-full justify-center transition-colors"
             style={{
               background: group.viewerIsMember ? 'var(--surface2)' : 'var(--accent)',
-              color:      group.viewerIsMember ? 'var(--text-secondary)' : '#fff',
+              color:      group.viewerIsMember ? 'var(--text-secondary)' : 'var(--on-accent)',
               border:     group.viewerIsMember ? '1px solid var(--border)' : 'none',
             }}
           >

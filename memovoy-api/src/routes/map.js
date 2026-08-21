@@ -1,5 +1,5 @@
 import { query } from '../db/pool.js'
-import { autorVisivelPara } from '../db/visibilidade.js'
+import { autorVisivelPara, autorVisivelPorId } from '../db/visibilidade.js'
 
 // ISO 3166-1 alpha-2 lookup for common English country names returned by the AI
 const COUNTRY_CODES = {
@@ -49,11 +49,18 @@ export async function mapRoutes(app) {
   // GET /map/countries — aggregate all public itineraries by country
   app.get('/countries', async (request, reply) => {
     const { rows } = await query(
+      // A conta privada tem de contar aqui como conta nas outras leituras.
+      // Sem isto, o mapa dizia "4 roteiros em Portugal" e a lista por baixo
+      // mostrava 3 — porque a listagem passou a respeitar contas privadas e
+      // esta contagem ficou para trás. Além da incoerência visível, um número
+      // que sobe quando alguém publica revela que alguém publicou.
       `SELECT country, COUNT(*) AS count
        FROM itineraries
        WHERE is_public = TRUE AND country IS NOT NULL
+         AND ${autorVisivelPorId('user_id', '$1')}
        GROUP BY country
        ORDER BY count DESC`,
+      [request.user?.id ?? null],
     )
 
     return reply.send(

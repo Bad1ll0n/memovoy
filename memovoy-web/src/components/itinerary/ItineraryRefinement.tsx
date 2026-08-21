@@ -106,7 +106,7 @@ export function ItineraryRefinement({ itineraryId, onDaysUpdated }: Props) {
                   className="max-w-[85%] px-3 py-2 rounded-2xl text-sm"
                   style={msg.role === 'user' ? {
                     background: 'var(--accent)',
-                    color: '#000',
+                    color: 'var(--on-accent)',
                     borderBottomRightRadius: 4,
                   } : {
                     background: 'var(--bg-card)',
@@ -172,7 +172,7 @@ export function ItineraryRefinement({ itineraryId, onDaysUpdated }: Props) {
               style={{ background: 'var(--accent)' }}
               aria-label="Enviar"
             >
-              <Send className="w-3.5 h-3.5" style={{ color: '#000' }} />
+              <Send className="w-3.5 h-3.5" style={{ color: 'var(--on-accent)' }} />
             </button>
           </form>
         </div>

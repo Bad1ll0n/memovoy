@@ -239,7 +239,7 @@ export default function ConversationPage() {
           style={{ background: 'var(--accent)' }}
           aria-label="Enviar"
         >
-          <Send className="w-4 h-4" style={{ color: '#000' }} />
+          <Send className="w-4 h-4" style={{ color: 'var(--on-accent)' }} />
         </button>
       </div>
     </div>

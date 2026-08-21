@@ -75,7 +75,7 @@ export function FeatureTour() {
       <div className="flex items-start justify-between p-4 pb-0">
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'var(--accent)', color: '#000' }}
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           <Icon className="w-4 h-4" />
         </div>
@@ -114,7 +114,7 @@ export function FeatureTour() {
         <button
           onClick={next}
           className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-          style={{ background: 'var(--accent)', color: '#000' }}
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           {step < STEPS.length - 1 ? 'Próximo' : 'Entendido'}
           {step < STEPS.length - 1 && <ChevronRight className="w-3.5 h-3.5" />}

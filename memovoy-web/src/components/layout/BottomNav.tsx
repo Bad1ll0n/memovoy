@@ -46,7 +46,7 @@ export function BottomNav() {
                 className="w-10 h-10 rounded-full flex items-center justify-center"
                 style={{ background: 'var(--accent)' }}
               >
-                <Icon className="w-5 h-5" style={{ color: '#000' }} />
+                <Icon className="w-5 h-5" style={{ color: 'var(--on-accent)' }} />
               </span>
             ) : (
               <>

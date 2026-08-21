@@ -197,7 +197,7 @@ export default function EditProfilePage() {
               {uploading ? (
                 <Spinner size="sm" />
               ) : (
-                <Camera className="w-3.5 h-3.5" style={{ color: '#000' }} />
+                <Camera className="w-3.5 h-3.5" style={{ color: 'var(--on-accent)' }} />
               )}
             </button>
           </div>

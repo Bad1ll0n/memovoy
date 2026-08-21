@@ -92,7 +92,7 @@ export default function MapPage() {
               className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
               style={{
                 background: mapMode === mode ? 'var(--accent)' : 'transparent',
-                color:      mapMode === mode ? '#000' : 'var(--text-secondary)',
+                color:      mapMode === mode ? 'var(--on-accent)' : 'var(--text-secondary)',
               }}
             >
               {mode === 'world' ? 'Mundo' : 'O Meu Mapa'}

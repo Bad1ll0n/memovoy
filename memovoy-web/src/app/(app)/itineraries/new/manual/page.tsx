@@ -650,7 +650,7 @@ function SortableDay({
 
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: 'var(--accent)', color: '#000' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {day.day}
           </div>
