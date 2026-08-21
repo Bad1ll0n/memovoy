@@ -59,9 +59,25 @@ export function RightPanel() {
 
   return (
     <aside
-      className="hidden xl:flex flex-col gap-4 py-5 px-3 h-screen sticky top-0 overflow-y-auto"
-      style={{ width: 'var(--right-width)' }}
+      // Mesmo enquadramento da barra da esquerda, e pela mesma razão.
+      //
+      // Esta tinha a largura maior das duas (280 contra 240) e mesmo assim
+      // parecia mais pequena: sem borda e sem fundo, os cartões ficavam a
+      // flutuar no vazio em vez de formarem uma coluna. A folga até é simétrica
+      // — 315px de cada lado do conteúdo — mas à esquerda o espaço acaba num
+      // limite visível e à direita não acabava em nada.
+      //
+      // O overflow vai no conteúdo e não no <aside>, com min-h-0, para que num
+      // ecrã baixo deslizem só os cartões. É a mesma correcção que a barra da
+      // esquerda levou.
+      className="hidden xl:flex flex-col h-screen sticky top-0 overflow-hidden"
+      style={{
+        width: 'var(--right-width)',
+        borderLeft: '1px solid var(--border)',
+        background: 'var(--bg-body)',
+      }}
     >
+      <div className="flex flex-col gap-4 py-5 px-3 flex-1 min-h-0 overflow-y-auto">
       {/* Top Travellers */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3">
@@ -167,6 +183,7 @@ export function RightPanel() {
       <p className="text-xs text-center pb-4" style={{ color: 'var(--text-muted)' }}>
         © 2026 Memovoy · PT/EN
       </p>
+      </div>
     </aside>
   )
 }
