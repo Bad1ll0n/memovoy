@@ -69,13 +69,24 @@ describe('agentValidateDestination — resposta válida', () => {
     assert.deepEqual(r.quickFacts, DESTINO_VALIDO.quickFacts)
   })
 
-  test('pede resposta em JSON e sem retentativas do SDK', async () => {
+  test('impõe o esquema, não só JSON válido', async () => {
+    // Este teste afirmava json_object e passou a falhar quando os agentes de
+    // geração ganharam esquema estrito. Estava certo a falhar: o contrato
+    // mudou, e para melhor.
+    //
+    // O json_object garante JSON *válido* e mais nada. Numa geração real, o
+    // modelo devolveu «400 Failed to generate JSON» à primeira tentativa e
+    // funcionou à segunda com o mesmo pedido. O json_schema com strict impõe
+    // a forma durante a descodificação, em vez de a pedir no prompt.
     const cliente = clienteFalso([DESTINO_VALIDO])
     definirClienteLlm(cliente)
 
     await agentValidateDestination('lisboa')
 
-    assert.equal(cliente.chamadas[0].response_format.type, 'json_object')
+    const formato = cliente.chamadas[0].response_format
+    assert.equal(formato.type, 'json_schema')
+    assert.equal(formato.json_schema.strict, true, 'sem strict não há descodificação restringida')
+    assert.ok(formato.json_schema.schema.properties.normalizedName)
   })
 
   test('sanitiza a saída do modelo — HTML e null bytes', async () => {

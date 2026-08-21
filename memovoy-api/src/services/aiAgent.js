@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import OpenAI from 'openai'
 import { query } from '../db/pool.js'
 import { resolverConfigLlm } from './llmConfig.js'
+import { ESQUEMA_DESTINO, ESQUEMA_DIAS, ESQUEMA_DICAS } from './llmSchemas.js'
 
 // Strip HTML tags and null-bytes from any string that comes out of the LLM
 export function sanitizeText(value) {
@@ -293,7 +294,28 @@ export function reiniciarContadoresDaIa() {
  * Worth another attempt? Anything the server or the network might do
  * differently a moment later.
  */
+/**
+ * Um 400 do fornecedor a dizer que não conseguiu produzir JSON.
+ *
+ * Medido: em quatro gerações reais espaçadas, uma falhou assim — e a mesma
+ * geração passou à segunda tentativa. Não é um pedido mal formado, é o modelo
+ * a falhar a formatação nesta amostragem. Repetir resolve; desistir manda um
+ * erro ao utilizador por uma coisa que ia funcionar.
+ *
+ * Vale para as duas mensagens que a Groq devolve. A diferença entre elas diz
+ * como o esquema estrito é implementado neste modelo: "generate" é não ter
+ * conseguido produzir JSON; "validate" é tê-lo produzido fora do esquema. A
+ * segunda só aparece com json_schema, e mostra que a imposição é feita depois
+ * de gerar e não durante — ou seja, o strict apanha o erro em vez de o tornar
+ * impossível. Daí isto continuar a ser preciso.
+ */
+function falhaDeFormatacaoDoModelo(err) {
+  if (err?.status !== 400) return false
+  return /failed to (generate|validate) json/i.test(String(err?.message ?? ''))
+}
+
 function vaiTentarOutraVez(err) {
+  if (falhaDeFormatacaoDoModelo(err)) return true
   if (err?.status === 429) return true
   if (err?.status >= 500) return true
   if (err?.code === 'ECONNRESET' || err?.code === 'ETIMEDOUT') return true
@@ -315,18 +337,26 @@ function esperaAntesDeRepetir(err, tentativa) {
   return Math.min(base + Math.random() * 250, 8_000)
 }
 
-async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperature } = {}) {
+async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperature, schema } = {}) {
+  // Com esquema, a forma da resposta é imposta durante a descodificação e o
+  // modelo não pode produzir outra coisa. Sem esquema, `json_object` garante
+  // JSON válido e mais nada — que foi o que deixou passar um «Failed to
+  // generate JSON» à primeira geração real que fizemos.
+  const formatoComEsquema = schema
+    ? { type: 'json_schema', json_schema: { name: schema.name, strict: true, schema: schema.schema } }
+    : { type: 'json_object' }
+
   const params = {
     model,
-    response_format: { type: 'json_object' },
+    response_format: formatoComEsquema,
     messages,
     max_tokens: maxTokens,
   }
   if (temperature !== undefined) params.temperature = temperature
 
-  async function run(modelo) {
+  async function run(modelo, formato = params.response_format) {
     const completion = await obterCliente().chat.completions.create(
-      { ...params, model: modelo },
+      { ...params, model: modelo, response_format: formato },
       // O limite acompanha o fornecedor: é uma consequência do débito dele e
       // do tamanho da resposta, não um número escolhido a olho.
       { signal: AbortSignal.timeout(cfg.timeoutMs) },
@@ -349,11 +379,35 @@ async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperatu
   contadores.chamadas++
   let ultimoErro
 
+  // Se o fornecedor não souber json_schema, tentar outra vez em json_object em
+  // vez de falhar. Nem todos o suportam, e o perfil pode ter sido trocado por
+  // alguém que não sabia disto — degradar é melhor do que recusar.
+  const semSuporteAEsquema = (err) =>
+    schema && err?.status === 400 && /response_format|json_schema|schema/i.test(String(err?.message ?? ''))
+
   for (let tentativa = 1; tentativa <= TENTATIVAS_MAX; tentativa++) {
     try {
       return await run(params.model)
     } catch (err) {
       ultimoErro = err
+
+      // A ordem importa: uma falha de formatação também é um 400, e cair no
+      // ramo de baixo tirava o esquema por causa de um erro que nada tem a ver
+      // com suporte. Desistir do esquema é permanente para esta chamada;
+      // repetir é barato.
+      if (falhaDeFormatacaoDoModelo(err)) {
+        if (tentativa === TENTATIVAS_MAX) break
+        contadores.retentativas++
+        await new Promise((r) => setTimeout(r, esperaAntesDeRepetir(err, tentativa)))
+        continue
+      }
+
+      if (semSuporteAEsquema(err)) {
+        console.warn('[ai] o fornecedor recusou json_schema; a repetir sem esquema estrito')
+        contadores.semEsquema = (contadores.semEsquema ?? 0) + 1
+        return await run(params.model, { type: 'json_object' })
+      }
+
       if (!vaiTentarOutraVez(err) || tentativa === TENTATIVAS_MAX) break
 
       contadores.retentativas++
@@ -398,7 +452,7 @@ normalizedName, country, continent, currency, language, timezone, bestTimeToVisi
 If the destination is not real or too vague, set normalizedName to null.${PT_RULE}`,
     },
     { role: 'user', content: `Destination: ${destination}` },
-  ], 500)
+  ], 500, { schema: ESQUEMA_DESTINO })
 
   if (!data.normalizedName) {
     throw new Error(`Destino "${destination}" não reconhecido. Tenta ser mais específico.`)
@@ -465,7 +519,7 @@ ${['breakfast', 'lunch', 'dinner'].map((meal) =>
 - Language spoken there: ${language}${PT_RULE}`,
     },
     { role: 'user', content: `Generate a ${days}-day itinerary starting ${startDate} for ${destination}. Days: ${days}` },
-  ], 7000)
+  ], 7000, { schema: ESQUEMA_DIAS })
 
   // Reparado antes de ser guardado em cache: a cache dura sete dias, e uma
   // resposta malformada guardada é uma resposta malformada servida a toda a
@@ -524,7 +578,7 @@ Return a JSON object with these keys:
 Context: ${groupType} trip, style: ${travelStyle.join(', ')}.${PT_RULE}`,
     },
     { role: 'user', content: `Give practical tips and key local phrases for visiting ${destination}` },
-  ], 1800)
+  ], 1800, { schema: ESQUEMA_DICAS })
 
   await setCache(key, data)
   return data
