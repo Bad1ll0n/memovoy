@@ -175,7 +175,20 @@ export async function itinerariesRoutes(app) {
       try {
         destinationMeta = await agentValidateDestination(params.destination)
       } catch (err) {
-        send('error', { message: err.message })
+        // Mesma distinção do /generate: um erro com estado HTTP veio do
+        // fornecedor de IA e não é culpa do que o utilizador escreveu.
+        //
+        // Corrigi o /generate primeiro e assumi que este caminho estava
+        // tratado, porque o catch exterior desta rota já mandava uma mensagem
+        // genérica. Não estava: a validação do destino tem o seu próprio catch
+        // e escapava antes de lá chegar. E é este o caminho que a interface
+        // usa — o /generate quase não é chamado.
+        if (err?.status || err?.statusCode) {
+          console.error('[generate-stream] o modelo recusou a chamada:', err.status ?? err.statusCode, err.message)
+          send('error', { message: 'Serviço de IA temporariamente indisponível. Tenta novamente em alguns segundos.' })
+        } else {
+          send('error', { message: err.message })
+        }
         reply.raw.end()
         return
       }
