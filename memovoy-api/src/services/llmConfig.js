@@ -44,9 +44,15 @@ export const PERFIS = {
     modelo:   'gpt-oss-120b',
     recurso:  'gemma-4-31b',
     visao:    'gpt-oss-120b',
-    // ~3000 tokens/s. Os 7000 tokens do agente pesado saem em ~2,3 segundos,
-    // contra ~14 na Groq e ~84 na DeepSeek. 20s é oito vezes a estimativa, o
-    // que chega para absorver o TTFT e a rede sem deixar um pedido pendurado.
+    // ~1641 tokens/s medidos de forma independente pela Artificial Analysis.
+    //
+    // Escrevi aqui 3000 primeiro, que é o número da própria Cerebras. Medido
+    // por terceiros dá 1641 — continua a ser de longe o mais rápido (a Groq faz
+    // 474), mas quase metade do anunciado. Vale a regra: para velocidade, o
+    // número do fornecedor é um tecto, não uma expectativa.
+    //
+    // 7000 tokens dão ~4,3 segundos, contra ~15 na Groq e ~84 na DeepSeek.
+    // 20s é quase cinco vezes a estimativa, o que chega para o TTFT e a rede.
     timeoutMs: 20_000,
     prefixoDaChave: 'csk-',
     // AVISO: o plano gratuito limita o contexto a 8192 tokens. O agente que

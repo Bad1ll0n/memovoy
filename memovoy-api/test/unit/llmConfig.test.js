@@ -86,10 +86,19 @@ describe('o tempo limite tem de caber no que se pede', () => {
     assert.ok(preciso < PERFIS.groq.timeoutMs, `precisa de ${preciso}ms e tem ${PERFIS.groq.timeoutMs}ms`)
   })
 
-  test('a 3000 t/s da Cerebras, dois segundos e meio chegam', () => {
-    const preciso = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 3000)
-    assert.ok(preciso < 3_000, `~${preciso}ms — seis vezes mais rápido que a Groq`)
-    assert.ok(preciso < PERFIS.cerebras.timeoutMs)
+  test('à velocidade MEDIDA da Cerebras, 20 segundos sobram', () => {
+    // 1641 t/s, medidos por terceiros. Usei primeiro os 3000 que a Cerebras
+    // anuncia — quase o dobro do real. Para velocidade, o número do fornecedor
+    // é um tecto e não uma expectativa, por isso o teste usa o medido.
+    const preciso = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 1641)
+    assert.ok(preciso < 5_000, `~${preciso}ms`)
+    assert.ok(preciso * 4 < PERFIS.cerebras.timeoutMs, 'o limite deve ter margem larga sobre a estimativa')
+  })
+
+  test('mesmo assim é três vezes mais rápida que a Groq', () => {
+    const cerebras = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 1641)
+    const groq     = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 474)
+    assert.ok(groq / cerebras > 3)
   })
 
   test('o plano gratuito da Cerebras deixa uma folga perigosamente pequena', () => {
