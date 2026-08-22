@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { resolverConfigLlm, tempoEstimadoMs, PERFIS } from '../../src/services/llmConfig.js'
+import { resolverConfigLlm, tempoEstimadoMs, esforcoParaModelo, PERFIS } from '../../src/services/llmConfig.js'
 
 // O fornecedor e os modelos estavam escritos no código. A 16 de Agosto de 2026
 // a Groq desligou os dois modelos que a app usava — o principal e o de recurso,
@@ -123,5 +123,69 @@ describe('o tempo limite tem de caber no que se pede', () => {
     const preciso = tempoEstimadoMs(TOKENS_DO_PEDIDO_MAIS_PESADO, 83)
     assert.ok(preciso > 25_000, 'este é o cálculo que desaconselha o limite antigo')
     assert.ok(preciso < PERFIS.deepseek.timeoutMs, `precisa de ${preciso}ms e o perfil dá ${PERFIS.deepseek.timeoutMs}ms`)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O raciocínio come o orçamento do texto
+//
+// Descobri isto a testar uma chave nova: pedi uma legenda com max_tokens 10 e
+// veio uma string vazia. Não um erro — vazia. Os 10 tokens foram todos para o
+// raciocínio e não sobrou nenhum para a resposta.
+//
+// Com os 300 que o código usava, medido contra a API a sério:
+//
+//     Edimburgo   139 a pensar   190 de 300 no total
+//     Tóquio      182            251
+//     Lisboa      230            291       ← nove tokens de folga
+//
+// E quando não sobra, o modelo é interrompido a meio da frase e o campo vem
+// preenchido na mesma. Forcei o corte para ver: "...ouvindo um fado que".
+// Escrever até ao limite é indistinguível de escrever até ao fim, se ninguém
+// olhar para o finish_reason.
+describe('o esforço de raciocínio por modelo', () => {
+  test('os dois modelos usam vocabulários que não se tocam', () => {
+    // Esta é a razão de o valor viver no perfil e não no sítio da chamada.
+    // Medido contra a API: o gpt-oss responde 400 a `none` ("must be one of
+    // low, medium, or high") e o qwen responde 400 a `low` ("must be one of
+    // none or default"). Um valor fixo parte um dos dois caminhos.
+    const cfg = resolverConfigLlm({ LLM_PROVIDER: 'groq' })
+
+    assert.equal(esforcoParaModelo(cfg, 'openai/gpt-oss-120b'), 'low')
+    assert.equal(esforcoParaModelo(cfg, 'qwen/qwen3.6-27b'), 'none')
+    assert.notEqual(
+      esforcoParaModelo(cfg, 'openai/gpt-oss-120b'),
+      esforcoParaModelo(cfg, 'qwen/qwen3.6-27b'),
+      'se algum dia forem iguais, alguém simplificou isto sem testar os dois',
+    )
+  })
+
+  test('um modelo desconhecido não leva parâmetro nenhum', () => {
+    // Deliberado. Enviar o parâmetro errado dá 400 e mata a chamada; não o
+    // enviar só gasta mais alguns tokens a pensar. Perante a dúvida, a opção
+    // cara ganha a opção partida.
+    const cfg = resolverConfigLlm({ LLM_PROVIDER: 'groq' })
+    assert.equal(esforcoParaModelo(cfg, 'modelo-que-ainda-nao-existe'), undefined)
+  })
+
+  test('o modelo de visão da Groq não é o que foi desligado', () => {
+    // O llama-4-scout respondia 404 e ninguém tinha reparado: a única coisa
+    // que o usava eram as legendas com foto, longe da geração de roteiros.
+    // Um modelo de visão morto falha num canto da app que ninguém visita.
+    assert.ok(!/llama-4-scout/.test(PERFIS.groq.visao), 'o modelo desligado voltou ao perfil')
+    assert.ok(PERFIS.groq.visao, 'tem de haver um modelo de visão')
+  })
+
+  test('todo o modelo nomeado no perfil da Groq sabe que esforço aceita', () => {
+    // Um modelo no perfil sem entrada aqui é um 400 à espera de acontecer,
+    // ou tokens desperdiçados em silêncio. Vale para os que existem hoje e
+    // para o próximo que alguém acrescentar.
+    const perfil = PERFIS.groq
+    for (const modelo of [perfil.modelo, perfil.recurso, perfil.visao]) {
+      assert.ok(
+        perfil.esforcoMinimo[modelo],
+        `${modelo} está no perfil mas não diz que esforço aceita`,
+      )
+    }
   })
 })

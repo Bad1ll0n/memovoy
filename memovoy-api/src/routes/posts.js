@@ -440,8 +440,16 @@ export async function postsRoutes(app) {
         if (safe) reply.raw.write(`data: ${JSON.stringify({ t: safe })}\n\n`)
       }
       reply.raw.write('data: [DONE]\n\n')
-    } catch {
-      reply.raw.write('data: {"error":true}\n\n')
+    } catch (err) {
+      // Uma legenda cortada no limite de tokens nao e o mesmo que uma falha:
+      // o texto que ja chegou e bom, so nao esta acabado. Dizer "erro" mandava
+      // o cliente deitar fora uma frase util; dizer [DONE] fazia passar meia
+      // frase por legenda inteira. Nem uma coisa nem outra: vai a verdade.
+      if (err?.code === 'LEGENDA_CORTADA' && err.parcial) {
+        reply.raw.write('data: {"incompleta":true}\n\n')
+      } else {
+        reply.raw.write('data: {"error":true}\n\n')
+      }
     } finally {
       reply.raw.end()
     }

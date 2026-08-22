@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import OpenAI from 'openai'
 import { query } from '../db/pool.js'
-import { resolverConfigLlm } from './llmConfig.js'
+import { resolverConfigLlm, esforcoParaModelo } from './llmConfig.js'
 import { ESQUEMA_DESTINO, ESQUEMA_DIAS, ESQUEMA_DICAS } from './llmSchemas.js'
 
 // Strip HTML tags and null-bytes from any string that comes out of the LLM
@@ -755,11 +755,27 @@ export async function* agentStreamCaption({ destination, images }) {
     userContent = `Destination: ${destination}.`
   }
 
+  // ── Porque e que isto leva reasoning_effort ────────────────────────────────
+  //
+  // Os tokens de raciocinio saem do MESMO orcamento que o texto. Medido nestes
+  // 300: Edimburgo gastou 139 a pensar e 190 no total, Toquio 182 e 251,
+  // Lisboa 230 e 291. Nove tokens de folga. O destino seguinte passava.
+  //
+  // E quando passa nao ha erro nenhum: o finish_reason vem 'length' e a legenda
+  // fica a meio da frase — "...ouvindo um fado que" — que foi exactamente o que
+  // obtive ao forcar o corte. Escrever ate ao limite parece escrever ate ao fim.
+  //
+  // Com o raciocinio no minimo sao 19-23 tokens em vez de 139-230, e a legenda
+  // e igualmente boa: uma legenda de viagem nao precisa de cadeia de raciocinio.
+  const modelo = hasImages ? VISION_MODEL : MODEL
+  const esforco = esforcoParaModelo(cfg, modelo)
+
   const stream = await obterCliente().chat.completions.create({
-    model: hasImages ? VISION_MODEL : MODEL,
+    model: modelo,
     temperature: 0.9,
     max_tokens: 300,
     stream: true,
+    ...(esforco ? { reasoning_effort: esforco } : {}),
     messages: [
       {
         role: 'system',
@@ -772,9 +788,27 @@ Write in Portuguese (European).`,
     ],
   })
 
+  let cortada = false
+  let saiuAlgumaCoisa = false
+
   for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content
-    if (delta) yield delta
+    const escolha = chunk.choices[0]
+    const delta = escolha?.delta?.content
+    if (delta) { saiuAlgumaCoisa = true; yield delta }
+    // A ultima parte do fluxo traz a razao da paragem. 'length' quer dizer que
+    // o modelo foi interrompido, nao que acabou.
+    if (escolha?.finish_reason === 'length') cortada = true
+  }
+
+  // Nao ha forma de "des-emitir" o que ja foi transmitido, e apagar o que o
+  // utilizador viu aparecer seria pior. Mas ficar calado faz de meia frase uma
+  // legenda acabada — quem le nao tem como saber a diferenca. Um erro no fim
+  // deixa quem chama decidir; silencio nao deixa.
+  if (cortada) {
+    const erro = new Error('A legenda foi cortada no limite de tokens.')
+    erro.code = 'LEGENDA_CORTADA'
+    erro.parcial = saiuAlgumaCoisa
+    throw erro
   }
 }
 

@@ -31,10 +31,22 @@ export const PERFIS = {
     baseURL:  'https://api.groq.com/openai/v1',
     modelo:   'openai/gpt-oss-120b',
     recurso:  'openai/gpt-oss-20b',
-    visao:    'meta-llama/llama-4-scout-17b-16e-instruct',
+    // O llama-4-scout que estava aqui responde 404 desde a limpeza de Agosto:
+    // foi desligado com os outros e ninguem reparou, porque a unica coisa que
+    // o usava eram as legendas com foto — que falhavam sozinhas, longe da
+    // geracao de roteiros.
+    visao:    'qwen/qwen3.6-27b',
     // ~500 tokens/s medidos pela Groq para o gpt-oss-120b.
     timeoutMs: 25_000,
     prefixoDaChave: 'gsk_',
+    // Quanto raciocinio pedir quando a tarefa nao precisa de nenhum.
+    //
+    // Os dois modelos aceitam o MESMO parametro com vocabularios que nao se
+    // tocam: o gpt-oss quer `low|medium|high` e recusa `none`; o qwen quer
+    // `none|default` e recusa `low`. Um valor fixo no sitio da chamada da 400
+    // num dos dois caminhos, portanto vive aqui, ao lado do modelo a que
+    // pertence.
+    esforcoMinimo: { 'openai/gpt-oss-120b': 'low', 'openai/gpt-oss-20b': 'low', 'qwen/qwen3.6-27b': 'none' },
   },
   cerebras: {
     baseURL:  'https://api.cerebras.ai/v1',
@@ -105,7 +117,20 @@ export function resolverConfigLlm(ambiente = process.env) {
     visao:     ambiente.LLM_MODEL_VISION   || perfil.visao,
     timeoutMs: numero(ambiente.LLM_TIMEOUT_MS, perfil.timeoutMs),
     prefixoDaChave: perfil.prefixoDaChave,
+    esforcoMinimo: perfil.esforcoMinimo ?? {},
   }
+}
+
+/**
+ * O valor de `reasoning_effort` a enviar para um modelo, ou undefined.
+ *
+ * Devolver undefined para um modelo desconhecido e deliberado: enviar o
+ * parametro errado da 400 e mata a chamada, enquanto nao o enviar so gasta
+ * mais alguns tokens a pensar. Perante a duvida, a opcao cara ganha a opcao
+ * partida.
+ */
+export function esforcoParaModelo(config, modelo) {
+  return config?.esforcoMinimo?.[modelo]
 }
 
 /**

@@ -66,6 +66,7 @@ export function CreatePostModal({ onClose, initialDestination }: Props) {
   const [destination, setDestination] = useState(initialDestination ?? '')
   const [error, setError] = useState('')
   const [captionAiLoading, setCaptionAiLoading] = useState(false)
+  const [captionAviso, setCaptionAviso] = useState<string | null>(null)
   const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null)
   const [showItineraryPicker, setShowItineraryPicker] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
@@ -123,6 +124,7 @@ export function CreatePostModal({ onClose, initialDestination }: Props) {
   async function handleSuggestCaption() {
     if (!destination.trim()) return
     setCaptionAiLoading(true)
+    setCaptionAviso(null)
     setCaption('')
     try {
       const res = await fetch(`${API_URL}/posts/suggest-caption/stream`, {
@@ -150,8 +152,12 @@ export function CreatePostModal({ onClose, initialDestination }: Props) {
           const payload = line.slice(6)
           if (payload === '[DONE]') break
           try {
-            const { t, error: err } = JSON.parse(payload)
-            if (err) throw new Error()
+            const { t, error: err, incompleta } = JSON.parse(payload)
+            // O servidor distingue "falhou" de "ficou a meio". Uma legenda
+            // cortada no limite de tokens acaba a meio da frase, e sem isto
+            // aparecia na caixa como se estivesse pronta a publicar.
+            if (incompleta) { setCaptionAviso('A sugestão ficou a meio. Acaba a frase ou pede outra.'); break }
+            if (err) { setCaptionAviso('Não foi possível sugerir uma legenda. Tenta outra vez.'); break }
             if (t) setCaption((prev) => prev + t)
           } catch { /* skip malformed chunk */ }
         }
@@ -263,7 +269,10 @@ export function CreatePostModal({ onClose, initialDestination }: Props) {
                 maxLength={2200}
                 autoFocus
               />
-              <div className="flex justify-end">
+              <div className="flex justify-between items-center gap-2">
+                {captionAviso ? (
+                  <p className="text-xs pl-1" style={{ color: 'var(--text-muted)' }}>{captionAviso}</p>
+                ) : <span />}
                 <button
                   type="button"
                   onClick={handleSuggestCaption}
