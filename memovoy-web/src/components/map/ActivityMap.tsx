@@ -19,14 +19,25 @@ interface GeoMarker {
   type: string
 }
 
-/** O Leaflet monta os marcadores em HTML solto e em opções JavaScript, onde
- *  var(--accent) não resolve. Lê-se o valor calculado do documento para o mapa
- *  acompanhar o tema em vez de ficar preso a uma cor fixa — que foi como o
- *  laranja da paleta antiga aqui sobreviveu. */
-function corDoTema(nome: string, alternativa: string) {
-  if (typeof window === 'undefined') return alternativa
-  const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim()
-  return v || alternativa
+/**
+ * Cores para desenhar SOBRE o mapa.
+ *
+ * O mapa é sempre claro, independentemente do tema da interface. Foi decisão
+ * deliberada: a cartografia é linha fina e nome pequeno, e o contraste que
+ * serve uma interface escura não serve aqui.
+ *
+ * A consequência é que o que se desenha em cima dele não pode seguir o tema.
+ * Estas cores eram lidas de var(--accent), e no tema escuro isso dá o azul
+ * claro (#47A3CB) — que sobre um mapa pálido quase desaparece. Ficam fixas, e
+ * escolhidas para fundo claro.
+ *
+ * Isto substitui o corDoTema() que aqui esteve: fazia sentido enquanto o mapa
+ * acompanhava o tema, e deixou de fazer no momento em que o mapa deixou de o
+ * acompanhar.
+ */
+const SOBRE_O_MAPA = {
+  acento:      '#1A6B9F',   // o acento do tema claro
+  acentoForte: '#155A89',   // contorno, um tom abaixo
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -143,7 +154,12 @@ export function ActivityMap({ activities }: Props) {
     const map = L.map(containerRef.current, { zoomControl: true, attributionControl: true })
     mapRef.current = map
 
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    // Tiles claros, sempre — não acompanham o tema.
+    //
+    // Estavam escuros mesmo no modo claro, e o utilizador queixou-se de não se
+    // ver bem. Um mapa é uma imagem densa de linhas finas e nomes pequenos: o
+    // contraste do escuro que serve a interface não serve a cartografia.
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://stadiamaps.com/">Stadia Maps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 20,
     }).addTo(map)
@@ -170,7 +186,7 @@ export function ActivityMap({ activities }: Props) {
         const labels = cluster.map((m) => `${m.index + 1}. ${m.label}`).join('<br>')
         const icon   = L.divIcon({
           className: '',
-          html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:2.5px solid ${corDoTema('--accent', '#47A3CB')};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;box-shadow:0 2px 8px rgba(0,0,0,0.4);line-height:1">${cluster.length}</div>`,
+          html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:2.5px solid ${SOBRE_O_MAPA.acento};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;box-shadow:0 2px 8px rgba(0,0,0,0.4);line-height:1">${cluster.length}</div>`,
           iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
         })
         const clusterMarker = L.marker([centLat, centLng], { icon }).addTo(map)

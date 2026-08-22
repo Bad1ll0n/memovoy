@@ -4,14 +4,25 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-/** O Leaflet monta os marcadores em HTML solto e em opções JavaScript, onde
- *  var(--accent) não resolve. Lê-se o valor calculado do documento para o mapa
- *  acompanhar o tema em vez de ficar preso a uma cor fixa — que foi como o
- *  laranja da paleta antiga aqui sobreviveu. */
-function corDoTema(nome: string, alternativa: string) {
-  if (typeof window === 'undefined') return alternativa
-  const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim()
-  return v || alternativa
+/**
+ * Cores para desenhar SOBRE o mapa.
+ *
+ * O mapa é sempre claro, independentemente do tema da interface. Foi decisão
+ * deliberada: a cartografia é linha fina e nome pequeno, e o contraste que
+ * serve uma interface escura não serve aqui.
+ *
+ * A consequência é que o que se desenha em cima dele não pode seguir o tema.
+ * Estas cores eram lidas de var(--accent), e no tema escuro isso dá o azul
+ * claro (#47A3CB) — que sobre um mapa pálido quase desaparece. Ficam fixas, e
+ * escolhidas para fundo claro.
+ *
+ * Isto substitui o corDoTema() que aqui esteve: fazia sentido enquanto o mapa
+ * acompanhava o tema, e deixou de fazer no momento em que o mapa deixou de o
+ * acompanhar.
+ */
+const SOBRE_O_MAPA = {
+  acento:      '#1A6B9F',   // o acento do tema claro
+  acentoForte: '#155A89',   // contorno, um tom abaixo
 }
 
 
@@ -183,7 +194,8 @@ export default function WorldMap({ countries, onSelectCountry }: Props) {
       zoomControl: true,
     })
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Claro sempre, pela mesma razão do ActivityMap.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO',
       subdomains: 'abcd',
       maxZoom: 19,
@@ -211,11 +223,14 @@ export default function WorldMap({ countries, onSelectCountry }: Props) {
 
       const marker = L.circleMarker(coords, {
         radius: Math.min(4 + c.count * 2, 20),
-        fillColor: corDoTema('--accent', '#47A3CB'),
-        color:     corDoTema('--accent-hover', '#3791B8'),
+        fillColor: SOBRE_O_MAPA.acento,
+        color:     SOBRE_O_MAPA.acentoForte,
         weight: 1.5,
-        opacity: 0.9,
-        fillOpacity: 0.7,
+        opacity: 1,
+        // 0.7 sobre um mapa escuro lia como cor cheia; sobre um mapa claro lava
+        // o azul e o marcador quase desaparece. A transparência tinha sido
+        // afinada para o fundo antigo — mudou o fundo, muda o valor.
+        fillOpacity: 0.9,
       })
 
       marker.bindTooltip(`${c.countryName} (${c.count})`, {
