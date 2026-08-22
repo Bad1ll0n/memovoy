@@ -31,6 +31,7 @@ import { packingRoutes }       from './routes/packing.js'
 import { groupsRoutes }        from './routes/groups.js'
 import { adminRoutes }          from './routes/admin.js'
 import { reportsRoutes }       from './routes/reports.js'
+import { emSegundoPlano } from './lib/emSegundoPlano.js'
 
 /**
  * Strips username and password from a URL before it reaches the logs.
@@ -326,11 +327,18 @@ export async function buildApp({ rateLimit = true } = {}) {
           }
         }
         lastSeenCache.set(userId, now)
-        // Deliberately not awaited: this is bookkeeping and must not delay the
-        // response. But the error is no longer swallowed — if this failed
-        // permanently, nobody would notice.
-        query('UPDATE users SET last_seen = NOW() WHERE id = $1', [userId])
-          .catch((err) => console.warn('[last_seen] falhou:', err.message))
+        // Não é esperada de propósito: é contabilidade e não deve atrasar a
+        // resposta. Mas passa pelo registo de trabalho em segundo plano.
+        //
+        // Quando envolvi as escritas fire-and-forget, o meu varrimento só
+        // percorreu src/routes/ — e esta, que é precisamente a que o comentário
+        // do limparBaseDeDados culpava desde o início, ficou de fora. Um
+        // varrimento incompleto dá a mesma sensação de cobertura que um
+        // completo; é aí que engana.
+        emSegundoPlano(
+          query('UPDATE users SET last_seen = NOW() WHERE id = $1', [userId]),
+          (err) => console.warn('[last_seen] falhou:', err.message),
+        )
       }
     } catch {
       // unauthenticated request — ignore

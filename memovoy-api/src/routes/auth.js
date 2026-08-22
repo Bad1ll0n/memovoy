@@ -56,16 +56,32 @@ function makeTokens(userId, username) {
   return { accessToken, refreshToken, jti }
 }
 
-function recordSession(userId, jti, request) {
+/**
+ * Grava a sessão do dispositivo. AGUARDADA, de propósito.
+ *
+ * Estava em segundo plano, e isso é defensável para contabilidade — mas uma
+ * sessão não é contabilidade. É o que permite ao utilizador ver onde tem a
+ * conta aberta e revogar o que não reconhece. Se a linha não existir, a sessão
+ * continua válida e não há como a terminar: uma funcionalidade de segurança que
+ * falha em silêncio.
+ *
+ * Foi assim que se manifestou: o /users/me/sessions devolvia lista vazia logo a
+ * seguir ao login, porque o INSERT ainda vinha a caminho. Passava aqui e
+ * falhava no CI, onde os tempos são outros.
+ *
+ * O custo é um INSERT numa ligação já aberta, ao lado de um argon2 que leva
+ * dezenas de milissegundos. Não se nota.
+ */
+async function recordSession(userId, jti, request) {
   const ua        = request.headers['user-agent'] ?? null
   const ip        = request.ip ?? null
   const expiresAt = new Date(Date.now() + REFRESH_MS)
-  emSegundoPlano(query(
+  await query(
     `INSERT INTO device_sessions (user_id, jti, device_name, ip_address, user_agent, expires_at)
      VALUES ($1, $2, $3, $4::inet, $5, $6)
      ON CONFLICT (jti) DO UPDATE SET last_seen_at = NOW()`,
     [userId, jti, ua?.slice(0, 200) ?? null, ip, ua, expiresAt],
-  ))
+  ).catch((err) => console.warn('[sessao] não foi possível gravar:', err.message))
 }
 
 function setRefreshCookie(reply, token) {
@@ -157,7 +173,7 @@ export async function authRoutes(app) {
 
     const { accessToken, refreshToken, jti } = makeTokens(user.id, user.username)
     setRefreshCookie(reply, refreshToken)
-    recordSession(user.id, jti, request)
+    await recordSession(user.id, jti, request)
 
     return reply.send({ user: userDto(user), accessToken })
   })
@@ -200,7 +216,7 @@ export async function authRoutes(app) {
             'UPDATE users SET failed_login_attempts = $1, locked_until = $2 WHERE id = $3',
             [attempts, lockedUntil, user.id],
           )
-          logAudit(user.id, 'account_locked', { attempts, ip }, ip)
+          emSegundoPlano(logAudit(user.id, 'account_locked', { attempts, ip }, ip))
           return reply.status(429).send({
             message: `Conta bloqueada por ${LOCKOUT_MIN} minutos após ${MAX_ATTEMPTS} tentativas falhadas.`,
           })
@@ -238,7 +254,7 @@ export async function authRoutes(app) {
 
     const { accessToken, refreshToken: rt2, jti: jti2 } = makeTokens(user.id, user.username)
     setRefreshCookie(reply, rt2)
-    recordSession(user.id, jti2, request)
+    await recordSession(user.id, jti2, request)
 
     return reply.send({ user: userDto(user), accessToken })
   })
@@ -271,7 +287,7 @@ export async function authRoutes(app) {
 
     const { accessToken, refreshToken: rt2fa, jti: jti2fa } = makeTokens(user.id, user.username)
     setRefreshCookie(reply, rt2fa)
-    recordSession(user.id, jti2fa, request)
+    await recordSession(user.id, jti2fa, request)
     return reply.send({ user: userDto(user), accessToken })
   })
 
@@ -412,7 +428,7 @@ export async function authRoutes(app) {
 
     const { accessToken, refreshToken, jti: newJti } = makeTokens(user.id, user.username)
     setRefreshCookie(reply, refreshToken)
-    recordSession(user.id, newJti, request)
+    await recordSession(user.id, newJti, request)
 
     return reply.send({ user: userDto(user), accessToken })
   })
@@ -441,7 +457,7 @@ export async function authRoutes(app) {
     const newHash = await hashPassword(newPassword)
     await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, request.user.id])
 
-    logAudit(request.user.id, 'password_change', {}, getClientIp(request))
+    emSegundoPlano(logAudit(request.user.id, 'password_change', {}, getClientIp(request)))
 
     return reply.send({ ok: true })
   })

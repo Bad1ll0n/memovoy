@@ -1,5 +1,6 @@
 import webPush from 'web-push'
 import { query } from '../db/pool.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 const VAPID_PUBLIC  = process.env.VAPID_PUBLIC_KEY
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY
@@ -47,9 +48,12 @@ export async function sendPushToUser(userId, payload) {
   )
 
   if (stale.length > 0) {
-    query(
+    // Apaga de push_subscriptions, que referencia users. Chegar depois de a
+    // limpeza dos testes apagar os utilizadores dava exactamente as violações
+    // de chave estrangeira que andámos a perseguir.
+    emSegundoPlano(query(
       `DELETE FROM push_subscriptions WHERE id = ANY($1::uuid[])`,
       [stale],
-    ).catch(() => {})
+    ))
   }
 }

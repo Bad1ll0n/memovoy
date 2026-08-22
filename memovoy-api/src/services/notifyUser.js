@@ -1,5 +1,6 @@
 import { query } from '../db/pool.js'
 import { sendPushToUser } from './webPush.js'
+import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 
 /**
  * Create a DB notification, emit a socket event, and fire a web push.
@@ -21,9 +22,9 @@ export async function notifyUser({ recipientId, actorId = null, type, message, t
   }
 
   // Web push (works even when browser is closed)
-  sendPushToUser(recipientId, {
+  emSegundoPlano(sendPushToUser(recipientId, {
     title: 'Memovoy',
     body:  message,
     url:   targetUrl ?? '/notifications',
-  }).catch(() => {})
+  }))
 }
