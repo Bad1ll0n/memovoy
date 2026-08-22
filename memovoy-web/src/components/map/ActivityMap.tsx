@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -9,6 +9,9 @@ export interface ActivityPin {
   address: string | null
   geoName?: string | null
   type: string
+  /** Resolvidas no servidor ao gerar o roteiro. Ver services/geocodificar.js. */
+  lat?: number | null
+  lon?: number | null
 }
 
 interface GeoMarker {
@@ -48,23 +51,10 @@ const TYPE_COLORS: Record<string, string> = {
   hotel:     '#f472b6',
 }
 
-async function geocodeAddress(address: string): Promise<[number, number] | null> {
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
-    const res = await fetch(url, {
-      headers: {
-        'Accept-Language': 'pt',
-        'User-Agent': 'Memovoy-app/1.0',
-      },
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (data?.[0]) return [parseFloat(data[0].lat), parseFloat(data[0].lon)]
-    return null
-  } catch {
-    return null
-  }
-}
+// A geocodificação vivia aqui, no browser. Foi para o servidor —
+// services/geocodificar.js — onde acontece uma vez por lugar em vez de uma vez
+// por visita, com cache partilhada e com o cabeçalho de identificação que a
+// política do Nominatim exige e que os browsers não deixam enviar.
 
 function haversineKm(a: GeoMarker, b: GeoMarker): number {
   const R = 6371
@@ -97,91 +87,41 @@ function clusterMarkers(markers: GeoMarker[], thresholdKm = 0.12): GeoMarker[][]
 
 interface Props {
   activities: ActivityPin[]
-  /** Cidade e país do roteiro. Sem isto a geocodificação não sabe onde procurar. */
-  destino?: string
-  pais?: string
 }
 
-/**
- * Um resultado a mais de 150 km do destino não é do destino.
- *
- * Nem uma cidade grande com arredores chega perto disto — Londres inteira cabe
- * em 40 km. É larga de propósito: serve para apanhar o marcador que aterrou
- * noutro continente, não para julgar se uma actividade fica um pouco longe do
- * centro.
- */
-const RAIO_PLAUSIVEL_KM = 150
 
-export function ActivityMap({ activities, destino, pais }: Props) {
+export function ActivityMap({ activities }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<L.Map | null>(null)
-  const [markers, setMarkers]   = useState<GeoMarker[]>([])
-  const [statusGeocode, setStatusGeocode] = useState<'loading' | 'ready' | 'empty'>('loading')
 
-  // Não haver nada para geocodificar é derivável das props — não precisa de um
-  // efeito a corrigir o estado depois de pintar.
-  const toGeocode = useMemo(
+  // As coordenadas já vêm resolvidas do servidor.
+  //
+  // Antes eram pedidas ao Nominatim aqui, uma por actividade, a cada visita. A
+  // política do serviço é um pedido por segundo, portanto o utilizador esperava
+  // uns catorze segundos pelo mapa — e um roteiro visto quinhentas vezes fazia
+  // quase vinte mil pedidos pelos MESMOS lugares.
+  //
+  // Agora a resolução acontece uma vez, no servidor, ao gerar, com cache global
+  // partilhada por todos os utilizadores. Aqui só se desenha.
+  const markers: GeoMarker[] = useMemo(
     () => activities
       .map((a, i) => ({ ...a, index: i }))
-      .filter((a) => a.type !== 'transport' && ((a.geoName && a.geoName.trim().length > 0) || (a.address && a.address.trim().length > 0)))
-      .slice(0, 12), // cap at 12 to avoid long waits
+      .filter((a) => typeof a.lat === 'number' && typeof a.lon === 'number')
+      .map((a) => ({ lat: a.lat as number, lng: a.lon as number, label: a.name, index: a.index, type: a.type })),
     [activities],
   )
 
-  const status = toGeocode.length === 0 ? 'empty' : statusGeocode
+  // Quantas ficaram por resolver. A interface diz-lo em vez de as deixar
+  // desaparecer: hoje o utilizador não distinguia "não há mapa" de "faltam
+  // três actividades no mapa", e a segunda é uma informação que ele merece.
+  const semLocalizacao = useMemo(
+    () => activities.filter(
+      (a) => a.type !== 'transport' && typeof a.lat !== 'number',
+    ).length,
+    [activities],
+  )
 
-  // Geocode all activities with addresses (rate-limited: 1 req/s)
-  useEffect(() => {
-    if (toGeocode.length === 0) return
-
-    let cancelled = false
-    const results: GeoMarker[] = []
-
-    ;(async () => {
-      // O destino é geocodificado primeiro, para servir de referência ao que
-      // vier a seguir. Se falhar, seguimos sem a verificação de distância em
-      // vez de não mostrar nada.
-      let centro: GeoMarker | null = null
-      if (destino) {
-        const c = await geocodeAddress([destino, pais].filter(Boolean).join(', '))
-        if (c) centro = { lat: c[0], lng: c[1], label: destino, index: -1, type: 'visit' }
-        await new Promise((r) => setTimeout(r, 1100))
-      }
-
-      for (const [seq, act] of toGeocode.entries()) {
-        if (cancelled) return
-        if (seq > 0) await new Promise((r) => setTimeout(r, 1100)) // Nominatim: max 1 req/s
-        // A consulta leva cidade e país.
-        //
-        // Sem eles, "Old Town" num roteiro de Edimburgo procura no mundo
-        // inteiro e o Nominatim devolve o primeiro que encontra — foi assim que
-        // apareceram marcadores sobre Cuba num roteiro escocês. O nome de um
-        // sítio só é único dentro de uma cidade.
-        const partes = [act.geoName?.trim() || act.address!, destino, pais].filter(Boolean)
-        const coords = await geocodeAddress(partes.join(', '))
-        if (!coords) continue
-
-        const ponto = { lat: coords[0], lng: coords[1], label: act.name, index: act.index, type: act.type }
-
-        // Segunda defesa: mesmo com contexto, o Nominatim às vezes devolve algo
-        // absurdo. Um ponto a mais de 150 km do destino não é do destino, e é
-        // melhor não o mostrar do que mostrá-lo no sítio errado — um mapa com
-        // menos pinos é incompleto, um mapa com pinos errados é falso.
-        if (centro && haversineKm(centro, ponto) > RAIO_PLAUSIVEL_KM) {
-          console.warn('[mapa] descartado por estar longe do destino:', act.name, Math.round(haversineKm(centro, ponto)) + 'km')
-          continue
-        }
-
-        results.push(ponto)
-      }
-      if (!cancelled) {
-        setMarkers(results)
-        setStatusGeocode(results.length > 0 ? 'ready' : 'empty')
-      }
-    })()
-
-    return () => { cancelled = true }
-  }, [toGeocode, destino, pais])
+  const status: 'ready' | 'empty' = markers.length > 0 ? 'ready' : 'empty'
 
   // Init/update Leaflet map when markers are ready
   useEffect(() => {
@@ -254,29 +194,34 @@ export function ActivityMap({ activities, destino, pais }: Props) {
     }
   }, [markers, status])
 
+  // Já não há estado de carregamento: as coordenadas vêm com o roteiro.
+  //
+  // O ecrã "A geocodificar locais…" desapareceu com a espera que o justificava.
+  // Quando ainda não há nenhuma resolvida — roteiro acabado de gerar, com a
+  // geocodificação a correr em segundo plano — não se mostra mapa nenhum, e
+  // aparece na visita seguinte.
   if (status === 'empty') return null
 
-  if (status === 'loading') {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl mb-5"
-        style={{ height: 240, background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-      >
-        <div className="text-center">
-          <div className="spinner spinner-lg mx-auto mb-2" />
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            A geocodificar locais…
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div
-      ref={containerRef}
-      className="rounded-xl overflow-hidden mb-5"
-      style={{ height: 240, border: '1px solid var(--border)' }}
-    />
+    <div className="mb-5">
+      <div
+        ref={containerRef}
+        className="rounded-xl overflow-hidden"
+        style={{ height: 240, border: '1px solid var(--border)' }}
+      />
+      {semLocalizacao > 0 && (
+        // Dizer o que falta em vez de deixar desaparecer.
+        //
+        // Antes, uma actividade que não se conseguia localizar simplesmente não
+        // aparecia, e o utilizador não tinha como distinguir "este mapa está
+        // completo" de "faltam aqui três". Um mapa incompleto que se assume é
+        // honesto; um que se cala parece completo e não é.
+        <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+          {semLocalizacao === 1
+            ? '1 actividade sem localização no mapa'
+            : `${semLocalizacao} actividades sem localização no mapa`}
+        </p>
+      )}
+    </div>
   )
 }

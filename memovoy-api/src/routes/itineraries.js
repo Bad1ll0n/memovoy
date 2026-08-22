@@ -16,6 +16,7 @@ async function getUserPreferences(userId) {
 import { checkItineraryBadges } from '../services/badges.js'
 import { difundirNaSala } from '../services/socket.js'
 import { emSegundoPlano } from '../lib/emSegundoPlano.js'
+import { preencherCoordenadas } from '../services/geocodificar.js'
 
 const generateSchema = z.object({
   destination:    z.string().min(2).max(100),
@@ -259,6 +260,25 @@ export async function itinerariesRoutes(app) {
           params.groupType, JSON.stringify(params.travelStyle), JSON.stringify(params.transport),
           params.budget, JSON.stringify(data),
         ],
+      )
+
+      // Coordenadas em segundo plano, e não antes de responder.
+      //
+      // Resolver doze actividades leva uns catorze segundos, porque a política
+      // do Nominatim é um pedido por segundo. Somar isso à geração punha o
+      // utilizador à espera do dobro do tempo por uma coisa que ele só vê
+      // quando chega ao mapa, mais abaixo na página.
+      //
+      // Com a cache de lugares, a segunda vez que alguém gerar um roteiro para
+      // a mesma cidade é quase instantânea — os lugares repetem-se muito mais
+      // do que parece.
+      emSegundoPlano(
+        preencherCoordenadas(data, destinationMeta.normalizedName, destinationMeta.country)
+          .then(({ data: comCoords, resolvidas, semLocalizacao }) => {
+            console.info('[geo] roteiro', rows[0].id, '—', resolvidas, 'resolvidas,', semLocalizacao, 'sem localização')
+            return query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(comCoords), rows[0].id])
+          }),
+        (erro) => console.warn('[geo] falhou para o roteiro', rows[0].id + ':', erro.message),
       )
 
       emSegundoPlano(query('UPDATE users SET score = score + 10 WHERE id = $1', [request.user.id]))

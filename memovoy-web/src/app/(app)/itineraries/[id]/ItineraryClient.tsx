@@ -58,6 +58,10 @@ interface Activity {
   currency: string
   type: 'visit' | 'food' | 'transport' | 'leisure' | 'hotel'
   tips: string | null
+  /** Resolvidas no servidor ao gerar o roteiro, não vindas do modelo.
+   *  Opcionais porque os roteiros criados antes disto não as têm. */
+  lat?: number | null
+  lon?: number | null
 }
 
 interface Day {
@@ -889,6 +893,9 @@ export default function ItineraryClient() {
     address: a.address,
     geoName: a.geoName,
     type: a.type,
+    // Resolvidas no servidor ao gerar. O mapa já não geocodifica nada.
+    lat: a.lat,
+    lon: a.lon,
   }))
 
   return (
@@ -1134,7 +1141,7 @@ export default function ItineraryClient() {
 
       {/* Leaflet map for current day */}
       {currentDay && mapPins.some((p) => p.address || p.geoName) && (
-        <ActivityMap activities={mapPins} destino={it.destination} pais={it.country} />
+        <ActivityMap activities={mapPins} />
       )}
 
       {/* Timeline — sortable when owner */}
