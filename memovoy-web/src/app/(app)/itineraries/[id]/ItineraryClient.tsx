@@ -1134,7 +1134,7 @@ export default function ItineraryClient() {
 
       {/* Leaflet map for current day */}
       {currentDay && mapPins.some((p) => p.address || p.geoName) && (
-        <ActivityMap activities={mapPins} />
+        <ActivityMap activities={mapPins} destino={it.destination} pais={it.country} />
       )}
 
       {/* Timeline — sortable when owner */}

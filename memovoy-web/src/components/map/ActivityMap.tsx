@@ -97,9 +97,22 @@ function clusterMarkers(markers: GeoMarker[], thresholdKm = 0.12): GeoMarker[][]
 
 interface Props {
   activities: ActivityPin[]
+  /** Cidade e país do roteiro. Sem isto a geocodificação não sabe onde procurar. */
+  destino?: string
+  pais?: string
 }
 
-export function ActivityMap({ activities }: Props) {
+/**
+ * Um resultado a mais de 150 km do destino não é do destino.
+ *
+ * Nem uma cidade grande com arredores chega perto disto — Londres inteira cabe
+ * em 40 km. É larga de propósito: serve para apanhar o marcador que aterrou
+ * noutro continente, não para julgar se uma actividade fica um pouco longe do
+ * centro.
+ */
+const RAIO_PLAUSIVEL_KM = 150
+
+export function ActivityMap({ activities, destino, pais }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<L.Map | null>(null)
   const [markers, setMarkers]   = useState<GeoMarker[]>([])
@@ -125,14 +138,41 @@ export function ActivityMap({ activities }: Props) {
     const results: GeoMarker[] = []
 
     ;(async () => {
+      // O destino é geocodificado primeiro, para servir de referência ao que
+      // vier a seguir. Se falhar, seguimos sem a verificação de distância em
+      // vez de não mostrar nada.
+      let centro: GeoMarker | null = null
+      if (destino) {
+        const c = await geocodeAddress([destino, pais].filter(Boolean).join(', '))
+        if (c) centro = { lat: c[0], lng: c[1], label: destino, index: -1, type: 'visit' }
+        await new Promise((r) => setTimeout(r, 1100))
+      }
+
       for (const [seq, act] of toGeocode.entries()) {
         if (cancelled) return
         if (seq > 0) await new Promise((r) => setTimeout(r, 1100)) // Nominatim: max 1 req/s
-        const query = act.geoName?.trim() || act.address!
-        const coords = await geocodeAddress(query)
-        if (coords) {
-          results.push({ lat: coords[0], lng: coords[1], label: act.name, index: act.index, type: act.type })
+        // A consulta leva cidade e país.
+        //
+        // Sem eles, "Old Town" num roteiro de Edimburgo procura no mundo
+        // inteiro e o Nominatim devolve o primeiro que encontra — foi assim que
+        // apareceram marcadores sobre Cuba num roteiro escocês. O nome de um
+        // sítio só é único dentro de uma cidade.
+        const partes = [act.geoName?.trim() || act.address!, destino, pais].filter(Boolean)
+        const coords = await geocodeAddress(partes.join(', '))
+        if (!coords) continue
+
+        const ponto = { lat: coords[0], lng: coords[1], label: act.name, index: act.index, type: act.type }
+
+        // Segunda defesa: mesmo com contexto, o Nominatim às vezes devolve algo
+        // absurdo. Um ponto a mais de 150 km do destino não é do destino, e é
+        // melhor não o mostrar do que mostrá-lo no sítio errado — um mapa com
+        // menos pinos é incompleto, um mapa com pinos errados é falso.
+        if (centro && haversineKm(centro, ponto) > RAIO_PLAUSIVEL_KM) {
+          console.warn('[mapa] descartado por estar longe do destino:', act.name, Math.round(haversineKm(centro, ponto)) + 'km')
+          continue
         }
+
+        results.push(ponto)
       }
       if (!cancelled) {
         setMarkers(results)
@@ -141,7 +181,7 @@ export function ActivityMap({ activities }: Props) {
     })()
 
     return () => { cancelled = true }
-  }, [toGeocode])
+  }, [toGeocode, destino, pais])
 
   // Init/update Leaflet map when markers are ready
   useEffect(() => {
