@@ -48,8 +48,35 @@ const VAZIAS = new Set([
   'visita', 'passeio', 'almoco', 'jantar', 'visit', 'lunch', 'dinner',
 ])
 
+/**
+ * A mesma palavra escrita de outra maneira.
+ *
+ * "St. Peter's Basilica" contra "Saint Peter's Basilica" dava 0,67 e era
+ * recusado — o mesmo sítio, travado por uma abreviatura. E é o caso mais
+ * frequente que há: metade dos monumentos da Europa é um santo qualquer, e o
+ * OSM escreve o honorífico na língua local enquanto o modelo escreve noutra.
+ *
+ * Só se juntam variantes do MESMO termo. Traduzir "Peter" para "Pietro" seria
+ * outra coisa: aí passariam a coincidir sítios que são mesmo diferentes, e é
+ * precisamente São Pedro contra San Pietro in Vincoli que isto tem de separar.
+ */
+const IGUAIS = new Map(Object.entries({
+  st: 'santo', saint: 'santo', san: 'santo', sant: 'santo', santo: 'santo',
+  santa: 'santo', sao: 'santo', s: 'santo', ss: 'santo', sankt: 'santo',
+  mt: 'monte', mount: 'monte', monte: 'monte',
+  pza: 'praca', piazza: 'praca', plaza: 'praca', praca: 'praca', place: 'praca',
+  museu: 'museu', museo: 'museu', museum: 'museu', musee: 'museu', musei: 'museu',
+  museus: 'museu', museums: 'museu', musei_: 'museu',
+  basilica: 'basilica', basilique: 'basilica',
+  catedral: 'catedral', cattedrale: 'catedral', cathedral: 'catedral', duomo: 'catedral',
+  galeria: 'galeria', galleria: 'galeria', gallery: 'galeria', galerie: 'galeria',
+}))
+
 function palavras(texto) {
-  return normalizar(texto).split(' ').filter((p) => p && !VAZIAS.has(p))
+  return normalizar(texto)
+    .split(' ')
+    .filter((p) => p && !VAZIAS.has(p))
+    .map((p) => IGUAIS.get(p) ?? p)
 }
 
 /**
@@ -79,6 +106,26 @@ export function semelhanca(a, b) {
   const conjuntoB = new Set(pb)
   const comuns = pa.filter((p) => conjuntoB.has(p)).length
   return comuns / Math.max(pa.length, pb.length)
+}
+
+/**
+ * O nome do sítio, sem o que o modelo lhe põe à frente.
+ *
+ * O modelo escreve "Almoço – Ristorante Il Falchetto" e "Visita ao Coliseu".
+ * Comparar nomes já ignorava esses prefixos, mas a PROCURA levava-os na mesma —
+ * e o Nominatim procura pelo texto inteiro. O Il Falchetto tem horário no OSM e
+ * nós não o encontrávamos por causa da palavra "Almoço".
+ *
+ * Corta só o prefixo, e só até ao separador. "Jantar no Ristorante X" fica
+ * "Ristorante X"; um nome que por acaso comece por uma destas palavras sem
+ * separador nenhum fica intacto.
+ */
+export function limparTermo(termo) {
+  if (typeof termo !== 'string') return ''
+  return termo
+    // "Almoço – X", "Jantar: X", "Visita ao X" — travessão, dois pontos ou "ao/no/em".
+    .replace(/^\s*(almo[çc]o|jantar|pequeno[- ]almo[çc]o|lanche|visita|passeio|caminhada|explora[çc][ãa]o|lunch|dinner|breakfast|visit|walk)\b\s*(?:[-–—:]\s*|\b(?:ao|à|a|no|na|em|de|do|da|pela|pelo|to|at|the)\b\s+)/i, '')
+    .trim() || termo.trim()
 }
 
 /**

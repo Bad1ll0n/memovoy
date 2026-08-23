@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { correspondeAoPedido, semelhanca, normalizar, LIMIAR } from '../../src/services/nomeDoLugar.js'
+import { correspondeAoPedido, semelhanca, normalizar, limparTermo, LIMIAR } from '../../src/services/nomeDoLugar.js'
 
 // Procurar "St. Peter's Basilica, Roma, Itália" no Nominatim devolve a Basílica
 // de San Pietro in Vincoli — outra igreja, a 1,5 km, com horário próprio.
@@ -118,5 +118,100 @@ describe('a normalização', () => {
     assert.equal(normalizar('Basílica de São Pedro'), 'basilica de sao pedro')
     assert.equal(normalizar("St. Peter's"), 'st peters')
     assert.equal(normalizar('  Campo   de\' Fiori  '), 'campo de fiori')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A mesma palavra escrita de outra maneira
+//
+// "St. Peter's Basilica" contra "Saint Peter's Basilica" dava 0,67 e era
+// recusado — o mesmo sítio, travado por uma abreviatura. Metade dos monumentos
+// da Europa é um santo qualquer, e o OSM escreve o honorífico na língua local
+// enquanto o modelo escreve noutra.
+describe('abreviaturas e variantes da mesma palavra', () => {
+  test('St. e Saint são a mesma coisa', () => {
+    const r = correspondeAoPedido("St. Peter's Basilica", {
+      namedetails: { name: "Saint Peter's Basilica", 'name:it': 'Basilica di San Pietro' },
+    })
+    assert.equal(r.coincide, true)
+  })
+
+  test('mas São Pedro continua a não ser São Pedro in Vincoli', () => {
+    // É a verificação que interessa: juntar as variantes do honorífico não pode
+    // aproximar duas igrejas que são mesmo diferentes.
+    const r = correspondeAoPedido("St. Peter's Basilica", SAO_PEDRO_ERRADO)
+    assert.equal(r.coincide, false)
+  })
+
+  test('museu, museo, musei e museum são a mesma palavra', () => {
+    assert.equal(correspondeAoPedido('Museu Borghese', {
+      namedetails: { name: 'Museo Borghese' },
+    }).coincide, true)
+  })
+
+  test('mas "Capitolinos" contra "Capitolini" não chega — e não precisa', () => {
+    // O adjectivo traduzido não é uma abreviatura, e juntá-los era começar a
+    // traduzir. Não faz falta: o OSM traz o nome em várias línguas, e é pelo
+    // name:en que este museu é encontrado. Sozinho, o italiano não bastaria.
+    assert.equal(correspondeAoPedido('Museus Capitolinos', {
+      namedetails: { name: 'Musei Capitolini' },
+    }).coincide, false)
+
+    assert.equal(correspondeAoPedido('Capitoline Museums', CAPITOLINOS).coincide, true)
+  })
+
+  test('galeria e galleria', () => {
+    assert.equal(correspondeAoPedido('Galeria Borghese', {
+      namedetails: { name: 'Galleria Borghese' },
+    }).coincide, true)
+  })
+
+  test('não se traduz — só se normaliza a mesma palavra', () => {
+    // "Peter" e "Pietro" são o mesmo nome em línguas diferentes, mas juntá-los
+    // era abrir a porta a confundir sítios distintos. Fica de fora de propósito.
+    assert.equal(correspondeAoPedido('Saint Peter', {
+      namedetails: { name: 'San Pietro' },
+    }).coincide, false)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O que o modelo põe à frente do nome
+//
+// "Almoço – Ristorante Il Falchetto". A comparação de nomes já ignorava o
+// prefixo, mas a PROCURA levava-o: o Nominatim procura pelo texto inteiro, e o
+// Il Falchetto — que tem horário no OSM — não era encontrado por causa da
+// palavra "Almoço".
+describe('limpar o termo antes de procurar', () => {
+  test('tira o prefixo com travessão', () => {
+    assert.equal(limparTermo('Almoço – Ristorante Il Falchetto'), 'Ristorante Il Falchetto')
+    assert.equal(limparTermo('Jantar - Da Enzo al 29'), 'Da Enzo al 29')
+    assert.equal(limparTermo('Jantar: La Pergola'), 'La Pergola')
+  })
+
+  test('tira o prefixo com preposição', () => {
+    assert.equal(limparTermo('Visita ao Coliseu'), 'Coliseu')
+    assert.equal(limparTermo('Almoço no Ristorante Aroma'), 'Ristorante Aroma')
+    assert.equal(limparTermo('Passeio pela Via Appia'), 'Via Appia')
+  })
+
+  test('não mexe num nome que não tem prefixo', () => {
+    assert.equal(limparTermo('Galleria Borghese'), 'Galleria Borghese')
+    assert.equal(limparTermo('Museu Nacional do Azulejo'), 'Museu Nacional do Azulejo')
+  })
+
+  test('não corta uma palavra que faz parte do nome', () => {
+    // "Visitação" começa por "visita" mas não é um prefixo — e sem separador
+    // não há por onde cortar.
+    assert.equal(limparTermo('Visitação de Nossa Senhora'), 'Visitação de Nossa Senhora')
+  })
+
+  test('nunca devolve vazio', () => {
+    // Se o corte comesse o nome todo, ficávamos sem nada para procurar. Nesse
+    // caso vale mais o original — procurar por "Almoço" não encontra, mas
+    // procurar por "" nem sequer é uma pergunta.
+    assert.equal(limparTermo('Almoço no'), 'Almoço no')
+    assert.equal(limparTermo(''), '')
+    assert.equal(limparTermo(null), '')
   })
 })

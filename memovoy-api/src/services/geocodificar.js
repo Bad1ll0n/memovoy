@@ -30,7 +30,7 @@
 
 import { query } from '../db/pool.js'
 import { avaliarHorario, ABERTO, FECHADO } from './horarios.js'
-import { correspondeAoPedido } from './nomeDoLugar.js'
+import { correspondeAoPedido, limparTermo } from './nomeDoLugar.js'
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search'
 
@@ -104,7 +104,11 @@ async function perguntarAoNominatim(consulta) {
     // não seja perguntar ao modelo — que não os sabe de forma fiável.
     // namedetails=1 traz todos os nomes do sítio, em todas as línguas. É o que
     // permite confirmar que o resultado é o sítio pedido — ver nomeDoLugar.js.
-    const url = `${NOMINATIM}?format=json&limit=1&extratags=1&namedetails=1&q=${encodeURIComponent(consulta)}`
+    //
+    // limit=5 e não 1. O primeiro resultado nem sempre é o melhor: os Museus
+    // Vaticanos existem no OSM como dois nós, e é o SEGUNDO que tem o horário
+    // de abertura. A pedir só um, perdia-se — e não por o sítio não estar lá.
+    const url = `${NOMINATIM}?format=json&limit=5&extratags=1&namedetails=1&q=${encodeURIComponent(consulta)}`
     const res = await fetch(url, {
       headers: {
         // Do lado do servidor este cabeçalho passa mesmo. A política do
@@ -116,16 +120,16 @@ async function perguntarAoNominatim(consulta) {
     })
     if (!res.ok) return null
     const dados = await res.json()
-    if (!dados?.[0]) return null
-    return {
-      lat: parseFloat(dados[0].lat),
-      lon: parseFloat(dados[0].lon),
-      nome: dados[0].display_name ?? null,
+    if (!Array.isArray(dados) || dados.length === 0) return null
+    return dados.map((d) => ({
+      lat: parseFloat(d.lat),
+      lon: parseFloat(d.lon),
+      nome: d.display_name ?? null,
       // Vem em bruto, tal como está no OSM. Interpretar aqui era perder o que
       // ainda não sabemos ler — ver services/horarios.js.
-      horario: dados[0].extratags?.opening_hours ?? null,
-      bruto: dados[0],
-    }
+      horario: d.extratags?.opening_hours ?? null,
+      bruto: d,
+    }))
   } catch {
     return null
   }
@@ -167,14 +171,78 @@ export function comContexto(termo, destino, pais) {
  * mais de 150 km. Foi essa verificação que apanhou os marcadores sobre Cuba num
  * roteiro de Edimburgo, e é ela que torna esta segunda tentativa segura.
  */
-async function procurarComContexto(termo, destino, pais) {
+/**
+ * De vários candidatos, o melhor — e diz porquê.
+ *
+ * O Nominatim ordena por relevância própria, que não é a nossa. Medido:
+ *
+ *   "Vatican Museums"       o resultado 0 e o 1 são o MESMO museu em dois nós
+ *                           do OSM, e só o 1 tem horário de abertura
+ *   "St. Peter's Basilica"  o resultado 0 é outra igreja com nome parecido
+ *
+ * A ordem de preferência é: nome confirmado E com horário, depois nome
+ * confirmado, e só depois o primeiro que vier. Nunca se prefere ter horário a
+ * ter o sítio certo — um horário do edifício errado é pior do que nenhum.
+ */
+function escolherCandidato(candidatos, termo, ehNome) {
+  if (!ehNome) return { escolhido: candidatos[0], confirmado: true }
+
+  const avaliados = candidatos.map((c) => ({
+    c,
+    ...correspondeAoPedido(termo, c.bruto ?? {}),
+  }))
+  const confirmados = avaliados.filter((a) => a.coincide)
+
+  if (confirmados.length > 0) {
+    const comHorario = confirmados.find((a) => a.c.horario)
+    return { escolhido: (comHorario ?? confirmados[0]).c, confirmado: true }
+  }
+
+  // Nenhum é o sítio pedido. Devolve-se o primeiro na mesma — a coordenada
+  // aproximada ainda serve para o mapa, e a distância continua a protegê-la —
+  // mas marcado como não confirmado, o que impede o horário de ser usado.
+  const melhor = avaliados.reduce((a, b) => (b.melhor > a.melhor ? b : a))
+  return { escolhido: candidatos[0], confirmado: false, quaseFoi: melhor }
+}
+
+/**
+ * Procura um termo, com contexto e sem ele.
+ *
+ * A segunda tentativa começou por existir para os enclaves — os Museus
+ * Vaticanos ficam na Cidade do Vaticano e procurá-los "em Roma, Itália" não
+ * devolve nada. Depois descobriu-se que o caso mais comum é pior: a procura COM
+ * cidade devolve o sítio ERRADO, e por isso a repetição nunca chegava a
+ * acontecer. "St. Peter's Basilica, Roma, Itália" traz San Pietro in Vincoli;
+ * "St. Peter's Basilica" sozinho traz a basílica certa, com horário.
+ *
+ * Por isso repete-se também quando o que veio não corresponde ao pedido, e não
+ * só quando não veio nada.
+ *
+ * Procurar sem cidade traz de volta o risco que a cidade servia para evitar —
+ * "Old Town" sozinho cai em qualquer continente. Não é problema porque quem
+ * chama compara o resultado com o centro do destino e recusa acima de 150 km.
+ */
+async function procurarComContexto(termo, destino, pais, ehNome) {
   const comCidade = comContexto(termo, destino, pais)
-  const r = await perguntarAoNominatim(comCidade)
-  if (r) return r
+  const candidatos = await perguntarAoNominatim(comCidade)
+
+  let melhorTentativa = null
+  if (candidatos) {
+    const r = escolherCandidato(candidatos, termo, ehNome)
+    if (r.confirmado) return r
+    melhorTentativa = r
+  }
 
   // Só vale a pena repetir se a primeira tentativa acrescentou alguma coisa.
-  if (comCidade === termo) return null
-  return perguntarAoNominatim(termo)
+  if (comCidade === termo) return melhorTentativa
+
+  const semCidade = await perguntarAoNominatim(termo)
+  if (semCidade) {
+    const r = escolherCandidato(semCidade, termo, ehNome)
+    if (r.confirmado) return r
+    melhorTentativa ??= r
+  }
+  return melhorTentativa
 }
 
 /**
@@ -196,10 +264,28 @@ export async function resolverLugar(act, destino, pais, centro) {
   // recusa garantida: "Via del Casaletto, 45" encontrou a Trattoria da Cesare
   // — o sítio certo — e comparar os dois textos dá zero. A morada já é o
   // identificador; se o Nominatim acertou no número da porta, acertou no sítio.
+  //
+  // O nome vai limpo do que o modelo lhe põe à frente. Comparar nomes já
+  // ignorava "Almoço –" e "Visita ao", mas a PROCURA levava-os na mesma, e o
+  // Nominatim procura pelo texto todo: o Ristorante Il Falchetto tem horário no
+  // OSM e não o encontrávamos por causa da palavra "Almoço".
+  //
+  // E o NOME vem antes da morada, o que inverte a ordem original.
+  //
+  // O nome estava em último "porque é o mais ambíguo" — verdade enquanto não
+  // havia forma de verificar o que voltava. Agora há: o termo vai limpo e o
+  // resultado é confirmado contra os nomes do sítio, portanto um match errado
+  // é recusado em vez de aceite.
+  //
+  // A morada tem um problema que só se vê a medir: aterra no EDIFÍCIO e não no
+  // estabelecimento. "Via dei Fori Imperiali, 12" devolve o número de porta, que
+  // não tem horário; "Ristorante Il Falchetto" devolve o restaurante, que tem.
+  // Sete dos oito restaurantes de um roteiro resolviam pela morada e ficavam sem
+  // horário por causa disso.
   const tentativas = [
     { termo: act.geoName, ehNome: true },
+    { termo: limparTermo(act.name), ehNome: true },
     { termo: act.address, ehNome: false },
-    { termo: act.name,    ehNome: true },
   ]
     .map((t) => ({ ...t, termo: (t.termo ?? '').trim() }))
     .filter((t) => t.termo)
@@ -223,12 +309,14 @@ export async function resolverLugar(act, destino, pais, centro) {
       }
     }
 
-    const r = await procurarComContexto(termo, destino, pais)
+    const tentativa = await procurarComContexto(termo, destino, pais, ehNome)
 
-    if (!r) {
+    if (!tentativa) {
       await gravarCache(chave, null, null)
       continue
     }
+
+    const { escolhido: r, confirmado, quaseFoi } = tentativa
 
     if (centro && distanciaKm(centro, r) > RAIO_PLAUSIVEL_KM) {
       // Guardado como 'longe' e não como 'ok': é um resultado, mas não é este
@@ -242,15 +330,9 @@ export async function resolverLugar(act, destino, pais, centro) {
       continue
     }
 
-    // Só se confirma o nome quando se procurou POR nome. Ver o comentário das
-    // tentativas: comparar uma morada com o nome do sítio dá sempre zero.
-    let confirmado = true
-    if (ehNome) {
-      const { coincide, melhor, nomeQueBateu } = correspondeAoPedido(termo, r.bruto ?? {})
-      confirmado = coincide
-      if (!coincide && r.horario) {
-        console.info(`[geo] "${termo}" trouxe "${nomeQueBateu ?? '?'}" (${melhor.toFixed(2)}) — horário descartado`)
-      }
+    if (!confirmado && r.horario) {
+      console.info(`[geo] "${termo}" trouxe "${quaseFoi?.nomeQueBateu ?? '?'}" ` +
+        `(${(quaseFoi?.melhor ?? 0).toFixed(2)}) — horário descartado`)
     }
 
     await gravarCache(chave, r, r.nome, confirmado)
