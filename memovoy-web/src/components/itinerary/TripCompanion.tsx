@@ -5,6 +5,11 @@ import { useQuery } from '@tanstack/react-query'
 import { CloudRain, Sun, Cloud, CloudSnow, Zap, Wind, Thermometer, Wand2, RefreshCw } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Spinner } from '@/components/ui/Spinner'
+// A cópia local declarava `type: string`, e por isso as actividades que este
+// componente devolve não encaixavam onde as outras encaixam — o TypeScript só
+// se queixou quando a vista dos dias passou a ser partilhada. Duas definições
+// do mesmo objecto afastam-se sempre; esta afastou-se no campo que importa.
+import { type Activity } from './actividade'
 
 interface WeatherDay {
   date: string
@@ -15,17 +20,6 @@ interface WeatherDay {
   isAlert: boolean
 }
 
-interface Activity {
-  time: string
-  name: string
-  description: string
-  address: string | null
-  geoName?: string | null
-  cost: number | null
-  currency: string
-  type: string
-  tips: string | null
-}
 
 interface Props {
   itineraryId: string

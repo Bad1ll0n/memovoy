@@ -1,22 +1,13 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   MapPin, Calendar, Globe, Users, Bookmark, Share2, Trash2,
-  ChevronLeft, AlertCircle, Sparkles, Pencil, X, Wand2, GripVertical, Download, CheckCircle2, GitFork, Leaf, Plus,
+  ChevronLeft, Sparkles, Pencil, X, Download, GitFork, Leaf, Plus,
 } from 'lucide-react'
-import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { api } from '@/lib/api'
 import { formatarData } from '@/lib/datas'
 import { useAuthStore } from '@/store/authStore'
@@ -28,19 +19,13 @@ import { PackingPanel } from '@/components/itinerary/PackingPanel'
 import { ItineraryComments } from '@/components/itinerary/ItineraryComments'
 import { CollaboratorsPanel } from '@/components/itinerary/CollaboratorsPanel'
 import { ItineraryRefinement } from '@/components/itinerary/ItineraryRefinement'
-import { TripCompanion } from '@/components/itinerary/TripCompanion'
 import { ItineraryReactions } from '@/components/itinerary/ItineraryReactions'
 import { ItineraryLineage } from '@/components/itinerary/ItineraryLineage'
 import { useSalaDoRoteiro } from '@/hooks/useSalaDoRoteiro'
-import type { ActivityPin } from '@/components/map/ActivityMap'
 import { AiEditModal } from '@/components/itinerary/AiEditModal'
-import { activityTypeLabel, activityTypeClass, type Activity, type Day, type EditTarget } from '@/components/itinerary/actividade'
+import { type Activity, type Day, type EditTarget } from '@/components/itinerary/actividade'
+import { VistaDosDias } from '@/components/itinerary/VistaDosDias'
 
-// Load map only client-side — Leaflet needs window
-const ActivityMap = dynamic(
-  () => import('@/components/map/ActivityMap').then((m) => m.ActivityMap),
-  { ssr: false },
-)
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -317,149 +302,6 @@ function ManualActivityModal({
 
 // ─── Sortable activity card ───────────────────────────────────────────────────
 
-function SortableActivityCard({
-  act,
-  sortId,
-  isOwner,
-  checkedIn,
-  onEditClick,
-  onManualEditClick,
-  onDeleteClick,
-  onCheckin,
-}: {
-  act: Activity
-  sortId: string
-  actIdx: number
-  activeDay: number
-  isOwner: boolean
-  checkedIn: boolean
-  onEditClick: () => void
-  onManualEditClick: () => void
-  onDeleteClick: () => void
-  onCheckin: () => void
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: sortId })
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform:  CSS.Transform.toString(transform),
-        transition,
-        opacity:    isDragging ? 0.5 : 1,
-      }}
-      className="relative"
-    >
-      {/* Timeline dot */}
-      <div
-        className="absolute -left-6 top-3 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-        style={{ borderColor: 'var(--accent)', background: 'var(--bg-body)' }}
-      >
-        <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />
-      </div>
-
-      <div className="card p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${activityTypeClass[act.type] ?? 'act-leisure'}`}>
-                {activityTypeLabel[act.type] ?? act.type}
-              </span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{act.time}</span>
-            </div>
-            <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-              {act.name}
-            </h4>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {act.cost !== null && act.cost !== undefined && (
-              <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
-                {act.cost} {act.currency}
-              </span>
-            )}
-            {isOwner && (
-              <>
-                <button
-                  className="btn btn-ghost p-1.5 rounded-lg"
-                  title="Substituir com IA"
-                  onClick={onEditClick}
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  className="btn btn-ghost p-1.5 rounded-lg"
-                  title="Editar manualmente"
-                  onClick={onManualEditClick}
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  className="btn btn-ghost p-1.5 rounded-lg"
-                  title="Eliminar actividade"
-                  style={{ color: 'var(--danger, #ef4444)' }}
-                  onClick={onDeleteClick}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  className="btn btn-ghost p-1.5 rounded-lg cursor-grab active:cursor-grabbing"
-                  style={{ color: 'var(--text-muted)' }}
-                  title="Arrastar para reordenar"
-                  {...attributes}
-                  {...listeners}
-                >
-                  <GripVertical className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <p className="text-xs mb-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          {act.description}
-        </p>
-
-        {act.address && (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.geoName ?? act.address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs hover:underline transition-opacity hover:opacity-70"
-            style={{ color: 'var(--accent)' }}
-          >
-            <MapPin className="w-3 h-3 shrink-0" />
-            {act.address}
-          </a>
-        )}
-
-        {act.tips && (
-          <div className="mt-2 alert-info py-2 text-xs">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            {act.tips}
-          </div>
-        )}
-
-        <button
-          onClick={onCheckin}
-          className={`mt-3 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
-            checkedIn
-              ? 'animate-like-pop'
-              : 'hover:opacity-80'
-          }`}
-          style={{
-            background: checkedIn ? 'rgba(52,211,153,0.15)' : 'var(--surface2)',
-            color:      checkedIn ? 'var(--success)' : 'var(--text-muted)',
-          }}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          {checkedIn ? 'Já estive aqui' : 'Marcar como visitado'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ItineraryClient() {
@@ -475,9 +317,6 @@ export default function ItineraryClient() {
   const [refinedDays, setRefinedDays]               = useState<Day[] | null>(null)
   const reorderTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  )
 
   const deleteMutation = useMutation({
     mutationFn: () => api.delete(`/itineraries/${id}`),
@@ -563,31 +402,23 @@ export default function ItineraryClient() {
     onSuccess: (data) => router.push(`/itineraries/${data.id}`),
   })
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id || !it) return
-
-    const acts   = (refinedDays ?? it.days)[activeDay]?.activities ?? []
-    const oldIdx = acts.findIndex((_, i) => String(i) === active.id)
-    const newIdx = acts.findIndex((_, i) => String(i) === over.id)
-    if (oldIdx === -1 || newIdx === -1) return
-
-    const reordered = arrayMove(acts, oldIdx, newIdx)
-
-    // Optimistic update
+  // A VistaDosDias já faz o arrasto e entrega a lista na ordem nova; aqui só
+  // fica o que é desta página: pintar o resultado já e gravar com atraso.
+  const handleReorder = useCallback((dayIndex: number, reordered: Activity[]) => {
     qc.setQueryData<Itinerary>(['itinerary', id], (old) => {
       if (!old) return old
-      const days = old.days.map((d, di) =>
-        di === activeDay ? { ...d, activities: reordered } : d,
-      )
-      return { ...old, days }
+      return { ...old, days: old.days.map((d, di) => (di === dayIndex ? { ...d, activities: reordered } : d)) }
     })
 
-    // Debounced API call — capture activeDay now, not when timeout fires
-    const capturedDay = activeDay
+    // Com atraso, porque arrastar três actividades seguidas são três pedidos
+    // por uma decisão só. O índice do dia é capturado agora, não quando o
+    // temporizador disparar — a essa altura o utilizador já pode ter mudado.
     if (reorderTimer.current) clearTimeout(reorderTimer.current)
-    reorderTimer.current = setTimeout(() => reorderMutation.mutate({ dayIndex: capturedDay, activities: reordered }), 500)
-  }, [it, refinedDays, activeDay, id, qc, reorderMutation])
+    reorderTimer.current = setTimeout(
+      () => reorderMutation.mutate({ dayIndex, activities: reordered }),
+      500,
+    )
+  }, [id, qc, reorderMutation])
 
   const handleManualSave = useCallback((activities: Activity[]) => {
     if (!manualTarget) return
@@ -649,15 +480,6 @@ export default function ItineraryClient() {
   const isOwner = user?.id === it.author.id
 
   // Map pins for the current day
-  const mapPins: ActivityPin[] = (currentDay?.activities ?? []).map((a) => ({
-    name: a.name,
-    address: a.address,
-    geoName: a.geoName,
-    type: a.type,
-    // Resolvidas no servidor ao gerar. O mapa já não geocodifica nada.
-    lat: a.lat,
-    lon: a.lon,
-  }))
 
   return (
     <div style={{ fontFamily: 'var(--font-dm-sans, var(--font-poppins, system-ui))' }}>
@@ -857,116 +679,29 @@ export default function ItineraryClient() {
         </div>
       )}
 
-      {/* Day tabs */}
-      {days.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-5" style={{ scrollbarWidth: 'none' }}>
-          {days.map((d, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveDay(i)}
-              className={`chip shrink-0 ${activeDay === i ? 'chip-active' : ''}`}
-            >
-              Dia {d.day}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Day header */}
-      {currentDay && (
-        <div className="mb-4">
-          <p className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>
-            {currentDay.theme}
-          </p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {currentDay.date}
-          </p>
-        </div>
-      )}
-
-      {/* Trip Companion — weather + AI adaptations */}
-      {currentDay && (
-        <TripCompanion
-          itineraryId={id}
-          activeDay={activeDay}
-          activeDate={currentDay.date}
-          isOwner={isOwner}
-          onActivitiesAdapted={(dayIdx, activities) => {
-            setRefinedDays((prev) => {
-              const base = prev ?? it.days
-              return base.map((d, i) => i === dayIdx ? { ...d, activities } : d) as Day[]
-            })
-          }}
-        />
-      )}
-
-      {/* Leaflet map for current day */}
-      {currentDay && mapPins.some((p) => p.address || p.geoName) && (
-        <ActivityMap activities={mapPins} />
-      )}
-
-      {/* Timeline — sortable when owner */}
-      {currentDay && (
-        <div className="relative pl-6">
-          <div
-            className="absolute left-2 top-2 bottom-2 w-px"
-            style={{ background: 'var(--border)' }}
-          />
-
-          {isOwner ? (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext
-                items={currentDay.activities.map((_, i) => String(i))}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="flex flex-col gap-4">
-                  {currentDay.activities.map((act, actIdx) => (
-                    <SortableActivityCard
-                      key={actIdx}
-                      sortId={String(actIdx)}
-                      act={act}
-                      actIdx={actIdx}
-                      activeDay={activeDay}
-                      isOwner={isOwner}
-                      checkedIn={checkinSet.has(`${activeDay}:${actIdx}`)}
-                      onEditClick={() => setEditTarget({ dayIndex: activeDay, activityIndex: actIdx, activity: act })}
-                      onManualEditClick={() => setManualTarget({ mode: 'edit', dayIndex: activeDay, activityIndex: actIdx, activity: act })}
-                      onDeleteClick={() => setActivityDeleteTarget({ dayIndex: activeDay, activityIndex: actIdx, name: act.name })}
-                      onCheckin={() => checkinMutation.mutate({
-                        dayIndex: activeDay, activityIndex: actIdx,
-                        activityName: act.name, destination: it?.destination ?? '',
-                        checked: checkinSet.has(`${activeDay}:${actIdx}`),
-                      })}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {currentDay.activities.map((act, actIdx) => (
-                <SortableActivityCard
-                  key={actIdx}
-                  sortId={String(actIdx)}
-                  act={act}
-                  actIdx={actIdx}
-                  activeDay={activeDay}
-                  isOwner={false}
-                  checkedIn={checkinSet.has(`${activeDay}:${actIdx}`)}
-                  onEditClick={() => {}}
-                  onManualEditClick={() => {}}
-                  onDeleteClick={() => {}}
-                  onCheckin={() => checkinMutation.mutate({
-                    dayIndex: activeDay, activityIndex: actIdx,
-                    activityName: act.name, destination: it?.destination ?? '',
-                    checked: checkinSet.has(`${activeDay}:${actIdx}`),
-                  })}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <VistaDosDias
+        roteiroId={id}
+        dias={days}
+        diaActivo={activeDay}
+        aoMudarDeDia={setActiveDay}
+        podeEditar={isOwner}
+        checkins={checkinSet}
+        aoReordenar={handleReorder}
+        aoSubstituirComIa={(dayIndex, activityIndex, activity) => setEditTarget({ dayIndex, activityIndex, activity })}
+        aoEditarManualmente={(dayIndex, activityIndex, activity) => setManualTarget({ mode: 'edit', dayIndex, activityIndex, activity })}
+        aoEliminar={(dayIndex, activityIndex, activity) => setActivityDeleteTarget({ dayIndex, activityIndex, name: activity.name })}
+        aoMarcarVisitado={(dayIndex, activityIndex, activity) => checkinMutation.mutate({
+          dayIndex, activityIndex,
+          activityName: activity.name, destination: it?.destination ?? '',
+          checked: checkinSet.has(`${dayIndex}:${activityIndex}`),
+        })}
+        aoAdaptarActividades={(dayIdx, activities) => {
+          setRefinedDays((prev) => {
+            const base = prev ?? it.days
+            return base.map((d, i) => i === dayIdx ? { ...d, activities } : d) as Day[]
+          })
+        }}
+      />
 
       {/* Add activity button — owner only */}
       {isOwner && currentDay && (
