@@ -21,6 +21,7 @@
 
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
+import { Footprints } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -28,7 +29,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CartaoDeActividade } from './CartaoDeActividade'
 import { TripCompanion } from './TripCompanion'
-import { type Activity, type Day } from './actividade'
+import { distanciaEntre, distanciaLegivel, type Activity, type Day } from './actividade'
 import type { ActivityPin } from '@/components/map/ActivityMap'
 
 const ActivityMap = dynamic(
@@ -104,23 +105,64 @@ export function VistaDosDias({
     aoReordenar(diaActivo, reordenadas)
   }
 
+  // O total percorrido no dia, somando os saltos entre paragens consecutivas.
+  // Em linha recta, portanto sempre menos do que se anda — mas serve para o que
+  // interessa: distinguir um dia de bairro de um dia que atravessa a cidade.
+  const totalDoDia = useMemo(() => {
+    const acts = (dia?.activities ?? []).filter((a) => a.type !== 'transport')
+    let metros = 0
+    for (let i = 1; i < acts.length; i++) {
+      metros += distanciaEntre(acts[i - 1], acts[i]) ?? 0
+    }
+    if (metros < 100) return null
+    return metros < 1000 ? `${metros} m` : `${(metros / 1000).toFixed(1).replace('.', ',')} km`
+  }, [dia])
+
   if (dias.length === 0) return null
 
-  const cartoes = (dia?.activities ?? []).map((act, i) => (
-    <CartaoDeActividade
-      key={i}
-      sortId={String(i)}
-      act={act}
-      podeEditar={podeEditar}
-      arrastavel={arrastavel && !!aoReordenar}
-      comCheckin={comCheckin}
-      checkedIn={checkins?.has(`${diaActivo}:${i}`) ?? false}
-      onEditClick={() => aoSubstituirComIa(diaActivo, i, act)}
-      onManualEditClick={() => aoEditarManualmente(diaActivo, i, act)}
-      onDeleteClick={() => aoEliminar(diaActivo, i, act)}
-      onCheckin={() => aoMarcarVisitado?.(diaActivo, i, act)}
-    />
-  ))
+  const actividades = dia?.activities ?? []
+
+  const cartoes = actividades.map((act, i) => {
+    // ── A distância desde a paragem anterior ────────────────────────────────
+    //
+    // O mapa mostra que os sítios existem; não mostra se dois estão a duzentos
+    // metros ou a três quilómetros. Num roteiro a pé é essa a pergunta, e sem
+    // resposta um dia que atravessa a cidade duas vezes parece igual a um dia
+    // que se faz num bairro.
+    //
+    // Salta o transporte: uma caminhada entre A e B não está "a 400 m de A",
+    // ela É os 400 m. Contá-la duplicava o mesmo percurso no ecrã.
+    const anterior = actividades.slice(0, i).reverse().find((a) => a.type !== 'transport')
+    const salto = (act.type !== 'transport' && anterior)
+      ? distanciaLegivel(distanciaEntre(anterior, act))
+      : null
+
+    return (
+      <div key={i}>
+        {salto && (
+          <p
+            className="text-xs mb-2 flex items-center gap-1"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <Footprints className="w-3 h-3 shrink-0" />
+            {salto}
+          </p>
+        )}
+        <CartaoDeActividade
+          sortId={String(i)}
+          act={act}
+          podeEditar={podeEditar}
+          arrastavel={arrastavel && !!aoReordenar}
+          comCheckin={comCheckin}
+          checkedIn={checkins?.has(`${diaActivo}:${i}`) ?? false}
+          onEditClick={() => aoSubstituirComIa(diaActivo, i, act)}
+          onManualEditClick={() => aoEditarManualmente(diaActivo, i, act)}
+          onDeleteClick={() => aoEliminar(diaActivo, i, act)}
+          onCheckin={() => aoMarcarVisitado?.(diaActivo, i, act)}
+        />
+      </div>
+    )
+  })
 
   return (
     <>
@@ -144,8 +186,15 @@ export function VistaDosDias({
             <p className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>
               {dia.theme}
             </p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {dia.date}
+            <p className="text-xs flex items-center gap-2 flex-wrap" style={{ color: 'var(--text-muted)' }}>
+              <span>{dia.date}</span>
+              {/* O total é o que diz de relance se o dia se faz a pé. Um dia de
+                  2 km é um bairro; um de 12 km é a cidade toda duas vezes. */}
+              {totalDoDia && (
+                <span className="flex items-center gap-1">
+                  <Footprints className="w-3 h-3" /> {totalDoDia} no total
+                </span>
+              )}
             </p>
           </div>
 

@@ -67,6 +67,44 @@ export function duracaoLegivel(minutos: number | null | undefined): string | nul
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 }
 
+/**
+ * Distância em linha recta entre duas actividades, em metros.
+ *
+ * Um mapa com pinos mostra que os sítios existem; não mostra se dois estão a
+ * duzentos metros ou a três quilómetros um do outro. É essa a pergunta de quem
+ * revê um roteiro a pé — e sem resposta, um dia que atravessa a cidade duas
+ * vezes parece igual a um dia que se faz num bairro.
+ */
+export function distanciaEntre(a: Activity, b: Activity): number | null {
+  if (typeof a.lat !== 'number' || typeof a.lon !== 'number') return null
+  if (typeof b.lat !== 'number' || typeof b.lon !== 'number') return null
+
+  const R = 6371000
+  const rad = (g: number) => (g * Math.PI) / 180
+  const dLat = rad(b.lat - a.lat)
+  const dLon = rad(b.lon - a.lon)
+  const h = Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)))
+}
+
+/**
+ * "450 m" ou "2,3 km", e quanto tempo dá isso a pé.
+ *
+ * A pé conta-se a 4,5 km/h — o ritmo de quem passeia numa cidade, não o de
+ * quem vai para o trabalho. E a distância é em linha recta, portanto o tempo
+ * real é sempre maior: as ruas não são rectas e há semáforos. Fica dito no
+ * ecrã com um "≈" em vez de se fingir precisão que não existe.
+ */
+export function distanciaLegivel(metros: number | null): string | null {
+  if (metros === null || metros < 50) return null   // dois passos não é distância
+  const texto = metros < 1000
+    ? `${metros} m`
+    : `${(metros / 1000).toFixed(1).replace('.', ',')} km`
+  const minutos = Math.round((metros / 4500) * 60)
+  return minutos >= 3 ? `${texto} · ≈${minutos} min a pé` : texto
+}
+
 export const activityTypeClass: Record<string, string> = {
   visit:     'act-visit',
   food:      'act-food',

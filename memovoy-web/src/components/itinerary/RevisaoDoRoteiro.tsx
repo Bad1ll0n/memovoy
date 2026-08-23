@@ -58,20 +58,30 @@ export function RevisaoDoRoteiro({
   // ── Esperar pelas coordenadas ──────────────────────────────────────────────
   //
   // Os dias chegam pelo fluxo da geração SEM lat/lon: a geocodificação corre em
-  // segundo plano no servidor e leva uns quinze segundos, porque o Nominatim
-  // permite um pedido por segundo. Sem isto o mapa nunca aparecia na revisão —
-  // só depois de guardar, que é exactamente quando já não serve para decidir.
+  // segundo plano no servidor, e o Nominatim só permite um pedido por segundo.
+  // Sem isto o mapa nunca aparecia na revisão — só depois de guardar, que é
+  // exactamente quando já não serve para decidir.
   //
-  // Vai buscá-las uma vez, e desiste ao fim de um minuto. Um mapa que não
-  // aparece é melhor do que uma página a bater no servidor para sempre.
+  // O tempo de espera acompanha o tamanho do roteiro, e essa é a correcção que
+  // faltava. Era um minuto fixo, o que chegava para seis actividades e não
+  // chegava para trinta e seis: num roteiro de dois dias em Roma a
+  // geocodificação demorou mais de um minuto, a espera desistiu antes, e o mapa
+  // não aparecia apesar de os dados já lá estarem.
+  //
+  // Um segundo e meio por actividade cobre o ritmo do Nominatim e as segundas
+  // tentativas. O tecto de quatro minutos existe para a página não ficar a bater
+  // no servidor indefinidamente se alguma coisa correr mal do outro lado.
   const jaEditou = useRef(false)
+  const [aLocalizar, setALocalizar] = useState(true)
+
   useEffect(() => {
     let vivo = true
-    let tentativas = 0
+    const orcamentoMs = Math.min(4 * 60_000, 15_000 + totalActividades * 1_500)
+    const fim = Date.now() + orcamentoMs
 
     async function buscar() {
-      if (!vivo || jaEditou.current || tentativas >= 12) return
-      tentativas++
+      if (!vivo || jaEditou.current) return
+      if (Date.now() > fim) { setALocalizar(false); return }
       try {
         const r = await api.get<{ days?: Day[] }>(`/itineraries/${roteiroId}`)
         const temCoordenadas = (r.days ?? []).some((d) =>
@@ -82,14 +92,18 @@ export function RevisaoDoRoteiro({
         // desfazer-lhe o trabalho sem aviso.
         if (temCoordenadas && !jaEditou.current && vivo) {
           setDiasLocais(r.days as Day[])
+          setALocalizar(false)
           return
         }
       } catch { /* volta a tentar */ }
-      if (vivo) setTimeout(buscar, 5000)
+      if (vivo) setTimeout(buscar, 4000)
     }
 
     const inicio = setTimeout(buscar, 4000)
     return () => { vivo = false; clearTimeout(inicio) }
+    // totalActividades só serve para dimensionar a espera e não muda enquanto
+    // ela decorre — a lista só cresce por edição, e uma edição pára a busca.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roteiroId])
 
   /** Substitui uma actividade no ecrã. Quem chama já gravou no servidor. */
@@ -181,6 +195,18 @@ export function RevisaoDoRoteiro({
       )}
 
       {erro && <div className="mb-4"><AlertBanner variant="danger" message={erro} /></div>}
+
+      {/* As coordenadas chegam depois da geração, e sem isto o ecrã ficava
+          calado — indistinguível de um mapa que não vai aparecer. */}
+      {aLocalizar && (
+        <div
+          className="flex items-center gap-2 rounded-xl px-3 py-2 mb-4 text-xs"
+          style={{ background: 'var(--surface2)', color: 'var(--text-muted)' }}
+        >
+          <Spinner size="sm" />
+          <span>A localizar os sítios no mapa e a verificar horários de abertura…</span>
+        </div>
+      )}
 
       <VistaDosDias
         roteiroId={roteiroId}
