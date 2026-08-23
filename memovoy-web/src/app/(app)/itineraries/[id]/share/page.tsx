@@ -6,16 +6,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Calendar, Users, Sparkles, ArrowLeft, ExternalLink, Share2 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { formatarData } from '@/lib/datas'
 import { Avatar } from '@/components/ui/Avatar'
 import { Spinner } from '@/components/ui/Spinner'
 import { AlertBanner } from '@/components/ui/AlertBanner'
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-  })
-}
 
 const typeColors: Record<string, string> = {
   visit:     'rgba(71,163,203,0.2)',
@@ -121,7 +115,7 @@ export default function SharePage() {
             {it.startDate && (
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
-                {formatDate(it.startDate)}{it.endDate ? ` → ${formatDate(it.endDate)}` : ''}
+                {formatarData(it.startDate, 'longo')}{it.endDate ? ` → ${formatarData(it.endDate, 'longo')}` : ''}
               </span>
             )}
             {it.groupType && (

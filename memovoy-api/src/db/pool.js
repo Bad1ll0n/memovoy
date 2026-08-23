@@ -2,6 +2,32 @@ import pg from 'pg'
 
 const { Pool } = pg
 
+// ── Uma DATE não tem hora, e por isso não tem fuso ───────────────────────────
+//
+// Por omissão o driver converte DATE num Date de JavaScript à meia-noite do
+// fuso LOCAL do servidor. Em Portugal, em Maio, "2027-05-10" tornava-se
+//
+//     2027-05-09T23:00:00.000Z
+//
+// e a interface, que formata em UTC, mostrava 9 de Maio. A página do roteiro
+// contradizia-se a si própria: o título dizia 2027-05-10 e o cabeçalho dizia
+// 9/05/2027 — porque as datas de cada dia vivem no JSONB como texto e essas
+// nunca sofreram o desvio.
+//
+// O erro está na conversão, não na formatação. Um Date de JavaScript é sempre
+// um INSTANTE; uma DATE de SQL é um dia do calendário. Traduzir um no outro
+// obriga a inventar uma hora, e a hora inventada é o que empurra o dia para
+// trás em qualquer fuso à frente de UTC.
+//
+// Vem como texto 'YYYY-MM-DD', que é o que a coluna guarda. Quem quiser fazer
+// contas faz `new Date('2027-05-10')`, que o JavaScript lê como meia-noite UTC
+// e portanto não volta a deslizar.
+//
+// Só DATE. TIMESTAMPTZ (created_at e companhia) é mesmo um instante e continua
+// a ser convertido — aí o Date é a representação certa.
+const OID_DATE = 1082
+pg.types.setTypeParser(OID_DATE, (valor) => valor)
+
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required')
 }

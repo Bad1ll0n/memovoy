@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { api } from '@/lib/api'
+import { formatarData } from '@/lib/datas'
 import { useAuthStore } from '@/store/authStore'
 import { Spinner } from '@/components/ui/Spinner'
 import { AlertBanner } from '@/components/ui/AlertBanner'
@@ -34,13 +35,6 @@ import { useSalaDoRoteiro } from '@/hooks/useSalaDoRoteiro'
 import type { ActivityPin } from '@/components/map/ActivityMap'
 import { AiEditModal } from '@/components/itinerary/AiEditModal'
 import { activityTypeLabel, activityTypeClass, type Activity, type Day, type EditTarget } from '@/components/itinerary/actividade'
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
-  })
-}
 
 // Load map only client-side — Leaflet needs window
 const ActivityMap = dynamic(
@@ -712,7 +706,7 @@ export default function ItineraryClient() {
           {it.startDate && (
             <span className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
               <Calendar className="w-3.5 h-3.5" />
-              {formatDate(it.startDate)}{it.endDate ? ` → ${formatDate(it.endDate)}` : ''}
+              {formatarData(it.startDate)}{it.endDate ? ` → ${formatarData(it.endDate)}` : ''}
             </span>
           )}
           {it.continent && (

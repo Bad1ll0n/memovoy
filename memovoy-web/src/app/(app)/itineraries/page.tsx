@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Map, Sparkles, Plus, Bookmark, Eye, Trash2, ExternalLink, Wand2, X, Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { formatarData } from '@/lib/datas'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -167,13 +168,6 @@ function MoodModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
-  })
-}
-
 function ItineraryCard({ it }: { it: ItinerarySummary }) {
   const router = useRouter()
   const qc = useQueryClient()
@@ -270,7 +264,7 @@ function ItineraryCard({ it }: { it: ItinerarySummary }) {
           )}
         </div>
         <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-          {it.destination} · {it.daysCount} dias · {formatDate(it.startDate)}
+          {it.destination} · {it.daysCount} dias · {formatarData(it.startDate)}
         </p>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
           <span className="flex items-center gap-1">

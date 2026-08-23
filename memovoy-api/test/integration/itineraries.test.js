@@ -545,3 +545,77 @@ describe('um roteiro por confirmar não aparece em lado nenhum', () => {
     assert.equal(res.statusCode, 403)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Uma DATE não tem hora, e por isso não tem fuso
+//
+// A página de um roteiro contradizia-se a si própria: o título dizia
+// "2027-05-10" e o cabeçalho, logo abaixo, dizia "9/05/2027".
+//
+// As datas de cada dia vivem no JSONB como texto e nunca deslizaram. As de
+// início e fim vinham de colunas DATE, e o driver convertia-as para um Date de
+// JavaScript à meia-noite do fuso do SERVIDOR. Em Portugal, em Maio:
+//
+//     '2027-05-10'  →  2027-05-09T23:00:00.000Z
+//
+// A interface formatava em UTC e mostrava 9 de Maio. Um dia inteiro perdido em
+// qualquer fuso à frente de UTC — ou seja, em Portugal metade do ano.
+//
+// Este é o teste da raiz. Os do frontend garantem que, dado o texto certo, se
+// mostra o dia certo; este garante que o texto certo é o que chega lá.
+describe('as datas saem como dias de calendário, não como instantes', () => {
+  const DATAS = { startDate: '2027-05-10', endDate: '2027-05-12' }
+
+  test('a API devolve YYYY-MM-DD e não um instante ISO', async () => {
+    const id = await criarRoteiro(autor, DATAS)
+
+    const res = await app.inject({
+      method: 'GET', url: `/itineraries/${id}`,
+      headers: comToken(autor.accessToken),
+    })
+
+    assert.equal(res.statusCode, 200)
+    const { startDate, endDate } = res.json()
+
+    // A falha antiga apanha-se aqui: vinha '2027-05-09T23:00:00.000Z'.
+    assert.equal(startDate, '2027-05-10')
+    assert.equal(endDate,   '2027-05-12')
+  })
+
+  test('o dia é o mesmo que foi guardado, sem deslizar', async () => {
+    // 1 de Janeiro é o caso que mais dói: com uma hora para trás, salta para
+    // 31 de Dezembro do ANO anterior.
+    const id = await criarRoteiro(autor, { startDate: '2027-01-01', endDate: '2027-01-03' })
+
+    const res = await app.inject({
+      method: 'GET', url: `/itineraries/${id}`,
+      headers: comToken(autor.accessToken),
+    })
+
+    assert.equal(res.json().startDate, '2027-01-01', 'saltou para o ano anterior')
+  })
+
+  test('o que sai é do tipo texto, não um Date serializado', async () => {
+    // Um Date serializa-se para string em JSON, portanto comparar strings não
+    // chega para provar o tipo. O formato é que denuncia: um instante traz um
+    // 'T' e um fuso; um dia de calendário tem dez caracteres e mais nada.
+    const id = await criarRoteiro(autor, DATAS)
+    const { startDate } = (await app.inject({
+      method: 'GET', url: `/itineraries/${id}`, headers: comToken(autor.accessToken),
+    })).json()
+
+    assert.match(startDate, /^\d{4}-\d{2}-\d{2}$/)
+    assert.ok(!String(startDate).includes('T'), 'trouxe uma hora que não existe')
+  })
+
+  test('as datas sem valor continuam nulas e não viram 1970', async () => {
+    const id = await criarRoteiro(autor, { startDate: null, endDate: null })
+
+    const { startDate, endDate } = (await app.inject({
+      method: 'GET', url: `/itineraries/${id}`, headers: comToken(autor.accessToken),
+    })).json()
+
+    assert.equal(startDate, null)
+    assert.equal(endDate, null)
+  })
+})

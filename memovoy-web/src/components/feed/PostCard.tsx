@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Heart, MessageCircle, Bookmark, MoreHorizontal, MapPin, Trash2, Link2, Flag, Radio, Share2, CalendarDays, Map } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { formatarData } from '@/lib/datas'
 import { Avatar } from '@/components/ui/Avatar'
 import { VideoPlayer, isVideoUrl } from '@/components/ui/VideoPlayer'
 import { Lightbox } from '@/components/ui/Lightbox'
@@ -444,9 +445,7 @@ export function PostCard({ post, queryKey, index = 0 }: { post: Post; queryKey: 
                 <div className="flex items-center gap-1 mt-0.5">
                   <CalendarDays className="w-3 h-3 shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {post.itineraryLinked.startDate
-                      ? new Date(post.itineraryLinked.startDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' })
-                      : null}
+                    {formatarData(post.itineraryLinked.startDate)}
                     {post.itineraryLinked.daysCount > 0 && (
                       <span className="ml-1">· {post.itineraryLinked.daysCount} {post.itineraryLinked.daysCount === 1 ? 'dia' : 'dias'}</span>
                     )}
