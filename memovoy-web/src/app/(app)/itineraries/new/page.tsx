@@ -11,6 +11,8 @@ import {
 import { api } from '@/lib/api'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { AlertBanner } from '@/components/ui/AlertBanner'
+import { RevisaoDoRoteiro } from '@/components/itinerary/RevisaoDoRoteiro'
+import type { Day } from '@/components/itinerary/actividade'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -345,7 +347,6 @@ export default function NewItineraryPage() {
   const [generatingCost, setGeneratingCost] = useState('')
   const [loadingStep, setLoadingStep] = useState(0)
   const [generatedId, setGeneratedId] = useState<string | null>(null)
-  const [discarding, setDiscarding] = useState(false)
 
   const [data, setData] = useState<WizardData>(defaultData)
 
@@ -463,9 +464,11 @@ export default function NewItineraryPage() {
     }
   }
 
+  // O estado de "a descartar" vive no ecrã de revisão, que é quem tem o botão
+  // e quem mostra o spinner. Ter uma segunda cópia aqui era uma que podia ficar
+  // dessincronizada da outra sem ninguém dar por isso.
   async function discard() {
     if (!generatedId) return
-    setDiscarding(true)
     try { await api.delete(`/itineraries/${generatedId}`) } catch { /* ignore */ }
     setGeneratedId(null)
     setGeneratingDays([])
@@ -474,7 +477,6 @@ export default function NewItineraryPage() {
     setGeneratingStatus('')
     setError('')
     setStep(0)
-    setDiscarding(false)
   }
 
   if (!isReady) return null
@@ -566,61 +568,14 @@ export default function NewItineraryPage() {
   }
 
   if (generatedId) {
-    type GenDay = { day: number; date: string; theme: string; activities: Array<{ time: string; name: string; type: string }> }
     return (
-      <div className="py-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--accent-subtle)' }}>
-            <Check className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          </div>
-          <div>
-            <p className="font-bold" style={{ color: 'var(--text-primary)' }}>Roteiro gerado!</p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Revê o resumo e decide se queres guardar.</p>
-          </div>
-        </div>
-
-        {(generatingSummary || generatingCost) && (
-          <div className="card p-4 mb-4">
-            {generatingSummary && <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{generatingSummary}</p>}
-            {generatingCost && <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Custo estimado: {generatingCost}</p>}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3 mb-6">
-          {(generatingDays as GenDay[]).map((d) => (
-            <div key={d.day} className="card p-4">
-              <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--accent)' }}>
-                Dia {d.day} · {d.theme}
-              </p>
-              <div className="flex flex-col gap-1">
-                {d.activities?.slice(0, 3).map((a, i) => (
-                  <p key={i} className="text-xs" style={{ color: 'var(--text-muted)' }}>{a.time} — {a.name}</p>
-                ))}
-                {d.activities?.length > 3 && (
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>+{d.activities.length - 3} actividades…</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <button
-            className="btn btn-primary w-full gap-2"
-            onClick={() => router.push(`/itineraries/${generatedId}`)}
-          >
-            <Check className="w-4 h-4" />
-            Guardar Roteiro
-          </button>
-          <button
-            className="btn btn-secondary w-full"
-            onClick={discard}
-            disabled={discarding}
-          >
-            {discarding ? 'A descartar…' : 'Descartar'}
-          </button>
-        </div>
-      </div>
+      <RevisaoDoRoteiro
+        roteiroId={generatedId}
+        dias={generatingDays as Day[]}
+        resumo={generatingSummary}
+        custoEstimado={generatingCost}
+        aoDescartar={discard}
+      />
     )
   }
 

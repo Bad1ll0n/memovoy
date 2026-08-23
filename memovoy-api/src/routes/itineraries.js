@@ -273,11 +273,17 @@ export async function itinerariesRoutes(app) {
       }
 
       const { rows } = await query(
+        // confirmado = FALSE e is_public = FALSE até o utilizador aceitar.
+        //
+        // O is_public é o que impede a fuga: os vinte e quatro sítios que lêem
+        // roteiros já o respeitam. Sem isto, o roteiro ficava público na
+        // pesquisa e no explorar enquanto ainda estava a ser revisto — e se
+        // fosse descartado, tinha estado lá na mesma.
         `INSERT INTO itineraries
           (user_id, title, destination, country, continent, start_date, end_date,
            group_type, travel_style, transport, budget, data, ai_generated,
-           day_start, day_end)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13, $14)
+           day_start, day_end, confirmado, is_public)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13, $14, FALSE, FALSE)
          RETURNING id`,
         [
           request.user.id, title,
@@ -412,11 +418,13 @@ export async function itinerariesRoutes(app) {
     }
 
     const { rows } = await query(
+      // Ver o comentário na rota em fluxo: por confirmar é privado, e é o
+      // is_public que garante que nenhum dos caminhos de leitura o mostra.
       `INSERT INTO itineraries
         (user_id, title, destination, country, continent, start_date, end_date,
          group_type, travel_style, transport, budget, data, ai_generated,
-         day_start, day_end)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13, $14)
+         day_start, day_end, confirmado, is_public)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13, $14, FALSE, FALSE)
        RETURNING id`,
       [
         request.user.id,
@@ -454,6 +462,10 @@ export async function itinerariesRoutes(app) {
               COALESCE(jsonb_array_length(data->'days'), 0) AS days_count
        FROM itineraries
        WHERE user_id = $1
+         -- Um roteiro por confirmar ainda está a ser revisto. Aparecer aqui
+         -- seria dizer que já é dele antes de o ter aceitado — e quem fechar o
+         -- separador a meio ficava com um roteiro na lista que nunca quis.
+         AND confirmado = TRUE
          AND ($2::uuid IS NULL OR created_at < (SELECT created_at FROM itineraries WHERE id = $2))
        ORDER BY created_at DESC
        LIMIT $3`,
@@ -1373,6 +1385,40 @@ export async function itinerariesRoutes(app) {
 
     await query('DELETE FROM itineraries WHERE id = $1', [request.params.id])
     return reply.send({ ok: true })
+  })
+
+  // POST /itineraries/:id/confirm — o utilizador aceita o roteiro que reviu
+  //
+  // Até aqui o roteiro existia mas era privado e não contava para lado nenhum.
+  // É este pedido que o torna dele de verdade: sai da revisão, passa a aparecer
+  // na lista, e ganha a visibilidade que qualquer roteiro tem.
+  app.post('/:id/confirm', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const schema = z.object({
+      // Quem revê pode querer guardá-lo sem o publicar. Antes desta rota não
+      // havia sequer a pergunta: todos os roteiros gerados nasciam públicos.
+      isPublic: z.boolean().default(true),
+    })
+    const parsed = schema.safeParse(request.body ?? {})
+    if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
+
+    const { rows } = await query(
+      'SELECT user_id, confirmado FROM itineraries WHERE id = $1',
+      [request.params.id],
+    )
+    if (rows.length === 0) return reply.status(404).send({ message: 'Roteiro não encontrado.' })
+    if (rows[0].user_id !== request.user.id) return reply.status(403).send({ message: 'Sem permissão.' })
+
+    // Confirmar duas vezes não é erro — um duplo clique ou uma repetição de
+    // rede não devem dar 400 — mas também não pode voltar a mexer no
+    // is_public de um roteiro que o dono já tornou privado depois.
+    if (rows[0].confirmado) return reply.send({ ok: true, jaEstava: true })
+
+    await query(
+      'UPDATE itineraries SET confirmado = TRUE, is_public = $2, updated_at = NOW() WHERE id = $1',
+      [request.params.id, parsed.data.isPublic],
+    )
+
+    return reply.send({ ok: true, jaEstava: false })
   })
 
   // ── Itinerary comments ──────────────────────────────────────────────────────

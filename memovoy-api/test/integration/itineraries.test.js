@@ -399,3 +399,149 @@ describe('a janela do dia é validada antes de chegar ao modelo', () => {
     assert.equal(res.statusCode, 400)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Um roteiro gerado ainda não é um roteiro
+//
+// O ecrã de revisão dizia "decide se queres guardar", mas a decisão já estava
+// tomada: a geração gravava antes de responder, sem tocar em is_public — que é
+// TRUE por omissão. O roteiro nascia PÚBLICO e aparecia na lista, na pesquisa e
+// no explorar, tudo antes de alguém carregar em "Guardar". Quem gerasse e
+// descartasse tinha-o visível para toda a gente no meio.
+//
+// A geração precisa da API da Groq e não corre aqui. O que se testa é a máquina
+// de estados: um roteiro por confirmar comporta-se como não existindo, e o
+// /confirm é o que o traz à existência.
+describe('um roteiro por confirmar não aparece em lado nenhum', () => {
+  /** Põe um roteiro no estado em que a geração o deixa. */
+  async function porPorConfirmar(id) {
+    await query(
+      'UPDATE itineraries SET confirmado = FALSE, is_public = FALSE WHERE id = $1',
+      [id],
+    )
+  }
+
+  test('não entra na lista do próprio dono', async () => {
+    // O caso que mais irrita: fechar o separador a meio da revisão e ficar com
+    // um roteiro na lista que nunca se chegou a querer.
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    const res = await app.inject({
+      method: 'GET', url: '/itineraries/mine',
+      headers: comToken(autor.accessToken),
+    })
+
+    assert.equal(res.statusCode, 200)
+    const ids = res.json().itineraries.map((i) => i.id)
+    assert.ok(!ids.includes(id), 'apareceu na lista sem ter sido confirmado')
+  })
+
+  test('um estranho não lhe chega, mesmo sabendo o id', async () => {
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    const res = await app.inject({
+      method: 'GET', url: `/itineraries/${id}`,
+      headers: comToken(intruso.accessToken),
+    })
+
+    assert.equal(res.statusCode, 404)
+  })
+
+  test('mas o dono vê-o — é o que torna a revisão possível', async () => {
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    const res = await app.inject({
+      method: 'GET', url: `/itineraries/${id}`,
+      headers: comToken(autor.accessToken),
+    })
+
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.json().id, id)
+  })
+
+  test('confirmar traz o roteiro à existência', async () => {
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    const res = await app.inject({
+      method: 'POST', url: `/itineraries/${id}/confirm`,
+      headers: comToken(autor.accessToken),
+      payload: {},
+    })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.json().jaEstava, false)
+
+    const lista = await app.inject({
+      method: 'GET', url: '/itineraries/mine',
+      headers: comToken(autor.accessToken),
+    })
+    assert.ok(lista.json().itineraries.map((i) => i.id).includes(id))
+
+    const deFora = await app.inject({
+      method: 'GET', url: `/itineraries/${id}`,
+      headers: comToken(intruso.accessToken),
+    })
+    assert.equal(deFora.statusCode, 200, 'depois de confirmado é visível')
+  })
+
+  test('confirmar em privado guarda sem publicar', async () => {
+    // Antes desta rota a pergunta nem existia: tudo o que era gerado nascia
+    // público, e não havia forma de guardar um roteiro só para si.
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    await app.inject({
+      method: 'POST', url: `/itineraries/${id}/confirm`,
+      headers: comToken(autor.accessToken),
+      payload: { isPublic: false },
+    })
+
+    const meu = await app.inject({
+      method: 'GET', url: '/itineraries/mine', headers: comToken(autor.accessToken),
+    })
+    assert.ok(meu.json().itineraries.map((i) => i.id).includes(id), 'está na minha lista')
+
+    const alheio = await app.inject({
+      method: 'GET', url: `/itineraries/${id}`, headers: comToken(intruso.accessToken),
+    })
+    assert.equal(alheio.statusCode, 404, 'e continua invisível para os outros')
+  })
+
+  test('confirmar duas vezes não estraga a segunda', async () => {
+    // Um duplo clique ou uma repetição de rede não podem dar erro — nem voltar
+    // a mexer no is_public de um roteiro que o dono já tornou privado depois.
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    const primeira = await app.inject({
+      method: 'POST', url: `/itineraries/${id}/confirm`,
+      headers: comToken(autor.accessToken), payload: { isPublic: false },
+    })
+    const segunda = await app.inject({
+      method: 'POST', url: `/itineraries/${id}/confirm`,
+      headers: comToken(autor.accessToken), payload: { isPublic: true },
+    })
+
+    assert.equal(primeira.json().jaEstava, false)
+    assert.equal(segunda.statusCode, 200)
+    assert.equal(segunda.json().jaEstava, true)
+
+    const { rows } = await query('SELECT is_public FROM itineraries WHERE id = $1', [id])
+    assert.equal(rows[0].is_public, false, 'a segunda chamada não repôs o público')
+  })
+
+  test('só o dono pode confirmar', async () => {
+    const id = await criarRoteiro(autor)
+    await porPorConfirmar(id)
+
+    const res = await app.inject({
+      method: 'POST', url: `/itineraries/${id}/confirm`,
+      headers: comToken(intruso.accessToken), payload: {},
+    })
+
+    assert.equal(res.statusCode, 403)
+  })
+})
