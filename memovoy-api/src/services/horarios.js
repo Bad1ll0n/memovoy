@@ -78,8 +78,41 @@ function intervalosDeHoras(texto) {
   return fora
 }
 
-/** "Nov 01-Feb 15" ou "Apr-Aug" → função que diz se uma data cai lá dentro. */
+/**
+ * "Nov 01-Feb 15", "Apr-Aug" ou "Dec 24,31" → função que diz se uma data cai
+ * lá dentro.
+ *
+ * A lista separada por vírgulas apareceu nos Museus Capitolinos:
+ *
+ *     Mo-Su 09:30-19:30; Dec 24,31 09:30-14:00; Jan 01 off; ...
+ *
+ * Sem a saber ler, a regra ficava ilegível — e como uma regra ilegível invalida
+ * a etiqueta inteira, perdia-se o horário de um museu que o tem bem preenchido
+ * por causa de duas datas de Dezembro.
+ */
 function periodoDoAno(texto) {
+  if (texto.includes(',')) {
+    const partes = texto.trim().split(',')
+    // "Dec 24,31" — o mês vem só na primeira parte e vale para as outras.
+    const primeiro = /^([A-Z][a-z]{2})\s*(\d{1,2})$/.exec(partes[0].trim())
+    if (!primeiro) return null
+    const mes = MESES.indexOf(primeiro[1])
+    if (mes === -1) return null
+
+    const dias = [Number(primeiro[2])]
+    for (const p of partes.slice(1)) {
+      const soDia = /^(\d{1,2})$/.exec(p.trim())
+      const comMes = /^([A-Z][a-z]{2})\s*(\d{1,2})$/.exec(p.trim())
+      if (soDia) dias.push(Number(soDia[1]))
+      else if (comMes && MESES.indexOf(comMes[1]) === mes) dias.push(Number(comMes[2]))
+      else return null   // meses diferentes na mesma lista: não arriscar
+    }
+    return (m, d) => m === mes && dias.includes(d)
+  }
+  return periodoSimples(texto)
+}
+
+function periodoSimples(texto) {
   const comDia = /^([A-Z][a-z]{2})\s*(\d{2})?\s*-\s*([A-Z][a-z]{2})\s*(\d{2})?$/.exec(texto.trim())
   const soUm   = /^([A-Z][a-z]{2})\s*(\d{2})?$/.exec(texto.trim())
 
@@ -137,7 +170,8 @@ function lerRegra(bruta) {
   //   (?!:\d{2})  é a que separa mesmo: "08:30" é hora, "15: 08:30" é dia 15
   //               seguido do separador da regra.
   const MES = MESES.join('|')
-  const DIA = '(?:\\s+\\d{1,2}(?!\\d)(?!:\\d{2}))?'
+  // O `(?:,\d{1,2})*` no fim é a lista dos Museus Capitolinos: "Dec 24,31".
+  const DIA = '(?:\\s+\\d{1,2}(?!\\d)(?!:\\d{2})(?:\\s*,\\s*\\d{1,2}(?!\\d)(?!:\\d{2}))*)?'
   const PERIODO = new RegExp(
     `^((?:${MES})${DIA}(?:\\s*-\\s*(?:${MES})${DIA})?)\\s*:?\\s*(.*)$`,
   )

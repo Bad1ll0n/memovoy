@@ -30,6 +30,7 @@
 
 import { query } from '../db/pool.js'
 import { avaliarHorario, ABERTO, FECHADO } from './horarios.js'
+import { correspondeAoPedido } from './nomeDoLugar.js'
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search'
 
@@ -76,20 +77,21 @@ export function chaveDeCache(nome, destino, pais) {
 
 async function lerCache(chave) {
   const { rows } = await query(
-    'SELECT lat, lon, estado, horario FROM lugares WHERE chave = $1',
+    'SELECT lat, lon, estado, horario, nome_confirmado FROM lugares WHERE chave = $1',
     [chave],
   )
   return rows[0] ?? null
 }
 
-async function gravarCache(chave, resultado, nomeObtido) {
+async function gravarCache(chave, resultado, nomeObtido, nomeConfirmado = false) {
   await query(
-    `INSERT INTO lugares (chave, lat, lon, nome_obtido, estado, horario)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO lugares (chave, lat, lon, nome_obtido, estado, horario, nome_confirmado)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (chave) DO UPDATE
-       SET lat = $2, lon = $3, nome_obtido = $4, estado = $5, horario = $6, criado_em = NOW()`,
+       SET lat = $2, lon = $3, nome_obtido = $4, estado = $5, horario = $6,
+           nome_confirmado = $7, criado_em = NOW()`,
     [chave, resultado?.lat ?? null, resultado?.lon ?? null, nomeObtido ?? null,
-     resultado ? 'ok' : 'sem_resposta', resultado?.horario ?? null],
+     resultado ? 'ok' : 'sem_resposta', resultado?.horario ?? null, nomeConfirmado],
   )
 }
 
@@ -100,7 +102,9 @@ async function perguntarAoNominatim(consulta) {
     // extratags=1 traz o `opening_hours` do OpenStreetMap no MESMO pedido.
     // Não custa uma chamada a mais e é a única fonte de horários que temos que
     // não seja perguntar ao modelo — que não os sabe de forma fiável.
-    const url = `${NOMINATIM}?format=json&limit=1&extratags=1&q=${encodeURIComponent(consulta)}`
+    // namedetails=1 traz todos os nomes do sítio, em todas as línguas. É o que
+    // permite confirmar que o resultado é o sítio pedido — ver nomeDoLugar.js.
+    const url = `${NOMINATIM}?format=json&limit=1&extratags=1&namedetails=1&q=${encodeURIComponent(consulta)}`
     const res = await fetch(url, {
       headers: {
         // Do lado do servidor este cabeçalho passa mesmo. A política do
@@ -120,6 +124,7 @@ async function perguntarAoNominatim(consulta) {
       // Vem em bruto, tal como está no OSM. Interpretar aqui era perder o que
       // ainda não sabemos ler — ver services/horarios.js.
       horario: dados[0].extratags?.opening_hours ?? null,
+      bruto: dados[0],
     }
   } catch {
     return null
@@ -185,11 +190,21 @@ export async function resolverLugar(act, destino, pais, centro) {
   // As tentativas, da mais específica para a menos. O nome da actividade é o
   // último recurso porque é o mais ambíguo — "Almoço no mercado" não é um
   // lugar, e uma consulta assim traz seja o que for.
-  const tentativas = [act.geoName, act.address, act.name]
-    .map((t) => (t ?? '').trim())
-    .filter(Boolean)
+  //
+  // O tipo de cada tentativa importa para a confirmação do nome. Procurar por
+  // MORADA e depois exigir que o nome devolvido se pareça com a morada é uma
+  // recusa garantida: "Via del Casaletto, 45" encontrou a Trattoria da Cesare
+  // — o sítio certo — e comparar os dois textos dá zero. A morada já é o
+  // identificador; se o Nominatim acertou no número da porta, acertou no sítio.
+  const tentativas = [
+    { termo: act.geoName, ehNome: true },
+    { termo: act.address, ehNome: false },
+    { termo: act.name,    ehNome: true },
+  ]
+    .map((t) => ({ ...t, termo: (t.termo ?? '').trim() }))
+    .filter((t) => t.termo)
 
-  for (const termo of tentativas) {
+  for (const { termo, ehNome } of tentativas) {
     const chave = chaveDeCache(termo, destino, pais)
 
     const emCache = await lerCache(chave)
@@ -197,7 +212,15 @@ export async function resolverLugar(act, destino, pais, centro) {
       // Uma falha em cache é uma resposta: não vale a pena voltar a perguntar
       // por um nome que já se sabe que não existe.
       if (emCache.estado !== 'ok') continue
-      return { lat: emCache.lat, lon: emCache.lon, horario: emCache.horario ?? null }
+      return {
+        lat: emCache.lat,
+        lon: emCache.lon,
+        // O horário só sai quando o nome do sítio confirmou o pedido. Procurar
+        // "St. Peter's Basilica" devolve San Pietro in Vincoli — outra igreja,
+        // a 1,5 km, com horário próprio. O pino a 1,5 km é um erro que se vê; o
+        // horário do edifício errado não.
+        horario: emCache.nome_confirmado ? (emCache.horario ?? null) : null,
+      }
     }
 
     const r = await procurarComContexto(termo, destino, pais)
@@ -219,8 +242,19 @@ export async function resolverLugar(act, destino, pais, centro) {
       continue
     }
 
-    await gravarCache(chave, r, r.nome)
-    return { lat: r.lat, lon: r.lon, horario: r.horario ?? null }
+    // Só se confirma o nome quando se procurou POR nome. Ver o comentário das
+    // tentativas: comparar uma morada com o nome do sítio dá sempre zero.
+    let confirmado = true
+    if (ehNome) {
+      const { coincide, melhor, nomeQueBateu } = correspondeAoPedido(termo, r.bruto ?? {})
+      confirmado = coincide
+      if (!coincide && r.horario) {
+        console.info(`[geo] "${termo}" trouxe "${nomeQueBateu ?? '?'}" (${melhor.toFixed(2)}) — horário descartado`)
+      }
+    }
+
+    await gravarCache(chave, r, r.nome, confirmado)
+    return { lat: r.lat, lon: r.lon, horario: confirmado ? (r.horario ?? null) : null }
   }
 
   return null

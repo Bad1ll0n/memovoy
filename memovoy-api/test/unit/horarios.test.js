@@ -160,3 +160,37 @@ describe('casos simples que têm de funcionar', () => {
     assert.equal(avaliarHorario('Mo-Su 09:00-18:00', TERCA, '17:59', 0).estado, ABERTO)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Uma sub-regra que não se lê deitava fora a etiqueta toda
+//
+// Os Museus Capitolinos têm o horário bem preenchido no OSM. Perdíamo-lo por
+// causa de duas datas de Dezembro: "Dec 24,31" é uma lista separada por
+// vírgulas, e o parser não a conhecia. Como uma regra ilegível invalida a
+// leitura inteira — o que é a decisão certa — o museu ficava sem horário.
+const CAPITOLINOS = 'Mo-Su 09:30-19:30; Dec 24,31 09:30-14:00; Jan 01 off; May 01 off; Dec 25 off'
+
+describe('listas de dias separadas por vírgulas', () => {
+  test('num dia normal, o horário lê-se', () => {
+    // O que se perdia: o museu abre das 09:30 às 19:30 todos os dias.
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-10-06', '10:00', 120).estado, ABERTO)
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-10-06', '19:00', 120).estado, FECHADO)
+  })
+
+  test('a 24 e a 31 de Dezembro fecham mais cedo', () => {
+    // As duas datas da lista, e as duas têm de valer.
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-12-24', '10:00', 120).estado, ABERTO)
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-12-24', '15:00', 60).estado, FECHADO)
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-12-31', '15:00', 60).estado, FECHADO)
+  })
+
+  test('o dia 30 de Dezembro não está na lista e segue a regra geral', () => {
+    // Se a lista fosse lida como um intervalo 24-31, este dia fechava às 14:00.
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-12-30', '15:00', 60).estado, ABERTO)
+  })
+
+  test('os dias encerrados continuam encerrados', () => {
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-12-25', '10:00', 60).estado, FECHADO)
+    assert.equal(avaliarHorario(CAPITOLINOS, '2026-01-01', '10:00', 60).estado, FECHADO)
+  })
+})
