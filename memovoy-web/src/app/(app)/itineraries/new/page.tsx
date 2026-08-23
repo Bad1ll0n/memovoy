@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Compass, ChevronLeft, ChevronRight, Loader2,
   Car, Check, Sparkles,
-  Sun, Moon, Clock, MapPin
+  Sun, Moon, Clock, MapPin, Sunrise, Sunset
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useRequireAuth } from '@/hooks/useRequireAuth'
@@ -24,9 +24,43 @@ interface WizardData {
   transport: string[]
   extras: string[]
   budget: number
+  dayStart: string
+  dayEnd: string
 }
 
 const STEPS = ['Destino', 'Datas', 'Grupo', 'Estilo', 'Refeições', 'Transporte', 'Extras']
+
+// ─── A que horas corre um dia ──────────────────────────────────────────────
+//
+// Não são uma preferência inventada: é o que o agente já fazia sozinho, sem
+// perguntar a ninguém. Quem não mexer fica exactamente como estava.
+const HORA_INICIO_OMISSAO = '09:00'
+const HORA_FIM_OMISSAO    = '22:00'
+
+/** A mesma regra que a API impõe. Três horas é o mínimo para caber algo. */
+const JANELA_MINIMA_MINUTOS = 180
+
+function emMinutos(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+
+/** O problema da janela em português, ou null se estiver boa. */
+function problemaDaJanela(inicio: string, fim: string): string | null {
+  if (!inicio || !fim) return 'Indica as duas horas.'
+  const duracao = emMinutos(fim) - emMinutos(inicio)
+  if (duracao <= 0) return 'O fim tem de ser depois do início.'
+  if (duracao < JANELA_MINIMA_MINUTOS) return 'O dia precisa de pelo menos 3 horas.'
+  return null
+}
+
+/** "13h30" em vez de "13.5 horas". */
+function duracaoLegivel(inicio: string, fim: string): string {
+  const total = emMinutos(fim) - emMinutos(inicio)
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+}
 
 // ─── Option groups ─────────────────────────────────────────────────────────
 
@@ -293,6 +327,8 @@ function defaultData(): WizardData {
     transport: ['plane'],
     extras: [],
     budget: 1000,
+    dayStart: HORA_INICIO_OMISSAO,
+    dayEnd: HORA_FIM_OMISSAO,
   }
 }
 
@@ -357,6 +393,7 @@ export default function NewItineraryPage() {
     switch (step) {
       case 0: return data.destination.trim().length >= 2
       case 1: return !!data.startDate && !!data.endDate && data.endDate >= data.startDate
+                     && problemaDaJanela(data.dayStart, data.dayEnd) === null
       case 2: return !!data.groupType
       case 3: return data.travelStyle.length > 0
       default: return true
@@ -652,6 +689,53 @@ export default function NewItineraryPage() {
                 onChange={(e) => setData((d) => ({ ...d, endDate: e.target.value }))}
               />
             </div>
+          </div>
+
+          {/* A que horas corre cada dia */}
+          <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+            <p className="label mb-1">A que horas queres andar na rua?</p>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Aplica-se a todos os dias. O roteiro é planeado dentro desta janela.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label flex items-center gap-1" htmlFor="hora-inicio">
+                  <Sunrise className="w-3 h-3" /> Começar
+                </label>
+                <input
+                  id="hora-inicio"
+                  type="time"
+                  className="input"
+                  value={data.dayStart}
+                  onChange={(e) => setData((d) => ({ ...d, dayStart: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="label flex items-center gap-1" htmlFor="hora-fim">
+                  <Sunset className="w-3 h-3" /> Terminar
+                </label>
+                <input
+                  id="hora-fim"
+                  type="time"
+                  className="input"
+                  value={data.dayEnd}
+                  onChange={(e) => setData((d) => ({ ...d, dayEnd: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* O erro tem prioridade sobre a confirmação: se a janela não
+                serve, dizer quanto tempo tem seria confirmar um disparate. */}
+            {problemaDaJanela(data.dayStart, data.dayEnd) ? (
+              <p className="text-xs mt-2" style={{ color: 'var(--danger)' }}>
+                {problemaDaJanela(data.dayStart, data.dayEnd)}
+              </p>
+            ) : (
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                {duracaoLegivel(data.dayStart, data.dayEnd)} por dia para actividades.
+              </p>
+            )}
           </div>
 
           {/* AI duration recommendation */}

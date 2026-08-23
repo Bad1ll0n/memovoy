@@ -91,6 +91,30 @@ const MODEL        = cfg.modelo
 const VISION_MODEL = cfg.visao
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
+// ── A que horas corre um dia ─────────────────────────────────────────────────
+//
+// O agente escolhia sozinho, e escolhia sempre parecido: nove da manhã até à
+// noite. Para quem viaja com crianças, chega num voo da tarde, ou simplesmente
+// não se levanta às oito, o roteiro nascia errado — e corrigi-lo era editar
+// actividade a actividade.
+//
+// Estes valores são o que se usa quando ninguém disse nada, e são também o que
+// os roteiros antigos tinham na prática. Não são uma preferência: são o
+// comportamento anterior, escrito onde se vê.
+export const HORA_INICIO_OMISSAO = '09:00'
+export const HORA_FIM_OMISSAO    = '22:00'
+
+/** HH:MM entre 00:00 e 23:59. */
+export function horaValida(h) {
+  return typeof h === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(h)
+}
+
+/** Minutos desde a meia-noite, para poder comparar horas como números. */
+export function emMinutos(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+
 // ── Prompt injection ─────────────────────────────────────────────────────────
 //
 // Free text written by the user reached the model as plain prompt content:
@@ -346,6 +370,20 @@ async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperatu
     ? { type: 'json_schema', json_schema: { name: schema.name, strict: true, schema: schema.schema } }
     : { type: 'json_object' }
 
+  // ── Porque é que TODAS as chamadas levam reasoning_effort ──────────────────
+  //
+  // Os tokens de raciocínio saem do mesmo orçamento que a resposta. Corrigi
+  // isto nas legendas e parei aí, o que foi um erro: há treze sítios com
+  // orçamento explícito, e o `recommend-duration` — 200 tokens — falhava
+  // sempre. Não com um erro claro, mas com «Failed to validate JSON», porque
+  // o modelo gastava os 200 a pensar e o JSON saía truncado.
+  //
+  // Medido: 139 a 335 tokens só de raciocínio, conforme a tarefa. Qualquer
+  // chamada abaixo de ~500 estava a viver de sorte.
+  //
+  // Fica aqui e não em cada sítio porque é aqui que se sabe qual é o modelo,
+  // e porque o próximo agente que alguém escrever herda a correcção sem ter
+  // de saber que ela existe.
   const params = {
     model,
     response_format: formatoComEsquema,
@@ -355,8 +393,17 @@ async function callOpenAI(messages, maxTokens = 1000, { model = MODEL, temperatu
   if (temperature !== undefined) params.temperature = temperature
 
   async function run(modelo, formato = params.response_format) {
+    // Por modelo: o gpt-oss aceita low|medium|high e recusa `none`; o qwen
+    // aceita none|default e recusa `low`. Um modelo desconhecido não leva
+    // nada — gastar tokens a mais é melhor do que um 400.
+    const esforco = esforcoParaModelo(cfg, modelo)
     const completion = await obterCliente().chat.completions.create(
-      { ...params, model: modelo, response_format: formato },
+      {
+        ...params,
+        model: modelo,
+        response_format: formato,
+        ...(esforco ? { reasoning_effort: esforco } : {}),
+      },
       // O limite acompanha o fornecedor: é uma consequência do débito dele e
       // do tamanho da resposta, não um número escolhido a olho.
       { signal: AbortSignal.timeout(cfg.timeoutMs) },
@@ -467,18 +514,38 @@ If the destination is not real or too vague, set normalizedName to null.${PT_RUL
  * Returns { summary, totalEstimatedCost, days: [...] }
  * userPreferences: optional array of top activity types from past activity_feedback
  */
-export async function agentGenerateDays({ destination, country, language, currency, startDate, endDate, groupType, travelStyle, mealsIncluded, transport, extras, budget, userPreferences = [] }) {
+export async function agentGenerateDays({ destination, country, language, currency, startDate, endDate, groupType, travelStyle, mealsIncluded, transport, extras, budget, dayStart = HORA_INICIO_OMISSAO, dayEnd = HORA_FIM_OMISSAO, userPreferences = [] }) {
   const start = new Date(startDate)
   const end   = new Date(endDate)
   const days  = Math.max(1, Math.round((end - start) / 86400000) + 1)
 
-  const key = cacheKey({ fn: 'days', destination, startDate, endDate, groupType, travelStyle, mealsIncluded, transport, extras, budget, currency })
+  // dayStart e dayEnd TÊM de entrar na chave da cache.
+  //
+  // A cache dura sete dias e é global. Sem eles, quem peça o mesmo destino nas
+  // mesmas datas com uma janela diferente recebe o roteiro do primeiro — com as
+  // horas do primeiro. A resposta chega depressa, parece correcta, e ignora em
+  // silêncio a única coisa que o utilizador mudou.
+  const key = cacheKey({ fn: 'days', destination, startDate, endDate, groupType, travelStyle, mealsIncluded, transport, extras, budget, currency, dayStart, dayEnd })
   const cached = await getCache(key)
   if (cached) return cached
 
   const preferencesNote = userPreferences.length > 0
     ? `\n- User preference profile (from past choices): strongly favours activity types [${userPreferences.join(', ')}]. Prioritise these types when filling optional slots.`
     : ''
+
+  // ── Quantos tokens de saída pedir ──────────────────────────────────────────
+  //
+  // Eram 7000 fixos, para qualquer viagem. Descobri o problema ao acrescentar
+  // a regra da janela: o pedido passou a 8015 tokens e a Groq recusou-o com um
+  // 413, porque o plano gratuito conta prompt + max_tokens contra os 8000 do
+  // minuto. Quinze tokens de texto a mais e a geração deixou de funcionar.
+  //
+  // 7000 nunca fez sentido para uma viagem de dois dias. Medido: três dias em
+  // Edimburgo deram 4145 tokens de saída, uns 1300 por dia mais o invólucro.
+  // A margem aqui é generosa — a saída é cortada a meio se falhar, e uma
+  // resposta cortada é JSON inválido — mas deixa de pagar por dias que não
+  // existem.
+  const tokensDeSaida = Math.min(7000, 1400 + days * 1400)
 
   const data = await callOpenAI([
     {
@@ -492,7 +559,7 @@ Return an object with:
       - day (number)
       - date (YYYY-MM-DD)
       - theme (string, max 60 chars)
-      - activities (array of 4-6 objects) each with:
+      - activities (array; aim for 4-6, but fewer if the day window is too short to fit them) each with:
           - time (HH:MM)
           - name (string)
           - description (string, max 200 chars)
@@ -504,6 +571,7 @@ Return an object with:
           - tips (string max 120 chars or null)
 
 Rules:
+- DAY WINDOW (STRICT): every day runs ${dayStart}–${dayEnd}. Nothing before ${dayStart}; the last activity must be OVER by ${dayEnd}, not starting then. Spread activities across the window; if it is short, plan fewer rather than compressing.
 - GEOGRAPHIC CLUSTERING (STRICT): Activities within each day must be geographically adjacent — walkable or in the same district. Group by neighbourhood: start all activities of a day in one zone, end in another, never jump between distant areas within the same day. A day spanning 2 zones max is ideal.
 - Budget is roughly ${budget} ${currency} total
 - Style: ${travelStyle.join(', ')}
@@ -519,7 +587,7 @@ ${['breakfast', 'lunch', 'dinner'].map((meal) =>
 - Language spoken there: ${language}${PT_RULE}`,
     },
     { role: 'user', content: `Generate a ${days}-day itinerary starting ${startDate} for ${destination}. Days: ${days}` },
-  ], 7000, { schema: ESQUEMA_DIAS })
+  ], tokensDeSaida, { schema: ESQUEMA_DIAS })
 
   // Reparado antes de ser guardado em cache: a cache dura sete dias, e uma
   // resposta malformada guardada é uma resposta malformada servida a toda a
@@ -878,7 +946,18 @@ Each item must have:
 }
 
 
-export async function agentRefineDays({ destination, currency, currentDays, userMessage, conversationHistory = [] }) {
+export async function agentRefineDays({ destination, currency, currentDays, userMessage, dayStart = null, dayEnd = null, conversationHistory = [] }) {
+  // O refinamento acontece noutro pedido, muito depois da geração. Sem a janela
+  // aqui, o modelo volta a inventar horas: pede-se "mete mais uma coisa no dia
+  // 2" e vem uma visita às 08:00 a um roteiro que o utilizador quis começar ao
+  // meio-dia. A escolha desfazia-se à primeira alteração.
+  //
+  // Só entra quando o roteiro tem janela guardada. Nos anteriores é NULL, e
+  // fabricar uma aqui era impor uma decisão que ninguém tomou.
+  const regraDaJanela = (dayStart && dayEnd)
+    ? `\nDAY WINDOW (STRICT): every day runs from ${dayStart} to ${dayEnd}. Any activity you add or move must fall inside that window, and the last one must be over by ${dayEnd}.`
+    : ''
+
   const messages = [
     {
       role: 'system',
@@ -888,7 +967,7 @@ Respond with ONLY a JSON object with a single key "days" containing the updated 
 Preserve the exact same structure as the input. Only modify what the user asks.
 Each day must have: day (number), date (ISO date string), theme (string), activities (array).
 Each activity must have: time (HH:MM), name, description, address (string or null), geoName (string or null), cost (number or null), currency ("${currency}"), type ("visit"|"food"|"transport"|"leisure"|"hotel"), tips (string or null).
-Never remove days unless explicitly asked. Never change the day numbers or dates.${REGRA_TEXTO_DO_UTILIZADOR}${PT_RULE}`,
+Never remove days unless explicitly asked. Never change the day numbers or dates.${regraDaJanela}${REGRA_TEXTO_DO_UTILIZADOR}${PT_RULE}`,
     },
     ...conversationHistory,
     {

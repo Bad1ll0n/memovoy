@@ -338,3 +338,64 @@ describe('GET /itineraries/:id/export.ics', () => {
     assert.equal(res.statusCode, 401)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A janela do dia
+//
+// O agente escolhia as horas sozinho — e escolhia sempre parecido: manhã cedo
+// até à noite. Para quem viaja com crianças, chega num voo da tarde, ou não se
+// levanta às oito, o roteiro nascia errado e corrigi-lo era editar actividade
+// a actividade.
+//
+// A geração em si precisa da API da Groq e fica de fora. O que se testa aqui é
+// o que a rota recusa ANTES de gastar uma chamada, porque é isso que impede
+// uma janela absurda de chegar ao modelo.
+describe('a janela do dia é validada antes de chegar ao modelo', () => {
+  const pedidoBase = {
+    destination: 'Sevilha',
+    startDate:   '2027-04-10',
+    endDate:     '2027-04-12',
+    groupType:   'family',
+    travelStyle: ['culture'],
+    transport:   ['walk'],
+    budget:      600,
+  }
+
+  const gerar = (extra) => app.inject({
+    method: 'POST', url: '/itineraries/generate',
+    headers: comToken(autor.accessToken),
+    payload: { ...pedidoBase, ...extra },
+  })
+
+  test('um dia que acaba antes de começar é recusado', async () => {
+    // Não é um dia curto, é um pedido impossível. Sem esta verificação o
+    // modelo recebia a janela invertida e devolvia seja o que fosse — sem
+    // erro nenhum, e sem ninguém perceber porquê.
+    const res = await gerar({ dayStart: '20:00', dayEnd: '09:00' })
+
+    assert.equal(res.statusCode, 400)
+    assert.match(res.json().message, /depois da hora de início/i)
+  })
+
+  test('uma janela curta demais é recusada', async () => {
+    const res = await gerar({ dayStart: '10:00', dayEnd: '11:00' })
+
+    assert.equal(res.statusCode, 400)
+    assert.match(res.json().message, /pelo menos/i)
+  })
+
+  test('horas mal formadas são recusadas', async () => {
+    // '24:00' é o caso traiçoeiro: lê-se como meia-noite e existe em ISO 8601,
+    // mas a coluna TIME recusa-o. Apanhá-lo aqui evita um erro de base de
+    // dados longe de onde o valor entrou.
+    for (const hora of ['24:00', '9:00', '09:60', 'manhã']) {
+      const res = await gerar({ dayStart: hora })
+      assert.equal(res.statusCode, 400, `${hora} devia ser recusada`)
+    }
+  })
+
+  test('início igual ao fim é recusado', async () => {
+    const res = await gerar({ dayStart: '14:00', dayEnd: '14:00' })
+    assert.equal(res.statusCode, 400)
+  })
+})

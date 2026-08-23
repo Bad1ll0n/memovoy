@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { query } from '../db/pool.js'
 import { autorVisivel, autorVisivelPara, autorVisivelPorId, datasDoRoteiro, datasVisiveis, datasVisiveisPara } from '../db/visibilidade.js'
-import { agentValidateDestination, agentGenerateDays, agentGenerateTips, agentSuggestActivity, agentStreamSuggestActivity, agentSuggestForDay, agentRecommendDuration, agentRefineDays, agentAdaptDayForWeather, agentMoodTrip } from '../services/aiAgent.js'
+import { agentValidateDestination, agentGenerateDays, agentGenerateTips, agentSuggestActivity, agentStreamSuggestActivity, agentSuggestForDay, agentRecommendDuration, agentRefineDays, agentAdaptDayForWeather, agentMoodTrip, HORA_INICIO_OMISSAO, HORA_FIM_OMISSAO, emMinutos } from '../services/aiAgent.js'
 
 async function getUserPreferences(userId) {
   const { rows } = await query(
@@ -18,6 +18,11 @@ import { difundirNaSala } from '../services/socket.js'
 import { emSegundoPlano } from '../lib/emSegundoPlano.js'
 import { preencherCoordenadas } from '../services/geocodificar.js'
 
+/** Menos do que isto não dá para planear um dia que valha a pena. */
+const JANELA_MINIMA_MINUTOS = 180
+
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/
+
 const generateSchema = z.object({
   destination:    z.string().min(2).max(100),
   startDate:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -28,7 +33,25 @@ const generateSchema = z.object({
   transport:      z.array(z.string()).default(['plane']),
   extras:         z.array(z.string()).default([]),
   budget:         z.number().min(0).default(1000),
+  // A que horas o utilizador quer começar e acabar cada dia.
+  //
+  // Os valores por omissão são o comportamento anterior: o agente já assumia
+  // qualquer coisa como 09:00 às 22:00, só que sem o dizer a ninguém. Assim
+  // quem não escolher fica como estava, e quem escolher é ouvido.
+  dayStart:       z.string().regex(HORA, 'Hora de início inválida.').default(HORA_INICIO_OMISSAO),
+  dayEnd:         z.string().regex(HORA, 'Hora de fim inválida.').default(HORA_FIM_OMISSAO),
 })
+  .refine(
+    // Um dia que acaba antes de começar não é um dia curto, é um pedido
+    // impossível. Sem isto o modelo recebia uma janela absurda e devolvia
+    // seja o que fosse — sem erro, e sem ninguém perceber porquê.
+    (d) => emMinutos(d.dayEnd) > emMinutos(d.dayStart),
+    { message: 'A hora de fim tem de ser depois da hora de início.', path: ['dayEnd'] },
+  )
+  .refine(
+    (d) => emMinutos(d.dayEnd) - emMinutos(d.dayStart) >= JANELA_MINIMA_MINUTOS,
+    { message: `O dia tem de ter pelo menos ${JANELA_MINIMA_MINUTOS / 60} horas.`, path: ['dayEnd'] },
+  )
 
 function itiSummaryDto(row) {
   return {
@@ -211,6 +234,8 @@ export async function itinerariesRoutes(app) {
         transport:       params.transport,
         extras:          params.extras,
         budget:          params.budget,
+        dayStart:        params.dayStart,
+        dayEnd:          params.dayEnd,
         userPreferences,
       })
 
@@ -250,8 +275,9 @@ export async function itinerariesRoutes(app) {
       const { rows } = await query(
         `INSERT INTO itineraries
           (user_id, title, destination, country, continent, start_date, end_date,
-           group_type, travel_style, transport, budget, data, ai_generated)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE)
+           group_type, travel_style, transport, budget, data, ai_generated,
+           day_start, day_end)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13, $14)
          RETURNING id`,
         [
           request.user.id, title,
@@ -259,6 +285,7 @@ export async function itinerariesRoutes(app) {
           params.startDate, params.endDate,
           params.groupType, JSON.stringify(params.travelStyle), JSON.stringify(params.transport),
           params.budget, JSON.stringify(data),
+          params.dayStart, params.dayEnd,
         ],
       )
 
@@ -346,6 +373,8 @@ export async function itinerariesRoutes(app) {
         transport:       params.transport,
         extras:          params.extras,
         budget:          params.budget,
+        dayStart:        params.dayStart,
+        dayEnd:          params.dayEnd,
         userPreferences: userPreferences2,
       })
     } catch {
@@ -385,8 +414,9 @@ export async function itinerariesRoutes(app) {
     const { rows } = await query(
       `INSERT INTO itineraries
         (user_id, title, destination, country, continent, start_date, end_date,
-         group_type, travel_style, transport, budget, data, ai_generated)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE)
+         group_type, travel_style, transport, budget, data, ai_generated,
+         day_start, day_end)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, $13, $14)
        RETURNING id`,
       [
         request.user.id,
@@ -401,6 +431,8 @@ export async function itinerariesRoutes(app) {
         JSON.stringify(params.transport),
         params.budget,
         JSON.stringify(data),
+        params.dayStart,
+        params.dayEnd,
       ],
     )
 
@@ -479,6 +511,12 @@ export async function itinerariesRoutes(app) {
       groupType:          row.group_type,
       travelStyle:        row.travel_style ?? [],
       ...datasDoRoteiro(row),
+      // A janela com que o roteiro foi feito. `i.*` traz TIME como '09:00:00';
+      // aqui corta-se para HH:MM, que é como se mostra e como se compara.
+      // NULL nos roteiros anteriores à funcionalidade — e a interface tem de o
+      // saber distinguir de "escolheu meia-noite".
+      dayStart:           row.day_start ? String(row.day_start).slice(0, 5) : null,
+      dayEnd:             row.day_end   ? String(row.day_end).slice(0, 5)   : null,
       budget:             row.budget,
       aiGenerated:        row.ai_generated,
       days:               data.days ?? [],
@@ -898,7 +936,13 @@ export async function itinerariesRoutes(app) {
     if (!parsed.success) return reply.status(400).send({ message: parsed.error.errors[0].message })
 
     const { rows } = await query(
-      "SELECT data, destination, data->>'currency' AS currency, user_id FROM itineraries WHERE id = $1",
+      `SELECT data, destination, data->>'currency' AS currency, user_id,
+              -- to_char e não a coluna crua: o driver devolve TIME como
+              -- '09:00:00' e o prompt fica a falar de segundos que ninguém
+              -- escolheu. NULL continua NULL.
+              to_char(day_start, 'HH24:MI') AS day_start,
+              to_char(day_end,   'HH24:MI') AS day_end
+         FROM itineraries WHERE id = $1`,
       [request.params.id],
     )
     if (rows.length === 0) return reply.status(404).send({ message: 'Roteiro não encontrado.' })
@@ -909,6 +953,10 @@ export async function itinerariesRoutes(app) {
       currency:            rows[0].currency ?? rows[0].data?.currency ?? 'EUR',
       currentDays:         rows[0].data?.days ?? [],
       userMessage:         parsed.data.userMessage,
+      // Nos roteiros anteriores à funcionalidade isto vem NULL, e o agente
+      // omite a regra em vez de inventar uma janela que ninguém escolheu.
+      dayStart:            rows[0].day_start,
+      dayEnd:              rows[0].day_end,
       conversationHistory: parsed.data.conversationHistory,
     })
 
