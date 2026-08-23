@@ -32,9 +32,23 @@
 const ACTIVIDADE = {
   type: 'object',
   additionalProperties: false,
-  required: ['time', 'name', 'description', 'address', 'geoName', 'cost', 'currency', 'type', 'tips'],
+  required: ['time', 'durationMin', 'name', 'description', 'address', 'geoName', 'cost', 'currency', 'type', 'tips'],
   properties: {
     time:        { type: 'string' },
+    // ── Quanto tempo demora ─────────────────────────────────────────────────
+    //
+    // Sem isto, um dia era uma lista de horas de início e mais nada. Ninguém
+    // conseguia ver que entre uma igreja de bairro (meia hora) e o almoço três
+    // horas depois havia duas horas e meia sem nada — nem o modelo, nem a
+    // interface, nem quem estava a rever.
+    //
+    // Medido num roteiro de sete dias em Roma: quatro entradas por dia, duas
+    // delas refeições, e cerca de seis horas por dia dentro da janela pedida
+    // sem nada marcado. A contagem de actividades estava cumprida; o dia é que
+    // estava a meio.
+    //
+    // Em minutos, e obrigatório. Um número verifica-se — "uma manhã" não.
+    durationMin: { type: 'integer' },
     name:        { type: 'string' },
     description: { type: 'string' },
     // Estes quatro vêm a null com frequência — morada desconhecida, actividade

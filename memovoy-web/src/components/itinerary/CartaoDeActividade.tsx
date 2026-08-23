@@ -15,7 +15,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { AlertCircle, CheckCircle2, GripVertical, MapPin, Pencil, Trash2, Wand2 } from 'lucide-react'
-import { activityTypeClass, activityTypeLabel, type Activity } from './actividade'
+import { activityTypeClass, activityTypeLabel, duracaoLegivel, type Activity } from './actividade'
 
 export function CartaoDeActividade({
   act,
@@ -70,6 +70,12 @@ export function CartaoDeActividade({
                 {activityTypeLabel[act.type] ?? act.type}
               </span>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{act.time}</span>
+              {/* A duração é o que permite ver, de relance, se o dia está cheio */}
+              {duracaoLegivel(act.durationMin) && (
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  · {duracaoLegivel(act.durationMin)}
+                </span>
+              )}
             </div>
             <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
               {act.name}

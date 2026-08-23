@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import OpenAI from 'openai'
 import { query } from '../db/pool.js'
 import { resolverConfigLlm, esforcoParaModelo } from './llmConfig.js'
+import { COBERTURA_MINIMA, diasPorPreencher, medirDia, paraHoras, refeicoesEmFalta, resumirAgenda } from './agenda.js'
 import { ESQUEMA_DESTINO, ESQUEMA_DIAS, ESQUEMA_DICAS } from './llmSchemas.js'
 
 // Strip HTML tags and null-bytes from any string that comes out of the LLM
@@ -209,6 +210,17 @@ function repararActividade(a, moedaPorOmissao = 'EUR') {
 
   return {
     time:        hora,
+    // Sem duração não se consegue medir se o dia está cheio — que é a única
+    // pergunta que interessa fazer a um dia. Vem null quando o modelo não a
+    // deu, e null é honesto: assinala que não se sabe, em vez de inventar um
+    // número que depois entrava nas contas como se fosse verdade.
+    //
+    // O tecto de 12 horas apanha o erro de unidade: um modelo que devolva
+    // segundos em vez de minutos manda 5400 para uma visita de hora e meia, e
+    // isso enchia o dia sozinho sem ninguém reparar.
+    durationMin: Number.isFinite(a.durationMin) && a.durationMin > 0 && a.durationMin <= 720
+      ? Math.round(a.durationMin)
+      : null,
     name,
     description: texto(a.description, 500) ?? '',
     address:     texto(a.address, 300),
@@ -303,6 +315,10 @@ const contadores = {
   recursos:        0,
   tokensPrompt:    0,
   tokensResposta:  0,
+  // Quantos dias saíram curtos e tiveram de levar uma segunda passagem.
+  // Se este número for alto, o prompt não está a convencer e vale a pena mexer-lhe
+  // em vez de pagar sempre duas chamadas.
+  diasCompletados: 0,
 }
 
 export function contadoresDaIa() {
@@ -547,6 +563,10 @@ export async function agentGenerateDays({ destination, country, language, curren
   // existem.
   const tokensDeSaida = Math.min(7000, 1400 + days * 1400)
 
+  // O tamanho da janela em minutos, que é o que o prompt usa para decidir
+  // quantas actividades cabem. Contar actividades era a regra antiga.
+  const janelaMin = emMinutos(dayEnd) - emMinutos(dayStart)
+
   const data = await callOpenAI([
     {
       role: 'system',
@@ -559,8 +579,9 @@ Return an object with:
       - day (number)
       - date (YYYY-MM-DD)
       - theme (string, max 60 chars)
-      - activities (array; aim for 4-6, but fewer if the day window is too short to fit them) each with:
+      - activities (array — as many as it takes to FILL the day window; see TIME BUDGET) each with:
           - time (HH:MM)
+          - durationMin (integer — how many minutes this actually takes, realistically)
           - name (string)
           - description (string, max 200 chars)
           - address (string or null)
@@ -571,7 +592,17 @@ Return an object with:
           - tips (string max 120 chars or null)
 
 Rules:
-- DAY WINDOW (STRICT): every day runs ${dayStart}–${dayEnd}. Nothing before ${dayStart}; the last activity must be OVER by ${dayEnd}, not starting then. Spread activities across the window; if it is short, plan fewer rather than compressing.
+- TIME BUDGET (STRICT — this decides how many activities a day has):
+  * Each day runs ${dayStart}–${dayEnd}. That is ${janelaMin} minutes.
+  * Do NOT aim for a number of activities. Add activities until the day is full.
+  * A day is full when the sum of every durationMin, plus travel between stops, covers at least ${Math.round(COBERTURA_MINIMA * 100)}% of those ${janelaMin} minutes. Meals count towards this.
+  * Each activity starts when the previous one ends, plus travel time. No unexplained gaps.
+  * NEVER OVERLAP: time + durationMin of one activity must be <= the time of the next. Check every consecutive pair before answering.
+  * The last activity must be OVER by ${dayEnd}: its time + durationMin must not pass it.
+  * Use realistic durations. A major museum is 180-240 min. A big monument is 90-150. A church or square is 20-45. A park walk is 45-90. Lunch is 60-90, dinner 90-120.
+  * A short window means fewer activities, never compressed ones. A long window means MORE activities — not longer gaps.
+  * The required meals below are NOT optional and NOT something to drop to make room. Place them first, at sensible hours, then build the day around them.
+- NO REPEATS ACROSS DAYS (STRICT): each place appears ONCE in the whole trip. Before adding a place to a day, check it is not already on another day. This became visible once days had to be filled: with more slots to fill, the Pantheon and the Trevi Fountain showed up on two different days of the same trip.
 - GEOGRAPHIC CLUSTERING (STRICT): Activities within each day must be geographically adjacent — walkable or in the same district. Group by neighbourhood: start all activities of a day in one zone, end in another, never jump between distant areas within the same day. A day spanning 2 zones max is ideal.
 - Budget is roughly ${budget} ${currency} total
 - Style: ${travelStyle.join(', ')}
@@ -592,10 +623,154 @@ ${['breakfast', 'lunch', 'dinner'].map((meal) =>
   // Reparado antes de ser guardado em cache: a cache dura sete dias, e uma
   // resposta malformada guardada é uma resposta malformada servida a toda a
   // gente durante uma semana.
-  const reparado = { ...data, days: repararDias(data?.days, currency) }
+  let reparado = { ...data, days: repararDias(data?.days, currency) }
+
+  // ── Verificar as horas, não as actividades ─────────────────────────────────
+  //
+  // O prompt pede um dia cheio, mas pedir não é garantir. Isto mede o que
+  // voltou e, se algum dia ficou a meio, manda-o de volta com a lista do que
+  // falta. Uma segunda chamada por um dia é barata; um roteiro com seis horas
+  // vazias por dia não é.
+  //
+  // Uma vez só. Se à segunda continuar curto, fica como está e vai registado —
+  // repetir sem fim gasta a quota de quem está à espera.
+  const fracos = diasPorPreencher(reparado.days, dayStart, dayEnd)
+  if (fracos.length > 0) {
+    console.warn('[agenda] dias por preencher:', fracos.map((f) =>
+      `dia ${f.dia} a ${Math.round(f.cobertura * 100)}% (faltam ${paraHoras(f.vazio)})`).join(', '))
+    contadores.diasCompletados += fracos.length
+    reparado = await completarDias({
+      dados: reparado, fracos, destination, country, currency, dayStart, dayEnd,
+      travelStyle, transport, mealsIncluded,
+    })
+  }
+
+  // Os problemas de horário — sobreposições, coisas que passam da hora — são
+  // registados mesmo quando não impedem nada. São o sinal de que o prompt está
+  // a escorregar, e sem isto só se descobriam olhando para o roteiro.
+  for (const d of reparado.days ?? []) {
+    const { problemas } = medirDia(d, dayStart, dayEnd)
+    if (problemas.length > 0) console.warn(`[agenda] dia ${d.day}:`, problemas.join(' | '))
+
+    // A pressão do tempo empurrou o almoço para fora numa das gerações: o dia
+    // ficou a 95% e sem almoço nenhum. Encher o dia não pode custar o que o
+    // utilizador pediu explicitamente.
+    const semRefeicao = refeicoesEmFalta(d, mealsIncluded)
+    if (semRefeicao.length > 0) {
+      console.warn(`[agenda] dia ${d.day}: sem ${semRefeicao.join(' nem ')} — foi pedido e não está lá`)
+    }
+  }
+
+  console.info('[agenda]', resumirAgenda(reparado.days, dayStart, dayEnd))
 
   await setCache(key, reparado)
   return reparado
+}
+
+/**
+ * Segunda passagem: pede ao modelo que encha os dias que ficaram curtos.
+ *
+ * Manda só os dias em causa, não o roteiro inteiro — é mais barato, e evita
+ * que ao arranjar o dia 5 o modelo mexa no dia 1 que estava bom.
+ *
+ * Se falhar, devolve o que já havia. Um roteiro com um dia curto continua a
+ * ser um roteiro; rebentar aqui deitava fora uma geração inteira por causa de
+ * uma segunda chamada que era um extra.
+ */
+async function completarDias({ dados, fracos, destination, country, currency, dayStart, dayEnd, travelStyle, transport, mealsIncluded }) {
+  try {
+    const pedidos = fracos.map((f) => {
+      const buracos = f.buracos.length > 0
+        ? f.buracos.map((b) => `${paraHoras(b.minutos)} livres depois de "${b.depoisDe}"`).join('; ')
+        : 'espalhado pelo dia'
+      return `Day ${f.dia}: only ${Math.round(f.cobertura * 100)}% full, ${paraHoras(f.vazio)} empty (${buracos})`
+    }).join('\n')
+
+    const paraCompletar = fracos.map((f) => dados.days[f.indice])
+
+    // ── O que já está noutros dias ─────────────────────────────────────────
+    //
+    // Mandar só os dias fracos era mais barato e evitava que ao arranjar o dia
+    // 3 o modelo mexesse no dia 1. Mas tem um custo que só se vê a gerar: o
+    // modelo não sabe o que está nos outros dias e volta a sugeri-lo. À
+    // primeira geração real, o dia 3 encheu-se com os Museus do Vaticano e o
+    // Castel Sant'Angelo — ambos já feitos no dia 2.
+    //
+    // Os nomes custam uma ninharia em tokens comparados com os dias inteiros,
+    // e são tudo o que é preciso para não repetir.
+    const indicesFracos = new Set(fracos.map((f) => f.indice))
+    const jaVistos = (dados.days ?? [])
+      .filter((_, i) => !indicesFracos.has(i))
+      .flatMap((d) => (d.activities ?? []).map((a) => a.name))
+      .filter((n) => typeof n === 'string' && n.length > 0)
+
+    const resposta = await callOpenAI([
+      {
+        role: 'system',
+        content: `You are an expert travel planner for ${destination}, ${country}.
+These days have too much empty time. Add activities to fill them.
+
+Return {"days": [...]} with the SAME days, same day numbers and dates, each with its
+existing activities PLUS the new ones, all sorted by time.
+
+Rules:
+- Every day runs ${dayStart}–${dayEnd}. Fill at least ${Math.round(COBERTURA_MINIMA * 100)}% of it.
+- Keep every existing activity exactly as it is. Only ADD.
+- Each activity needs durationMin (integer minutes, realistic).
+- NEVER OVERLAP: an activity must end (time + durationMin) before the next one starts. Check every pair.
+- NO FILLER: every activity you add must last at least 30 minutes and be worth doing on its own. Do not pad with 20-minute stops.
+- STAY IN THE AREA: what you add must be walkable from the activities immediately before and after it. Do not cross the city to fill a gap — extend what is already there.
+- The last activity must be OVER by ${dayEnd}.
+- NO EXTRA MEALS: ${mealsIncluded.length ? `${mealsIncluded.join(' and ')} already ${mealsIncluded.length > 1 ? 'are' : 'is'} in the day. Do not add a second one, nor a café, gelato or snack stop.` : 'the traveller handles meals; do not add any.'}
+- Transport modes allowed: ${transport.join(', ')}.
+- Style: ${travelStyle.join(', ')}.
+- currency is "${currency}".${
+  jaVistos.length > 0
+    ? `\n- ALREADY PLANNED on other days of this same trip — do NOT suggest any of these again:\n  ${jaVistos.join('; ')}`
+    : ''
+}${PT_RULE}`,
+      },
+      { role: 'user', content: `${pedidos}\n\nCurrent days:\n${JSON.stringify(paraCompletar)}` },
+    ], Math.min(6000, 1200 + fracos.length * 1600), { schema: ESQUEMA_DIAS })
+
+    const completos = repararDias(resposta?.days, currency)
+    if (completos.length === 0) return dados
+
+    // Encaixar de volta pelo número do dia. Por posição seria frágil: se o
+    // modelo devolvesse os dias por outra ordem, trocavam-se em silêncio.
+    const porNumero = new Map(completos.map((d) => [d.day, d]))
+    return {
+      ...dados,
+      days: dados.days.map((d) => {
+        const novo = porNumero.get(d.day)
+        if (!novo) return d
+
+        // ── Só aceita se ficou melhor em TUDO ────────────────────────────────
+        //
+        // A primeira versão só comparava a cobertura, e isso foi ingénuo: à
+        // primeira geração real o dia 3 subiu de 64% para 81% enchendo-se de
+        // paragens de vinte minutos, com um jantar às 15:15 sobreposto à visita
+        // seguinte e saltos entre Trastevere e o Monte Mário.
+        //
+        // A cobertura melhorou e o dia piorou. Optimizar o número que se mede
+        // é a forma mais fácil de estragar o que ele devia representar — por
+        // isso a segunda condição é que a lista de problemas não cresça.
+        const antes  = medirDia(d, dayStart, dayEnd)
+        const depois = medirDia(novo, dayStart, dayEnd)
+
+        if (depois.cobertura <= antes.cobertura) return d
+        if (depois.problemas.length > antes.problemas.length) {
+          console.warn(`[agenda] dia ${d.day} recusado: cobertura subiu para ` +
+            `${Math.round(depois.cobertura * 100)}% mas trouxe ${depois.problemas.length - antes.problemas.length} problemas novos`)
+          return d
+        }
+        return novo
+      }),
+    }
+  } catch (erro) {
+    console.warn('[agenda] não foi possível completar os dias:', erro.message)
+    return dados
+  }
 }
 
 /**

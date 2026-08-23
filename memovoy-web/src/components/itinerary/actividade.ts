@@ -9,6 +9,8 @@
 
 export interface Activity {
   time: string
+  /** Quantos minutos demora. Null nos roteiros gerados antes de o passarmos a pedir. */
+  durationMin?: number | null
   name: string
   description: string
   address: string | null
@@ -42,6 +44,23 @@ export const activityTypeLabel: Record<string, string> = {
   transport: 'Transporte',
   leisure:   'Lazer',
   hotel:     'Alojamento',
+}
+
+/**
+ * "1h30" a partir de 90.
+ *
+ * Mostrar a duração não é decoração: era a informação que faltava para se ver
+ * que um dia estava a meio. Uma lista de horas de início não diz que entre uma
+ * igreja de meia hora e o almoço três horas depois há duas horas e meia sem
+ * nada — e foi assim que um roteiro de sete dias em Roma saiu com metade do dia
+ * vazia sem ninguém reparar.
+ */
+export function duracaoLegivel(minutos: number | null | undefined): string | null {
+  if (typeof minutos !== 'number' || !Number.isFinite(minutos) || minutos <= 0) return null
+  const h = Math.floor(minutos / 60)
+  const m = Math.round(minutos % 60)
+  if (h === 0) return `${m}min`
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 }
 
 export const activityTypeClass: Record<string, string> = {

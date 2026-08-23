@@ -20,7 +20,7 @@ describe('reparar dias', () => {
     const dias = repararDias([{
       day: 1, theme: 'Centro',
       activities: [{
-        time: '10:00', name: 'Torre', description: 'Vista', type: 'visit',
+        time: '10:00', durationMin: 90, name: 'Torre', description: 'Vista', type: 'visit',
         currency: 'EUR', cost: 12, address: 'Belém', geoName: 'Tower', tips: 'Cedo',
       }],
     }])
@@ -28,8 +28,39 @@ describe('reparar dias', () => {
     assert.equal(dias.length, 1)
     assert.equal(dias[0].theme, 'Centro', 'campos que não conhecemos ficam')
     assert.deepEqual(dias[0].activities[0], {
-      time: '10:00', name: 'Torre', description: 'Vista', address: 'Belém',
+      time: '10:00', durationMin: 90, name: 'Torre', description: 'Vista', address: 'Belém',
       geoName: 'Tower', cost: 12, currency: 'EUR', type: 'visit', tips: 'Cedo',
+    })
+  })
+
+  describe('a duração, que é o que permite medir um dia', () => {
+    const comDuracao = (durationMin) => repararDias([{
+      day: 1,
+      activities: [{ time: '10:00', durationMin, name: 'Torre', type: 'visit' }],
+    }])[0].activities[0].durationMin
+
+    test('em falta fica null, e não um número inventado', () => {
+      // Inventar aqui era o pior dos mundos: a soma passava a incluir um valor
+      // que ninguém deu, e o dia parecia medido quando não estava.
+      assert.equal(comDuracao(undefined), null)
+      assert.equal(comDuracao(null), null)
+      assert.equal(comDuracao('noventa'), null)
+    })
+
+    test('zero e negativos não são durações', () => {
+      assert.equal(comDuracao(0), null)
+      assert.equal(comDuracao(-30), null)
+    })
+
+    test('um valor absurdo é recusado, porque denuncia a unidade errada', () => {
+      // 5400 são noventa minutos em segundos. Aceite, enchia o dia sozinho e a
+      // verificação de cobertura dava um dia perfeito a partir de uma visita.
+      assert.equal(comDuracao(5400), null)
+      assert.equal(comDuracao(720), 720, 'doze horas ainda é plausível')
+    })
+
+    test('decimais são arredondados em vez de descartados', () => {
+      assert.equal(comDuracao(89.6), 90)
     })
   })
 
