@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { chaveDeCache, distanciaKm, RAIO_PLAUSIVEL_KM } from '../../src/services/geocodificar.js'
+import { chaveDeCache, comContexto, distanciaKm, RAIO_PLAUSIVEL_KM } from '../../src/services/geocodificar.js'
 
 // A geocodificação vivia no browser, sem cache, a cada visita. Um roteiro de
 // três dias fazia 39 pedidos ao Nominatim por visitante — os mesmos 39 outra
@@ -62,5 +62,48 @@ describe('a distância que decide se um resultado é plausível', () => {
     const a = { lat: 40, lon: -8 }
     const b = { lat: 41, lon: -7 }
     assert.equal(distanciaKm(a, b).toFixed(6), distanciaKm(b, a).toFixed(6))
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A cidade duas vezes não é o dobro do contexto
+//
+// Acrescentávamos sempre a cidade e o país ao termo de procura. As moradas que
+// o modelo escreve já os trazem, e o resultado era este:
+//
+//     "Via del Casaletto, 45, 00151 Roma RM, Itália, Roma, Itália"
+//
+// O Nominatim não devolve nada para isso. Sem a duplicação devolve a Trattoria
+// da Cesare, com horário de abertura. Medido numa geração real: só 17% das
+// actividades ficavam com horário conhecido, e os restaurantes eram quase todos
+// os que faltavam.
+describe('o contexto que se acrescenta à procura', () => {
+  test('um nome simples leva cidade e país', () => {
+    assert.equal(
+      comContexto('Colosseum', 'Roma', 'Itália'),
+      'Colosseum, Roma, Itália',
+    )
+  })
+
+  test('uma morada que já os tem não os leva outra vez', () => {
+    // É este o caso real que estava a falhar.
+    assert.equal(
+      comContexto('Via del Casaletto, 45, 00151 Roma RM, Itália', 'Roma', 'Itália'),
+      'Via del Casaletto, 45, 00151 Roma RM, Itália',
+    )
+  })
+
+  test('leva só o que falta', () => {
+    assert.equal(comContexto('Piazza Navona, Roma', 'Roma', 'Itália'), 'Piazza Navona, Roma, Itália')
+    assert.equal(comContexto('Qualquer coisa, Itália', 'Roma', 'Itália'), 'Qualquer coisa, Itália, Roma')
+  })
+
+  test('não se deixa enganar por maiúsculas', () => {
+    assert.equal(comContexto('Via X, 00151 ROMA RM', 'Roma', 'Itália'), 'Via X, 00151 ROMA RM, Itália')
+  })
+
+  test('sem destino nem país, fica o termo', () => {
+    assert.equal(comContexto('Colosseum', null, null), 'Colosseum')
+    assert.equal(comContexto('Colosseum', undefined, undefined), 'Colosseum')
   })
 })

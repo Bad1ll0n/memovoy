@@ -127,6 +127,52 @@ async function perguntarAoNominatim(consulta) {
 }
 
 /**
+ * Junta a cidade e o país ao termo — mas só quando ainda lá não estão.
+ *
+ * Acrescentávamos sempre, e as moradas que o modelo escreve já trazem tudo:
+ *
+ *     "Via del Casaletto, 45, 00151 Roma RM, Itália"  +  ", Roma, Itália"
+ *
+ * O Nominatim não devolve nada para isso. Sem a duplicação devolve a Trattoria
+ * da Cesare, com horário de abertura e tudo. Era o que estava a deitar fora a
+ * maior parte dos restaurantes: numa medição real, só 17% das actividades
+ * ficavam com horário conhecido.
+ */
+export function comContexto(termo, destino, pais) {
+  const jaTem = (parte) => {
+    if (!parte) return true
+    return termo.toLowerCase().includes(String(parte).toLowerCase())
+  }
+  return [termo, jaTem(destino) ? null : destino, jaTem(pais) ? null : pais]
+    .filter(Boolean)
+    .join(', ')
+}
+
+/**
+ * Procura um termo, com contexto e sem ele.
+ *
+ * A segunda tentativa existe por causa dos enclaves: os Museus Vaticanos ficam
+ * na Cidade do Vaticano, e procurá-los "em Roma, Itália" não devolve nada.
+ * `Musei Vaticani` sozinho devolve. É o género de sítio que um roteiro de Roma
+ * inclui sempre e que a regra geral exclui.
+ *
+ * Procurar sem cidade traz de volta o risco que a cidade servia para evitar —
+ * "Old Town" sozinho pode cair em qualquer continente. Não é problema porque
+ * quem chama compara o resultado com o centro do destino e recusa o que está a
+ * mais de 150 km. Foi essa verificação que apanhou os marcadores sobre Cuba num
+ * roteiro de Edimburgo, e é ela que torna esta segunda tentativa segura.
+ */
+async function procurarComContexto(termo, destino, pais) {
+  const comCidade = comContexto(termo, destino, pais)
+  const r = await perguntarAoNominatim(comCidade)
+  if (r) return r
+
+  // Só vale a pena repetir se a primeira tentativa acrescentou alguma coisa.
+  if (comCidade === termo) return null
+  return perguntarAoNominatim(termo)
+}
+
+/**
  * Resolve um lugar, com cache e validação.
  *
  * @param {object} act        actividade com geoName, address e name
@@ -154,8 +200,7 @@ export async function resolverLugar(act, destino, pais, centro) {
       return { lat: emCache.lat, lon: emCache.lon, horario: emCache.horario ?? null }
     }
 
-    const consulta = [termo, destino, pais].filter(Boolean).join(', ')
-    const r = await perguntarAoNominatim(consulta)
+    const r = await procurarComContexto(termo, destino, pais)
 
     if (!r) {
       await gravarCache(chave, null, null)
