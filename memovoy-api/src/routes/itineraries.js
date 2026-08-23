@@ -307,8 +307,12 @@ export async function itinerariesRoutes(app) {
       // do que parece.
       emSegundoPlano(
         preencherCoordenadas(data, destinationMeta.normalizedName, destinationMeta.country)
-          .then(({ data: comCoords, resolvidas, semLocalizacao }) => {
+          .then(({ data: comCoords, resolvidas, semLocalizacao, comHorario, fechados }) => {
             console.info('[geo] roteiro', rows[0].id, '—', resolvidas, 'resolvidas,', semLocalizacao, 'sem localização')
+            // Os horários vêm do OpenStreetMap na mesma chamada. `fechados` são
+            // as actividades marcadas para uma hora a que o sítio está fechado —
+            // vão com um aviso e é quem revê que decide o que fazer.
+            console.info('[geo] horários —', comHorario, 'verificados,', fechados, 'com a porta fechada à hora marcada')
             return query('UPDATE itineraries SET data = $1 WHERE id = $2', [JSON.stringify(comCoords), rows[0].id])
           }),
         (erro) => console.warn('[geo] falhou para o roteiro', rows[0].id + ':', erro.message),

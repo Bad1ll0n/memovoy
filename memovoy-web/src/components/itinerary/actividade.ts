@@ -23,6 +23,10 @@ export interface Activity {
    *  Opcionais porque os roteiros criados antes disto não as têm. */
   lat?: number | null
   lon?: number | null
+  /** Preenchido pelo servidor quando o sítio está fechado à hora marcada. */
+  avisoDeHorario?: string | null
+  /** A etiqueta opening_hours do OpenStreetMap, em bruto. */
+  horarioConhecido?: string | null
 }
 
 export interface Day {

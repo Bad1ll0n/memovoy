@@ -29,6 +29,7 @@
  */
 
 import { query } from '../db/pool.js'
+import { avaliarHorario, ABERTO, FECHADO } from './horarios.js'
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search'
 
@@ -75,7 +76,7 @@ export function chaveDeCache(nome, destino, pais) {
 
 async function lerCache(chave) {
   const { rows } = await query(
-    'SELECT lat, lon, estado FROM lugares WHERE chave = $1',
+    'SELECT lat, lon, estado, horario FROM lugares WHERE chave = $1',
     [chave],
   )
   return rows[0] ?? null
@@ -83,11 +84,12 @@ async function lerCache(chave) {
 
 async function gravarCache(chave, resultado, nomeObtido) {
   await query(
-    `INSERT INTO lugares (chave, lat, lon, nome_obtido, estado)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO lugares (chave, lat, lon, nome_obtido, estado, horario)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (chave) DO UPDATE
-       SET lat = $2, lon = $3, nome_obtido = $4, estado = $5, criado_em = NOW()`,
-    [chave, resultado?.lat ?? null, resultado?.lon ?? null, nomeObtido ?? null, resultado ? 'ok' : 'sem_resposta'],
+       SET lat = $2, lon = $3, nome_obtido = $4, estado = $5, horario = $6, criado_em = NOW()`,
+    [chave, resultado?.lat ?? null, resultado?.lon ?? null, nomeObtido ?? null,
+     resultado ? 'ok' : 'sem_resposta', resultado?.horario ?? null],
   )
 }
 
@@ -95,7 +97,10 @@ async function gravarCache(chave, resultado, nomeObtido) {
 async function perguntarAoNominatim(consulta) {
   await respeitarRitmo()
   try {
-    const url = `${NOMINATIM}?format=json&limit=1&q=${encodeURIComponent(consulta)}`
+    // extratags=1 traz o `opening_hours` do OpenStreetMap no MESMO pedido.
+    // Não custa uma chamada a mais e é a única fonte de horários que temos que
+    // não seja perguntar ao modelo — que não os sabe de forma fiável.
+    const url = `${NOMINATIM}?format=json&limit=1&extratags=1&q=${encodeURIComponent(consulta)}`
     const res = await fetch(url, {
       headers: {
         // Do lado do servidor este cabeçalho passa mesmo. A política do
@@ -112,6 +117,9 @@ async function perguntarAoNominatim(consulta) {
       lat: parseFloat(dados[0].lat),
       lon: parseFloat(dados[0].lon),
       nome: dados[0].display_name ?? null,
+      // Vem em bruto, tal como está no OSM. Interpretar aqui era perder o que
+      // ainda não sabemos ler — ver services/horarios.js.
+      horario: dados[0].extratags?.opening_hours ?? null,
     }
   } catch {
     return null
@@ -143,7 +151,7 @@ export async function resolverLugar(act, destino, pais, centro) {
       // Uma falha em cache é uma resposta: não vale a pena voltar a perguntar
       // por um nome que já se sabe que não existe.
       if (emCache.estado !== 'ok') continue
-      return { lat: emCache.lat, lon: emCache.lon }
+      return { lat: emCache.lat, lon: emCache.lon, horario: emCache.horario ?? null }
     }
 
     const consulta = [termo, destino, pais].filter(Boolean).join(', ')
@@ -167,7 +175,7 @@ export async function resolverLugar(act, destino, pais, centro) {
     }
 
     await gravarCache(chave, r, r.nome)
-    return { lat: r.lat, lon: r.lon }
+    return { lat: r.lat, lon: r.lon, horario: r.horario ?? null }
   }
 
   return null
@@ -193,6 +201,8 @@ export async function preencherCoordenadas(data, destino, pais) {
   const centro = await resolverDestino(destino, pais)
   let resolvidas = 0
   let semLocalizacao = 0
+  let comHorario = 0
+  let fechados = 0
 
   for (const dia of data?.days ?? []) {
     for (const act of dia?.activities ?? []) {
@@ -204,11 +214,32 @@ export async function preencherCoordenadas(data, destino, pais) {
         act.lat = p.lat
         act.lon = p.lon
         resolvidas++
+
+        // ── A porta está aberta a esta hora? ────────────────────────────────
+        //
+        // Numa geração real apareceram os Museus do Vaticano às 18:05, e fecham
+        // às 18:00. Esta verificação só é possível aqui: o horário chega junto
+        // com as coordenadas, e é a DATA do dia que decide — a Galleria
+        // Borghese fecha à segunda, e o Coliseu fecha duas horas mais cedo no
+        // Inverno do que em Agosto.
+        //
+        // O aviso fica na actividade e não a apaga. Quem revê é que decide: a
+        // etiqueta do OSM pode estar desactualizada, e deitar fora uma visita
+        // por causa disso era pior do que a assinalar.
+        const veredicto = avaliarHorario(p.horario, dia.date, act.time, act.durationMin ?? 0)
+        if (veredicto.estado === FECHADO) {
+          act.avisoDeHorario  = veredicto.motivo
+          act.horarioConhecido = veredicto.horario
+          fechados++
+        } else if (veredicto.estado === ABERTO) {
+          act.horarioConhecido = veredicto.horario
+          comHorario++
+        }
       } else {
         semLocalizacao++
       }
     }
   }
 
-  return { data, resolvidas, semLocalizacao }
+  return { data, resolvidas, semLocalizacao, comHorario, fechados }
 }

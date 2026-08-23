@@ -148,6 +148,27 @@ export function CartaoDeActividade({
           </a>
         )}
 
+        {/* ── Fechado à hora marcada ────────────────────────────────────────
+            Vem do OpenStreetMap, não do modelo. Uma geração real marcou os
+            Museus do Vaticano para as 18:05, quando fecham às 18:00 — e a
+            Galleria Borghese fecha à segunda-feira, coisa que ninguém confirma
+            antes de lá chegar. É um aviso e não uma remoção: a etiqueta pode
+            estar desactualizada, e quem revê é que decide. */}
+        {act.avisoDeHorario && (
+          <div
+            className="mt-2 flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-xs"
+            style={{ background: 'rgba(239,68,68,0.10)', color: 'var(--danger, #ef4444)' }}
+          >
+            <AlertCircle className="w-3.5 h-3.5 mt-px shrink-0" />
+            <span>
+              <strong>{act.avisoDeHorario}</strong>
+              {act.horarioConhecido && (
+                <span style={{ opacity: 0.75 }}> · horário: {act.horarioConhecido}</span>
+              )}
+            </span>
+          </div>
+        )}
+
         {act.tips && (
           <div className="mt-2 alert-info py-2 text-xs">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
