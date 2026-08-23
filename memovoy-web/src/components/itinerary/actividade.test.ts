@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { distanciaEntre, distanciaLegivel, duracaoLegivel, type Activity } from './actividade'
+import { activityTypeColor, distanciaEntre, distanciaLegivel, duracaoLegivel, type Activity } from './actividade'
 
 // Um mapa com pinos mostra que os sítios existem; não mostra se dois estão a
 // duzentos metros ou a três quilómetros um do outro. Num roteiro a pé é essa a
@@ -94,5 +94,51 @@ describe('a duração de uma actividade', () => {
     expect(duracaoLegivel(null)).toBe(null)
     expect(duracaoLegivel(undefined)).toBe(null)
     expect(duracaoLegivel(0)).toBe(null)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Uma cor por tipo, e uma só tabela
+//
+// Havia duas. O mapa tinha a sua própria lista, e nela o `food` era VERDE e o
+// `leisure` LARANJA — exactamente ao contrário das etiquetas. Um restaurante
+// aparecia com etiqueta laranja na lista e pino verde no mapa, a poucos
+// centímetros no mesmo ecrã.
+//
+// Duas tabelas do mesmo mapeamento afastam-se sempre. Esta afastou-se de forma
+// a trocar dois valores um pelo outro, que é o pior caso: nada parece partido,
+// só se lê ao contrário.
+describe('as cores dos tipos de actividade', () => {
+  // Os valores de globals.css (.act-*), copiados à mão. Se a folha de estilos
+  // mudar sem que isto mude, este teste é que dá o alarme.
+  const NO_CSS: Record<string, string> = {
+    visit:     '#60a5fa',
+    food:      '#fb923c',
+    transport: '#a1a1aa',
+    leisure:   '#4ade80',
+    hotel:     '#c084fc',
+  }
+
+  test('a tabela do código concorda com a folha de estilos', () => {
+    expect(activityTypeColor).toEqual(NO_CSS)
+  })
+
+  test('o restaurante é laranja e o lazer é verde, não ao contrário', () => {
+    // É o par que estava trocado, e é o que o utilizador viu.
+    expect(activityTypeColor.food).toBe('#fb923c')
+    expect(activityTypeColor.leisure).toBe('#4ade80')
+    expect(activityTypeColor.food).not.toBe(activityTypeColor.leisure)
+  })
+
+  test('todos os tipos que existem têm cor', () => {
+    // Um tipo novo no enum sem cor aqui sai cinzento no mapa e ninguém repara.
+    for (const tipo of ['visit', 'food', 'transport', 'leisure', 'hotel']) {
+      expect(activityTypeColor[tipo], tipo).toMatch(/^#[0-9a-f]{6}$/i)
+    }
+  })
+
+  test('não há duas cores iguais', () => {
+    const cores = Object.values(activityTypeColor)
+    expect(new Set(cores).size).toBe(cores.length)
   })
 })

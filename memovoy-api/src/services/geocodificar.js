@@ -358,6 +358,73 @@ export async function resolverDestino(destino, pais) {
  * do que ficou por resolver — que a interface precisa para dizer "três
  * actividades sem localização" em vez de as deixar desaparecer em silêncio.
  */
+/**
+ * Quão longe do resto do dia é longe de mais.
+ *
+ * O raio de 150 km serve para excluir outro continente e não serve para mais
+ * nada. Um jantar na Piazza di Santa Maria in Trastevere — morada certa —
+ * ficou geocodificado a 8,6 km para leste do centro de Roma, e passou: 8,6 é
+ * muito menos que 150.
+ *
+ * O que denuncia um pino errado não é a distância ao destino, é a distância ao
+ * RESTO DO DIA. Um dia inteiro no Vaticano com uma paragem a dez quilómetros
+ * não é um dia com uma paragem longe; é um pino no sítio errado.
+ *
+ * 6 km é generoso para um dia a pé — Roma do Vaticano ao Coliseu são 4 — e
+ * continua a apanhar o caso de 8,6. Um dia que seja mesmo espalhado tem a
+ * mediana espalhada também, e por isso não se auto-acusa.
+ */
+export const DESVIO_MAXIMO_NO_DIA_KM = 6
+
+/** A mediana é melhor que a média: um outlier não puxa por ela. */
+function centroDoDia(actividades) {
+  const pontos = actividades.filter((a) => typeof a.lat === 'number' && typeof a.lon === 'number')
+  if (pontos.length < 3) return null   // com dois pontos não há "resto do dia"
+
+  const mediana = (valores) => {
+    const ordenados = [...valores].sort((x, y) => x - y)
+    const meio = Math.floor(ordenados.length / 2)
+    return ordenados.length % 2 ? ordenados[meio] : (ordenados[meio - 1] + ordenados[meio]) / 2
+  }
+  return { lat: mediana(pontos.map((p) => p.lat)), lon: mediana(pontos.map((p) => p.lon)) }
+}
+
+/**
+ * Tira as coordenadas às actividades que caíram longe do resto do dia.
+ *
+ * Tira e não corrige: não sabemos onde é o sítio certo, só sabemos que não é
+ * ali. Sem coordenadas a actividade aparece como "sem localização no mapa", que
+ * é verdade — e um mapa com menos pinos é incompleto, enquanto um mapa com
+ * pinos errados é falso.
+ *
+ * @returns {number} quantas foram descartadas
+ */
+export function descartarPinosForaDoDia(dias, limiteKm = DESVIO_MAXIMO_NO_DIA_KM) {
+  let descartados = 0
+
+  for (const dia of dias ?? []) {
+    const acts = (dia?.activities ?? []).filter((a) => a.type !== 'transport')
+    const centro = centroDoDia(acts)
+    if (!centro) continue
+
+    for (const a of acts) {
+      if (typeof a.lat !== 'number' || typeof a.lon !== 'number') continue
+      const d = distanciaKm(centro, a)
+      if (d <= limiteKm) continue
+
+      console.warn(`[geo] "${a.name}" ficou a ${d.toFixed(1)} km do resto do dia ${dia.day} — pino descartado`)
+      a.lat = null
+      a.lon = null
+      // O horário vinha do mesmo resultado. Se o sítio está errado, o horário
+      // também está — e um horário errado é pior do que nenhum.
+      delete a.horarioConhecido
+      delete a.avisoDeHorario
+      descartados++
+    }
+  }
+  return descartados
+}
+
 export async function preencherCoordenadas(data, destino, pais) {
   const centro = await resolverDestino(destino, pais)
   let resolvidas = 0
@@ -402,5 +469,14 @@ export async function preencherCoordenadas(data, destino, pais) {
     }
   }
 
-  return { data, resolvidas, semLocalizacao, comHorario, fechados }
+  // Última passagem: os pinos que caíram longe do resto do dia. Só é possível
+  // aqui, depois de todas as coordenadas estarem preenchidas — um ponto isolado
+  // não se distingue de um ponto certo sem ter os outros com que o comparar.
+  const forasDeMao = descartarPinosForaDoDia(data?.days)
+  if (forasDeMao > 0) {
+    resolvidas -= forasDeMao
+    semLocalizacao += forasDeMao
+  }
+
+  return { data, resolvidas, semLocalizacao, comHorario, fechados, forasDeMao }
 }

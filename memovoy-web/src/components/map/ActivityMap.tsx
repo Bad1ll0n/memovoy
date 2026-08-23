@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { activityTypeColor, COR_DESCONHECIDA } from '@/components/itinerary/actividade'
 
 export interface ActivityPin {
   name: string
@@ -43,13 +44,12 @@ const SOBRE_O_MAPA = {
   acentoForte: '#155A89',   // contorno, um tom abaixo
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  visit:     '#60a5fa',
-  food:      '#4ade80',
-  transport: '#c084fc',
-  leisure:   '#fca311',
-  hotel:     '#f472b6',
-}
+// As cores vinham daqui, numa tabela própria — e nela o `food` era VERDE e o
+// `leisure` LARANJA, ao contrário das etiquetas da lista. Um restaurante tinha
+// etiqueta laranja e pino verde no mesmo ecrã.
+//
+// Passam a vir de components/itinerary/actividade.ts, que é a mesma fonte que
+// as etiquetas usam.
 
 // A geocodificação vivia aqui, no browser. Foi para o servidor —
 // services/geocodificar.js — onde acontece uma vez por lugar em vez de uma vez
@@ -153,7 +153,7 @@ export function ActivityMap({ activities }: Props) {
 
       if (cluster.length === 1) {
         const m     = cluster[0]
-        const color = TYPE_COLORS[m.type] ?? '#94a3b8'
+        const color = activityTypeColor[m.type] ?? COR_DESCONHECIDA
         const icon  = L.divIcon({
           className: '',
           html: `<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;box-shadow:0 2px 6px rgba(0,0,0,0.45);line-height:1">${m.index + 1}</div>`,

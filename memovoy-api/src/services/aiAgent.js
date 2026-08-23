@@ -604,6 +604,8 @@ Rules:
   * The required meals below are NOT optional and NOT something to drop to make room. Place them first, at sensible hours, then build the day around them.
 - NO REPEATS ACROSS DAYS (STRICT): each place appears ONCE in the whole trip. Before adding a place to a day, check it is not already on another day. This became visible once days had to be filled: with more slots to fill, the Pantheon and the Trevi Fountain showed up on two different days of the same trip.
 - GEOGRAPHIC CLUSTERING (STRICT): Activities within each day must be geographically adjacent — walkable or in the same district. Group by neighbourhood: start all activities of a day in one zone, end in another, never jump between distant areas within the same day. A day spanning 2 zones max is ideal.
+  * MEALS FOLLOW THE DAY, not the other way round. Pick the restaurant from the neighbourhood the traveller is already in at that hour. A day in the Vatican that ends with dinner across the river is a day with a 4 km walk nobody asked for — and that happened.
+  * Rule of thumb: no two consecutive stops more than 2 km apart, and no stop more than 3 km from the rest of that day. If a place you want is further, it belongs to a different day.
 - Budget is roughly ${budget} ${currency} total
 - Style: ${travelStyle.join(', ')}
 - Group: ${groupType}

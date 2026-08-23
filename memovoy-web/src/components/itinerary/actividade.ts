@@ -105,6 +105,32 @@ export function distanciaLegivel(metros: number | null): string | null {
   return minutos >= 3 ? `${texto} · ≈${minutos} min a pé` : texto
 }
 
+/**
+ * A cor de cada tipo de actividade. Uma tabela só, para o mapa e as etiquetas.
+ *
+ * Havia duas, e não concordavam. O mapa tinha a sua própria lista, e nela o
+ * `food` era VERDE e o `leisure` LARANJA — exactamente ao contrário das
+ * etiquetas. Um restaurante aparecia com a etiqueta laranja na lista e um pino
+ * verde no mapa, a poucos centímetros de distância no mesmo ecrã.
+ *
+ * Duas tabelas do mesmo mapeamento afastam-se sempre; esta afastou-se de forma
+ * a trocar dois valores um pelo outro, que é o pior caso: nada parece partido,
+ * só se lê ao contrário.
+ *
+ * Os valores são os mesmos de globals.css (.act-*). Se um mudar, muda lá também
+ * — e o teste em actividade.test.ts existe para que a troca não volte.
+ */
+export const activityTypeColor: Record<string, string> = {
+  visit:     '#60a5fa',   // azul
+  food:      '#fb923c',   // laranja
+  transport: '#a1a1aa',   // cinza
+  leisure:   '#4ade80',   // verde
+  hotel:     '#c084fc',   // roxo
+}
+
+/** Para um tipo que não conhecemos — cinza neutro, sem fingir que sabe. */
+export const COR_DESCONHECIDA = '#94a3b8'
+
 export const activityTypeClass: Record<string, string> = {
   visit:     'act-visit',
   food:      'act-food',

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { chaveDeCache, comContexto, distanciaKm, RAIO_PLAUSIVEL_KM } from '../../src/services/geocodificar.js'
+import { chaveDeCache, comContexto, descartarPinosForaDoDia, distanciaKm, RAIO_PLAUSIVEL_KM } from '../../src/services/geocodificar.js'
 
 // A geocodificação vivia no browser, sem cache, a cada visita. Um roteiro de
 // três dias fazia 39 pedidos ao Nominatim por visitante — os mesmos 39 outra
@@ -105,5 +105,114 @@ describe('o contexto que se acrescenta à procura', () => {
   test('sem destino nem país, fica o termo', () => {
     assert.equal(comContexto('Colosseum', null, null), 'Colosseum')
     assert.equal(comContexto('Colosseum', undefined, undefined), 'Colosseum')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Longe do resto do dia
+//
+// O raio de 150 km serve para excluir outro continente e mais nada. Um jantar
+// na Piazza di Santa Maria in Trastevere — morada certa — ficou geocodificado
+// a 8,6 km para leste do centro de Roma, e passou: 8,6 é muito menos que 150.
+//
+// O que denuncia um pino errado não é a distância ao destino, é a distância ao
+// RESTO DO DIA. Um dia inteiro no Vaticano com uma paragem a dez quilómetros
+// não é um dia com uma paragem longe; é um pino no sítio errado.
+describe('pinos que caem fora do dia', () => {
+  // Coordenadas verdadeiras da zona do Vaticano.
+  const diaNoVaticano = () => ({
+    day: 1,
+    activities: [
+      { name: 'Museus do Vaticano',  type: 'visit', lat: 41.9065, lon: 12.4536 },
+      { name: 'Basílica de São Pedro', type: 'visit', lat: 41.9022, lon: 12.4539 },
+      { name: 'Castel Sant\'Angelo', type: 'visit', lat: 41.9031, lon: 12.4663 },
+      // O caso real: morada em Trastevere, pino a leste do centro.
+      { name: 'Jantar', type: 'food', lat: 41.8555, lon: 12.5741, horarioConhecido: 'Mo-Su 12:00-23:00' },
+    ],
+  })
+
+  test('o pino errado perde as coordenadas', () => {
+    const dia = diaNoVaticano()
+    const descartados = descartarPinosForaDoDia([dia])
+
+    assert.equal(descartados, 1)
+    assert.equal(dia.activities[3].lat, null)
+    assert.equal(dia.activities[3].lon, null)
+  })
+
+  test('e perde o horário com elas', () => {
+    // O horário veio do mesmo resultado do Nominatim. Se o sítio está errado, o
+    // horário é de outro sítio — e um horário errado é pior do que nenhum.
+    const dia = diaNoVaticano()
+    descartarPinosForaDoDia([dia])
+
+    assert.equal(dia.activities[3].horarioConhecido, undefined)
+  })
+
+  test('os que estão no sítio ficam', () => {
+    const dia = diaNoVaticano()
+    descartarPinosForaDoDia([dia])
+
+    for (const a of dia.activities.slice(0, 3)) {
+      assert.equal(typeof a.lat, 'number', a.name)
+    }
+  })
+
+  test('um dia genuinamente espalhado não se auto-acusa', () => {
+    // Roma do Vaticano ao Coliseu são uns 4 km, e é um dia normal. Se a regra
+    // fosse apertada de mais, dias legítimos perdiam metade dos pinos.
+    const espalhado = {
+      day: 1,
+      activities: [
+        { name: 'Vaticano', type: 'visit', lat: 41.9065, lon: 12.4536 },
+        { name: 'Navona',   type: 'visit', lat: 41.8992, lon: 12.4731 },
+        { name: 'Coliseu',  type: 'visit', lat: 41.8902, lon: 12.4922 },
+        { name: 'Trastevere', type: 'leisure', lat: 41.8896, lon: 12.4695 },
+      ],
+    }
+    assert.equal(descartarPinosForaDoDia([espalhado]), 0)
+  })
+
+  test('com menos de três pontos não há "resto do dia" para comparar', () => {
+    // Dois pontos afastados: qual deles é o errado? Não há como saber, e
+    // adivinhar deitava fora o certo metade das vezes.
+    const doisPontos = {
+      day: 1,
+      activities: [
+        { name: 'A', type: 'visit', lat: 41.9065, lon: 12.4536 },
+        { name: 'B', type: 'food',  lat: 41.8555, lon: 12.5741 },
+      ],
+    }
+    assert.equal(descartarPinosForaDoDia([doisPontos]), 0)
+    assert.equal(typeof doisPontos.activities[1].lat, 'number')
+  })
+
+  test('o transporte não entra na conta', () => {
+    // Uma caminhada não tem lugar próprio; contá-la puxava a mediana para um
+    // ponto que não é paragem nenhuma.
+    const dia = {
+      day: 1,
+      activities: [
+        { name: 'A', type: 'visit', lat: 41.9065, lon: 12.4536 },
+        { name: 'Caminhada', type: 'transport', lat: 41.7000, lon: 12.9000 },
+        { name: 'B', type: 'visit', lat: 41.9022, lon: 12.4539 },
+        { name: 'C', type: 'visit', lat: 41.9031, lon: 12.4663 },
+      ],
+    }
+    descartarPinosForaDoDia([dia])
+    assert.equal(dia.activities[1].lat, 41.7, 'o transporte fica como está')
+  })
+
+  test('actividades sem coordenadas não estorvam', () => {
+    const dia = {
+      day: 1,
+      activities: [
+        { name: 'A', type: 'visit', lat: 41.9065, lon: 12.4536 },
+        { name: 'sem', type: 'visit', lat: null, lon: null },
+        { name: 'B', type: 'visit', lat: 41.9022, lon: 12.4539 },
+        { name: 'C', type: 'visit', lat: 41.9031, lon: 12.4663 },
+      ],
+    }
+    assert.equal(descartarPinosForaDoDia([dia]), 0)
   })
 })
