@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { activityTypeColor, distanciaEntre, distanciaLegivel, duracaoLegivel, numerarParagens, type Activity } from './actividade'
+import { activityTypeColor, comoChamarAoSite, pesquisaDeBilhetes, distanciaEntre, distanciaLegivel, duracaoLegivel, numerarParagens, type Activity } from './actividade'
 
 // Um mapa com pinos mostra que os sítios existem; não mostra se dois estão a
 // duzentos metros ou a três quilómetros um do outro. Num roteiro a pé é essa a
@@ -187,5 +187,71 @@ describe('a numeração das paragens', () => {
 
   test('lista vazia não rebenta', () => {
     expect(numerarParagens([])).toEqual([])
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O que se chama ao link do site
+//
+// A primeira versão chamava "Bilhetes no site oficial" a tudo o que tivesse
+// custo — restaurantes incluídos. Não se compram bilhetes para um restaurante,
+// e uma etiqueta errada faz duvidar de todas as outras.
+describe('o nome do link do site', () => {
+  const act = (type: Activity['type'], cost: number | null): Activity => ({
+    time: '10:00', name: 'x', description: '', address: null,
+    cost, currency: 'EUR', type, tips: null,
+  })
+
+  test('num museu pago, bilhetes', () => {
+    expect(comoChamarAoSite(act('visit', 18))).toMatch(/Bilhetes/)
+  })
+
+  test('num restaurante, reserva — nunca bilhetes', () => {
+    const r = comoChamarAoSite(act('food', 35))
+    expect(r).toMatch(/Reservar/)
+    expect(r).not.toMatch(/Bilhete/)
+  })
+
+  test('num sítio gratuito, é só o site', () => {
+    const r = comoChamarAoSite(act('visit', 0))
+    expect(r).not.toMatch(/Bilhete/)
+    expect(r).toMatch(/Site oficial/)
+  })
+
+  test('sem custo preenchido não promete bilhetes', () => {
+    // O modelo escreve `cost: null` com frequência. Prometer bilhete a partir
+    // de um campo vazio é inventar.
+    expect(comoChamarAoSite(act('visit', null))).not.toMatch(/Bilhete/)
+  })
+})
+
+describe('a pesquisa, para quando não há site conhecido', () => {
+  const act = (type: Activity['type'], cost: number | null, name = 'Castel SantAngelo'): Activity => ({
+    time: '10:00', name, description: '', address: null,
+    cost, currency: 'EUR', type, tips: null,
+  })
+
+  test('num sítio pago sem site, há por onde procurar', () => {
+    // O Castel Sant'Angelo não tem etiqueta website no OSM — verificado. Sem
+    // isto, quem quisesse o bilhete não tinha nada para clicar.
+    const url = pesquisaDeBilhetes(act('visit', 15))
+    expect(url).toContain('Castel')
+    expect(url).toContain('bilhetes')
+  })
+
+  test('mas não numa praça gratuita', () => {
+    // Seria ruído: não há bilhete que procurar.
+    expect(pesquisaDeBilhetes(act('leisure', 0))).toBe(null)
+    expect(pesquisaDeBilhetes(act('visit', null))).toBe(null)
+  })
+
+  test('nem num restaurante', () => {
+    expect(pesquisaDeBilhetes(act('food', 35))).toBe(null)
+  })
+
+  test('usa o geoName quando existe, que é o nome que se procura', () => {
+    const a = act('visit', 15)
+    a.geoName = 'Castel SantAngelo Rome'
+    expect(pesquisaDeBilhetes(a)).toContain('Rome')
   })
 })

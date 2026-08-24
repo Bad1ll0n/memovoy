@@ -14,8 +14,8 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, CheckCircle2, GripVertical, MapPin, Pencil, Ticket, Trash2, Wand2 } from 'lucide-react'
-import { activityTypeClass, activityTypeColor, activityTypeLabel, duracaoLegivel, COR_DESCONHECIDA, type Activity } from './actividade'
+import { AlertCircle, CheckCircle2, GripVertical, MapPin, Pencil, Search, Ticket, Trash2, Wand2 } from 'lucide-react'
+import { activityTypeClass, activityTypeColor, activityTypeLabel, comoChamarAoSite, duracaoLegivel, pesquisaDeBilhetes, COR_DESCONHECIDA, type Activity } from './actividade'
 
 export function CartaoDeActividade({
   act,
@@ -183,11 +183,13 @@ export function CartaoDeActividade({
           </div>
         )}
 
-        {/* ── Onde comprar bilhete ────────────────────────────────────────
-            O site OFICIAL, da etiqueta do OpenStreetMap. Não promete o melhor
-            preço — isso não temos como saber — mas é a bilheteira sem margem de
-            revendedor, que é a coisa verdadeira mais próxima. Só aparece nas
-            actividades que custam dinheiro. */}
+        {/* ── O site oficial ──────────────────────────────────────────────
+            Da etiqueta do OpenStreetMap. Não promete o melhor preço — isso não
+            temos como saber — mas é a bilheteira sem margem de revendedor, que
+            é a coisa verdadeira mais próxima disso.
+
+            O nome do link muda com o tipo: não se compram bilhetes para um
+            restaurante, e uma etiqueta errada faz duvidar de todas as outras. */}
         {act.siteOficial && (
           <a
             href={act.siteOficial}
@@ -197,7 +199,23 @@ export function CartaoDeActividade({
             style={{ color: 'var(--accent)' }}
           >
             <Ticket className="w-3.5 h-3.5 shrink-0" />
-            Bilhetes no site oficial
+            {comoChamarAoSite(act)}
+          </a>
+        )}
+
+        {/* Sem site conhecido, mas paga-se para entrar: fica uma pesquisa, e
+            diz que é uma pesquisa. Um link que promete a bilheteira oficial e
+            abre uma lista de resultados é pior do que um que diz o que é. */}
+        {!act.siteOficial && pesquisaDeBilhetes(act) && (
+          <a
+            href={pesquisaDeBilhetes(act) as string}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex items-center gap-1.5 text-xs hover:underline transition-opacity hover:opacity-70"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <Search className="w-3.5 h-3.5 shrink-0" />
+            Procurar bilhetes
           </a>
         )}
 

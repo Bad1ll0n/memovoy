@@ -70,6 +70,45 @@ export function duracaoLegivel(minutos: number | null | undefined): string | nul
 }
 
 /**
+ * Como chamar ao link do site oficial.
+ *
+ * A primeira versão chamava-lhe "Bilhetes no site oficial" em tudo o que tivesse
+ * custo — restaurantes incluídos. Não se compram bilhetes para um restaurante,
+ * e uma etiqueta errada faz duvidar de todas as outras.
+ *
+ * O que é útil também muda: num museu quer-se o bilhete, num restaurante a
+ * reserva, e num sítio gratuito o que lá se pode ver.
+ */
+export function comoChamarAoSite(act: Activity): string {
+  if (act.type === 'food') return 'Reservar no site do restaurante'
+  if (act.type === 'hotel') return 'Site do alojamento'
+  const pago = typeof act.cost === 'number' && act.cost > 0
+  return pago ? 'Bilhetes no site oficial' : 'Site oficial'
+}
+
+/**
+ * Para quando não se sabe o site oficial de um sítio que se paga.
+ *
+ * O OpenStreetMap tem o site de muitos monumentos e de nenhum outro. Verificado
+ * em Roma: o Coliseu, os Museus Vaticanos, o Panteão e os Capitolinos têm; o
+ * Castel Sant'Angelo, o Fórum Romano e o Palatino não têm — e não é o nosso
+ * geocodificador a escolher mal, é a etiqueta que não existe.
+ *
+ * Nesses casos fica uma PESQUISA, e é assim que se chama no ecrã. Não é a
+ * bilheteira e não se faz passar por ela: um link que promete o site oficial e
+ * abre uma lista de resultados é pior do que um link que diz o que é.
+ *
+ * Só nas actividades que se pagam. Numa praça gratuita seria ruído.
+ */
+export function pesquisaDeBilhetes(act: Activity): string | null {
+  const pago = typeof act.cost === 'number' && act.cost > 0
+  if (!pago || act.type === 'food' || act.type === 'hotel') return null
+
+  const termo = [act.geoName ?? act.name, 'bilhetes'].join(' ')
+  return `https://duckduckgo.com/?q=${encodeURIComponent(termo)}`
+}
+
+/**
  * O número que cada actividade tem no mapa.
  *
  * O mapa numerava pelo índice na lista TODA, transportes incluídos, e nada

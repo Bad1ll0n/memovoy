@@ -477,16 +477,19 @@ export async function preencherCoordenadas(data, destino, pais) {
           comHorario++
         }
 
-        // ── Onde comprar bilhete ────────────────────────────────────────────
+        // ── O site oficial ──────────────────────────────────────────────────
         //
-        // Só nas actividades que custam dinheiro: uma praça com custo zero não
-        // precisa de um link para "comprar bilhete", e pô-lo em tudo tornava-o
-        // ruído que ninguém lê.
+        // Guarda-se sempre que exista, e não só quando a actividade tem custo.
         //
-        // É o site OFICIAL, da etiqueta do OpenStreetMap. Não é "o melhor
-        // preço" — isso não temos como saber — é a bilheteira sem margem de
-        // revendedor, que é a coisa verdadeira mais próxima disso.
-        if (p.site && typeof act.cost === 'number' && act.cost > 0) {
+        // A primeira versão exigia `cost > 0`, e isso deixou de fora metade dos
+        // sítios pagos: o modelo escreve `cost: null` com frequência, e um
+        // museu sem preço preenchido continua a ser um museu com bilheteira.
+        // Filtrar por um campo que o modelo preenche a meias era filtrar pelo
+        // que ele escreveu, não pelo que o sítio é.
+        //
+        // O que este link é chama-se na interface conforme o tipo — não se
+        // compram bilhetes para um restaurante.
+        if (p.site) {
           act.siteOficial = p.site
           comSite++
         }
