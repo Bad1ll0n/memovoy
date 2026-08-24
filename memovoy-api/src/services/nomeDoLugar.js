@@ -120,12 +120,89 @@ export function semelhanca(a, b) {
  * "Ristorante X"; um nome que por acaso comece por uma destas palavras sem
  * separador nenhum fica intacto.
  */
+/** O que o modelo põe à frente: o que se faz, e como. Nunca o sítio. */
+const PALAVRAS_DE_ACTIVIDADE = new Set([
+  'almoco', 'jantar', 'lanche', 'ceia', 'brunch', 'cafe', 'gelato',
+  'pequeno almoco', 'pequeno-almoco', 'pequeno',
+  'visita', 'passeio', 'caminhada', 'exploracao', 'chegada', 'partida',
+  'descoberta', 'entrada', 'subida', 'travessia', 'regresso', 'retorno',
+  'lunch', 'dinner', 'breakfast', 'visit', 'walk', 'stroll', 'tour',
+  // Como se faz — adjectivos que aparecem entre o verbo e o sítio.
+  'guiada', 'guiado', 'noturno', 'nocturna', 'nocturno', 'noturna',
+  'matinal', 'livre', 'relaxante', 'romantico', 'romantica', 'tipico',
+  'tipica', 'panoramica', 'panoramico', 'rapida', 'rapido', 'privado',
+  'privada', 'opcional', 'tradicional',
+])
+
+/** Ligações. Consumir uma é o sinal de que o que vem a seguir é o sítio. */
+const LIGACOES = new Set([
+  'ao', 'a', 'à', 'aos', 'as', 'às', 'no', 'na', 'nos', 'nas', 'em',
+  'de', 'do', 'da', 'dos', 'das', 'pelo', 'pela', 'pelos', 'pelas',
+  'ate', 'longo', 'para', 'por', 'com', 'to', 'at', 'the', 'of', 'in', 'along',
+])
+
+/**
+ * O nome do sítio, sem o que o modelo lhe põe à frente.
+ *
+ * O modelo escreve "Almoço – Ristorante Il Falchetto" e "Visita ao Coliseu".
+ * Comparar nomes já ignorava esses prefixos, mas a PROCURA levava-os na mesma —
+ * e o Nominatim procura pelo texto inteiro. O Il Falchetto tem horário no OSM e
+ * nós não o encontrávamos por causa da palavra "Almoço".
+ *
+ * A primeira versão era um regex que exigia o verbo COLADO à preposição, e
+ * partia-se em quase tudo o que não fosse o caso simples:
+ *
+ *     "Passeio ao longo do Rio Tibre"    → "longo do Rio Tibre"   (pior ainda)
+ *     "Passeio noturno pelo Trastevere"  → inalterado
+ *     "Visita guiada ao Coliseu"         → inalterado
+ *
+ * Agora corta palavra a palavra, enquanto forem palavras de actividade ou
+ * ligações, e pára na primeira que não seja.
+ *
+ * ── A salvaguarda ───────────────────────────────────────────────────────────
+ *
+ * Só corta se tiver consumido pelo menos uma LIGAÇÃO. É isso que separa
+ * "Passeio pela Via Appia" (corta: há um "pela") de "Passeio Público" — que é
+ * um jardim a sério em Lisboa, e onde cortar deixaria "Público".
+ */
 export function limparTermo(termo) {
-  if (typeof termo !== 'string') return ''
-  return termo
-    // "Almoço – X", "Jantar: X", "Visita ao X" — travessão, dois pontos ou "ao/no/em".
-    .replace(/^\s*(almo[çc]o|jantar|pequeno[- ]almo[çc]o|lanche|visita|passeio|caminhada|explora[çc][ãa]o|lunch|dinner|breakfast|visit|walk)\b\s*(?:[-–—:]\s*|\b(?:ao|à|a|no|na|em|de|do|da|pela|pelo|to|at|the)\b\s+)/i, '')
-    .trim() || termo.trim()
+  if (typeof termo !== 'string' || termo.trim() === '') return ''
+
+  const limpo = termo.trim()
+
+  // "Almoço – Ristorante Il Falchetto". O travessão é tão sinal como uma
+  // preposição: o que vem antes dele é o que se faz, o que vem depois é o
+  // sítio. Só conta se o que fica à esquerda for TODO palavras de actividade —
+  // senão "Santa Maria — Trastevere" perderia metade do nome.
+  //
+  // O hífen só conta rodeado de espaços. "Jantar - Da Enzo" é um separador;
+  // o de "Aix-en-Provence" ou "Pequeno-almoço" faz parte da palavra, e partir
+  // ali deixaria metade de um nome.
+  const comSeparador = /^(.+?)\s*(?:[–—:]|\s-\s)\s*(.+)$/.exec(limpo)
+  if (comSeparador) {
+    const esquerda = comSeparador[1].trim().split(/\s+/).map(normalizar)
+    const soActividade = esquerda.every((p) => PALAVRAS_DE_ACTIVIDADE.has(p) || LIGACOES.has(p))
+    if (soActividade && comSeparador[2].trim()) return comSeparador[2].trim()
+  }
+
+  const palavras = limpo.split(/\s+/).filter(Boolean)
+  let i = 0
+  let ligacaoConsumida = false
+
+  while (i < palavras.length) {
+    const p = normalizar(palavras[i])
+    if (LIGACOES.has(p)) { ligacaoConsumida = true; i++; continue }
+    // Depois da ligação vem o NOME, e uma palavra de actividade que apareça
+    // aí já faz parte dele. "Pequeno-almoço no Café Vianna" tem duas palavras
+    // de comida: a primeira é o que se faz, a segunda é o sítio. Continuar a
+    // cortar deixava "Vianna" — e o Café Vianna chama-se Café Vianna.
+    if (!ligacaoConsumida && PALAVRAS_DE_ACTIVIDADE.has(p)) { i++; continue }
+    break
+  }
+
+  const resto = palavras.slice(i).join(' ').trim()
+  if (!ligacaoConsumida || resto === '') return limpo
+  return resto
 }
 
 /**

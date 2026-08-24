@@ -206,6 +206,39 @@ describe('limpar o termo antes de procurar', () => {
     assert.equal(limparTermo('Visitação de Nossa Senhora'), 'Visitação de Nossa Senhora')
   })
 
+  test('atravessa os adjectivos que o modelo mete pelo meio', () => {
+    // A primeira versão era um regex que exigia o verbo COLADO à preposição.
+    // Bastava um adjectivo entre os dois para não cortar nada — e o modelo
+    // escreve assim quase sempre.
+    assert.equal(limparTermo('Passeio noturno pelo Trastevere'), 'Trastevere')
+    assert.equal(limparTermo('Visita guiada ao Coliseu'), 'Coliseu')
+  })
+
+  test('e as ligações de várias palavras', () => {
+    // Este era o pior: o regex cortava só o "ao" e deixava "longo do Rio
+    // Tibre", que não é o nome de nada. Uma limpeza que estraga o termo é pior
+    // do que não limpar.
+    assert.equal(limparTermo('Passeio ao longo do Rio Tibre'), 'Rio Tibre')
+    assert.equal(limparTermo('Caminhada até à Basílica'), 'Basílica')
+  })
+
+  test('"Chegada a X" também é um prefixo', () => {
+    assert.equal(limparTermo('Chegada a Trastevere'), 'Trastevere')
+  })
+
+  test('o Passeio Público de Lisboa continua a chamar-se Passeio Público', () => {
+    // É a salvaguarda: só corta se tiver consumido uma ligação. Aqui não há
+    // nenhuma, portanto "Passeio" faz parte do nome e fica.
+    assert.equal(limparTermo('Passeio Público'), 'Passeio Público')
+    assert.equal(limparTermo('Museu Nacional do Azulejo'), 'Museu Nacional do Azulejo')
+  })
+
+  test('um travessão só corta se o que está à esquerda for actividade', () => {
+    assert.equal(limparTermo('Almoço – Ristorante Il Falchetto'), 'Ristorante Il Falchetto')
+    // Aqui a esquerda é um nome, não uma actividade — cortar perdia metade.
+    assert.equal(limparTermo('Santa Maria — Trastevere'), 'Santa Maria — Trastevere')
+  })
+
   test('nunca devolve vazio', () => {
     // Se o corte comesse o nome todo, ficávamos sem nada para procurar. Nesse
     // caso vale mais o original — procurar por "Almoço" não encontra, mas
