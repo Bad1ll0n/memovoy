@@ -55,6 +55,44 @@ export function RevisaoDoRoteiro({
 
   const totalActividades = diasLocais.reduce((n, d) => n + (d.activities?.length ?? 0), 0)
 
+  // ── O nome do roteiro ──────────────────────────────────────────────────────
+  //
+  // Vem já preenchido com o que a geração escolheu, para o campo nunca aparecer
+  // vazio — um campo vazio parece uma obrigação, e nomear é opcional.
+  const [titulo, setTitulo] = useState('')
+  const [tituloOriginal, setTituloOriginal] = useState('')
+  const [tituloGravado, setTituloGravado] = useState(false)
+
+  useEffect(() => {
+    let vivo = true
+    api.get<{ title?: string }>(`/itineraries/${roteiroId}`)
+      .then((r) => {
+        if (!vivo || !r.title) return
+        setTitulo(r.title)
+        setTituloOriginal(r.title)
+      })
+      .catch(() => { /* fica vazio, e o utilizador escreve o que quiser */ })
+    return () => { vivo = false }
+  }, [roteiroId])
+
+  async function gravarTitulo() {
+    const novo = titulo.trim()
+    // Nada a fazer se não mudou, e um nome vazio não substitui um nome que já
+    // existe — apagar o campo sem querer não pode deixar o roteiro sem nome.
+    if (novo === '' || novo === tituloOriginal) {
+      setTitulo(tituloOriginal || titulo)
+      return
+    }
+    try {
+      await api.patch(`/itineraries/${roteiroId}`, { title: novo })
+      setTituloOriginal(novo)
+      setTituloGravado(true)
+      setTimeout(() => setTituloGravado(false), 2500)
+    } catch {
+      setErro('Não foi possível guardar o nome. Tenta outra vez.')
+    }
+  }
+
   // ── Esperar pelas coordenadas ──────────────────────────────────────────────
   //
   // Os dias chegam pelo fluxo da geração SEM lat/lon: a geocodificação corre em
@@ -174,13 +212,39 @@ export function RevisaoDoRoteiro({
         >
           <Check className="w-5 h-5" style={{ color: 'var(--accent)' }} />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-bold" style={{ color: 'var(--text-primary)' }}>Roteiro gerado</p>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             {diasLocais.length} {diasLocais.length === 1 ? 'dia' : 'dias'} · {totalActividades} actividades.
             Muda o que não gostares antes de guardar.
           </p>
         </div>
+      </div>
+
+      {/* ── O nome ──────────────────────────────────────────────────────────
+          O título era gerado e imposto — "Roma — 2027-10-04". Serve para
+          arrumar, não para lembrar. Quem faz a viagem sabe melhor do que nós
+          como lhe quer chamar, e é aqui que sabe, com o roteiro à frente.
+
+          Grava ao sair do campo e não a cada tecla: um PATCH por letra seria
+          desperdício, e o utilizador não perde nada por o nome só ficar ao
+          mudar de foco. */}
+      <div className="mb-5">
+        <label className="label" htmlFor="nome-do-roteiro">Nome do roteiro</label>
+        <input
+          id="nome-do-roteiro"
+          type="text"
+          className="input"
+          value={titulo}
+          maxLength={200}
+          placeholder="Ex: Fim-de-semana em Roma"
+          onChange={(e) => setTitulo(e.target.value)}
+          onBlur={gravarTitulo}
+          disabled={aGuardar}
+        />
+        {tituloGravado && (
+          <p className="text-xs mt-1" style={{ color: 'var(--success)' }}>Nome guardado.</p>
+        )}
       </div>
 
       {(resumo || custoEstimado) && (

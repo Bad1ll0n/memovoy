@@ -13,6 +13,8 @@ export interface ActivityPin {
   /** Resolvidas no servidor ao gerar o roteiro. Ver services/geocodificar.js. */
   lat?: number | null
   lon?: number | null
+  /** O mesmo número que a actividade mostra no cartão. Ver numerarParagens(). */
+  numero?: number | null
 }
 
 interface GeoMarker {
@@ -103,9 +105,15 @@ export function ActivityMap({ activities }: Props) {
   //
   // Agora a resolução acontece uma vez, no servidor, ao gerar, com cache global
   // partilhada por todos os utilizadores. Aqui só se desenha.
+  //
+  // O número do pino vem de fora, já calculado, para ser o MESMO que aparece no
+  // cartão da actividade. Era o índice na lista toda, transportes incluídos:
+  // via-se um pino "5" sem forma de saber a que sítio correspondia, e os
+  // números saltavam (1, 3, 5, 7) porque as caminhadas gastavam um número sem
+  // ganhar um pino.
   const markers: GeoMarker[] = useMemo(
     () => activities
-      .map((a, i) => ({ ...a, index: i }))
+      .map((a, i) => ({ ...a, index: (a.numero ?? i + 1) - 1 }))
       .filter((a) => typeof a.lat === 'number' && typeof a.lon === 'number')
       .map((a) => ({ lat: a.lat as number, lng: a.lon as number, label: a.name, index: a.index, type: a.type })),
     [activities],

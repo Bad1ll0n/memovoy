@@ -585,7 +585,11 @@ Return an object with:
           - name (string)
           - description (string, max 200 chars)
           - address (string or null)
-          - geoName (string or null — official English name for geocoding, e.g. "Eiffel Tower")
+          - geoName (string or null — the place's own name, for looking it up on a map)
+              * REQUIRED for every activity except type "transport". Without it the activity has no pin on the map, and the traveller cannot see where it is.
+              * A walk or a stroll still has a place: "Passeio pelo Trastevere" → geoName "Trastevere". "Passeio ao longo do Rio Tibre" → "Tiber River". Name the neighbourhood, park or landmark it happens in.
+              * Use the name the place is known by locally or internationally — "Colosseum", "Musei Vaticani", "Trastevere". Not a description.
+              * null ONLY when the activity genuinely has no place: "Café da manhã livre", "Tempo livre".
           - cost (number in ${currency} or null if free)
           - currency ("${currency}")
           - type ("visit" | "food" | "transport" | "leisure" | "hotel")

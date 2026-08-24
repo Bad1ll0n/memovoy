@@ -77,7 +77,7 @@ export function chaveDeCache(nome, destino, pais) {
 
 async function lerCache(chave) {
   const { rows } = await query(
-    'SELECT lat, lon, estado, horario, nome_confirmado FROM lugares WHERE chave = $1',
+    'SELECT lat, lon, estado, horario, nome_confirmado, site FROM lugares WHERE chave = $1',
     [chave],
   )
   return rows[0] ?? null
@@ -85,13 +85,14 @@ async function lerCache(chave) {
 
 async function gravarCache(chave, resultado, nomeObtido, nomeConfirmado = false) {
   await query(
-    `INSERT INTO lugares (chave, lat, lon, nome_obtido, estado, horario, nome_confirmado)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO lugares (chave, lat, lon, nome_obtido, estado, horario, nome_confirmado, site)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      ON CONFLICT (chave) DO UPDATE
        SET lat = $2, lon = $3, nome_obtido = $4, estado = $5, horario = $6,
-           nome_confirmado = $7, criado_em = NOW()`,
+           nome_confirmado = $7, site = $8, criado_em = NOW()`,
     [chave, resultado?.lat ?? null, resultado?.lon ?? null, nomeObtido ?? null,
-     resultado ? 'ok' : 'sem_resposta', resultado?.horario ?? null, nomeConfirmado],
+     resultado ? 'ok' : 'sem_resposta', resultado?.horario ?? null, nomeConfirmado,
+     resultado?.site ?? null],
   )
 }
 
@@ -128,6 +129,10 @@ async function perguntarAoNominatim(consulta) {
       // Vem em bruto, tal como está no OSM. Interpretar aqui era perder o que
       // ainda não sabemos ler — ver services/horarios.js.
       horario: d.extratags?.opening_hours ?? null,
+      // O site oficial. Pediram "onde comprar ao melhor preço" e não há forma
+      // honesta de garantir isso — os revendedores mudam-no ao dia. O que há é
+      // a bilheteira oficial, que vende sem margem de intermediário.
+      site: d.extratags?.website ?? d.extratags?.['contact:website'] ?? null,
       bruto: d,
     }))
   } catch {
@@ -306,6 +311,7 @@ export async function resolverLugar(act, destino, pais, centro) {
         // a 1,5 km, com horário próprio. O pino a 1,5 km é um erro que se vê; o
         // horário do edifício errado não.
         horario: emCache.nome_confirmado ? (emCache.horario ?? null) : null,
+        site: emCache.nome_confirmado ? (emCache.site ?? null) : null,
       }
     }
 
@@ -336,7 +342,13 @@ export async function resolverLugar(act, destino, pais, centro) {
     }
 
     await gravarCache(chave, r, r.nome, confirmado)
-    return { lat: r.lat, lon: r.lon, horario: confirmado ? (r.horario ?? null) : null }
+    return {
+      lat: r.lat, lon: r.lon,
+      // O site segue a mesma regra do horário: só quando o nome confirma. O
+      // site do sítio errado manda alguém comprar bilhete para outro museu.
+      horario: confirmado ? (r.horario ?? null) : null,
+      site:    confirmado ? (r.site ?? null) : null,
+    }
   }
 
   return null
@@ -430,6 +442,7 @@ export async function preencherCoordenadas(data, destino, pais) {
   let resolvidas = 0
   let semLocalizacao = 0
   let comHorario = 0
+  let comSite = 0
   let fechados = 0
 
   for (const dia of data?.days ?? []) {
@@ -463,6 +476,20 @@ export async function preencherCoordenadas(data, destino, pais) {
           act.horarioConhecido = veredicto.horario
           comHorario++
         }
+
+        // ── Onde comprar bilhete ────────────────────────────────────────────
+        //
+        // Só nas actividades que custam dinheiro: uma praça com custo zero não
+        // precisa de um link para "comprar bilhete", e pô-lo em tudo tornava-o
+        // ruído que ninguém lê.
+        //
+        // É o site OFICIAL, da etiqueta do OpenStreetMap. Não é "o melhor
+        // preço" — isso não temos como saber — é a bilheteira sem margem de
+        // revendedor, que é a coisa verdadeira mais próxima disso.
+        if (p.site && typeof act.cost === 'number' && act.cost > 0) {
+          act.siteOficial = p.site
+          comSite++
+        }
       } else {
         semLocalizacao++
       }
@@ -478,5 +505,5 @@ export async function preencherCoordenadas(data, destino, pais) {
     semLocalizacao += forasDeMao
   }
 
-  return { data, resolvidas, semLocalizacao, comHorario, fechados, forasDeMao }
+  return { data, resolvidas, semLocalizacao, comHorario, fechados, forasDeMao, comSite }
 }

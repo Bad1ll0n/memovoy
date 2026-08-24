@@ -14,11 +14,12 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, CheckCircle2, GripVertical, MapPin, Pencil, Trash2, Wand2 } from 'lucide-react'
-import { activityTypeClass, activityTypeLabel, duracaoLegivel, type Activity } from './actividade'
+import { AlertCircle, CheckCircle2, GripVertical, MapPin, Pencil, Ticket, Trash2, Wand2 } from 'lucide-react'
+import { activityTypeClass, activityTypeColor, activityTypeLabel, duracaoLegivel, COR_DESCONHECIDA, type Activity } from './actividade'
 
 export function CartaoDeActividade({
   act,
+  numero,
   sortId,
   podeEditar,
   arrastavel = true,
@@ -30,6 +31,8 @@ export function CartaoDeActividade({
   onCheckin,
 }: {
   act: Activity
+  /** O mesmo número que a actividade tem no mapa. null nos transportes. */
+  numero?: number | null
   sortId: string
   podeEditar: boolean
   /** Fora do ecrã de revisão a ordem já é definitiva; lá ainda não é. */
@@ -66,6 +69,17 @@ export function CartaoDeActividade({
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
+              {/* O mesmo número do pino. Sem isto via-se um "5" no mapa e não
+                  havia como saber a que sítio correspondia. */}
+              {typeof numero === 'number' && (
+                <span
+                  className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0"
+                  style={{ background: activityTypeColor[act.type] ?? COR_DESCONHECIDA, color: '#000' }}
+                  aria-label={`Ponto ${numero} no mapa`}
+                >
+                  {numero}
+                </span>
+              )}
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${activityTypeClass[act.type] ?? 'act-leisure'}`}>
                 {activityTypeLabel[act.type] ?? act.type}
               </span>
@@ -167,6 +181,24 @@ export function CartaoDeActividade({
               )}
             </span>
           </div>
+        )}
+
+        {/* ── Onde comprar bilhete ────────────────────────────────────────
+            O site OFICIAL, da etiqueta do OpenStreetMap. Não promete o melhor
+            preço — isso não temos como saber — mas é a bilheteira sem margem de
+            revendedor, que é a coisa verdadeira mais próxima. Só aparece nas
+            actividades que custam dinheiro. */}
+        {act.siteOficial && (
+          <a
+            href={act.siteOficial}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex items-center gap-1.5 text-xs hover:underline transition-opacity hover:opacity-70"
+            style={{ color: 'var(--accent)' }}
+          >
+            <Ticket className="w-3.5 h-3.5 shrink-0" />
+            Bilhetes no site oficial
+          </a>
         )}
 
         {act.tips && (

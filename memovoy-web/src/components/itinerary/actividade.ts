@@ -27,6 +27,8 @@ export interface Activity {
   avisoDeHorario?: string | null
   /** A etiqueta opening_hours do OpenStreetMap, em bruto. */
   horarioConhecido?: string | null
+  /** Site oficial, para comprar bilhete sem margem de revendedor. */
+  siteOficial?: string | null
 }
 
 export interface Day {
@@ -65,6 +67,25 @@ export function duracaoLegivel(minutos: number | null | undefined): string | nul
   const m = Math.round(minutos % 60)
   if (h === 0) return `${m}min`
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+}
+
+/**
+ * O número que cada actividade tem no mapa.
+ *
+ * O mapa numerava pelo índice na lista TODA, transportes incluídos, e nada
+ * ligava esse número à actividade no ecrã. Via-se um pino "5" e não havia como
+ * saber a que sítio correspondia — e os números saltavam (1, 3, 5, 7) porque as
+ * caminhadas gastavam um número sem ganhar um pino.
+ *
+ * Agora contam-se só as paragens, 1, 2, 3, e o mesmo número aparece nos dois
+ * lados. Um transporte não tem número porque não tem pino: uma caminhada é o
+ * caminho entre dois sítios, não um sítio.
+ *
+ * @returns array com o número de cada actividade, ou null para transporte
+ */
+export function numerarParagens(activities: Activity[]): (number | null)[] {
+  let n = 0
+  return activities.map((a) => (a.type === 'transport' ? null : ++n))
 }
 
 /**

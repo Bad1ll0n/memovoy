@@ -29,7 +29,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CartaoDeActividade } from './CartaoDeActividade'
 import { TripCompanion } from './TripCompanion'
-import { distanciaEntre, distanciaLegivel, type Activity, type Day } from './actividade'
+import { distanciaEntre, distanciaLegivel, numerarParagens, type Activity, type Day } from './actividade'
 import type { ActivityPin } from '@/components/map/ActivityMap'
 
 const ActivityMap = dynamic(
@@ -77,8 +77,12 @@ export function VistaDosDias({
 
   const dia = dias[diaActivo]
 
+  // Uma numeração só, para o mapa e para os cartões. O número no pino tem de
+  // querer dizer o mesmo que o número na lista — antes não queria.
+  const numeros = useMemo(() => numerarParagens(dia?.activities ?? []), [dia])
+
   const pinos: ActivityPin[] = useMemo(
-    () => (dia?.activities ?? []).map((a) => ({
+    () => (dia?.activities ?? []).map((a, i) => ({
       name: a.name,
       address: a.address,
       geoName: a.geoName,
@@ -86,8 +90,9 @@ export function VistaDosDias({
       // Resolvidas no servidor ao gerar. O mapa já não geocodifica nada.
       lat: a.lat,
       lon: a.lon,
+      numero: numeros[i],
     })),
-    [dia],
+    [dia, numeros],
   )
 
   function fimDoArrasto(evento: DragEndEvent) {
@@ -151,6 +156,7 @@ export function VistaDosDias({
         <CartaoDeActividade
           sortId={String(i)}
           act={act}
+          numero={numeros[i]}
           podeEditar={podeEditar}
           arrastavel={arrastavel && !!aoReordenar}
           comCheckin={comCheckin}

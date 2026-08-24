@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { activityTypeColor, distanciaEntre, distanciaLegivel, duracaoLegivel, type Activity } from './actividade'
+import { activityTypeColor, distanciaEntre, distanciaLegivel, duracaoLegivel, numerarParagens, type Activity } from './actividade'
 
 // Um mapa com pinos mostra que os sítios existem; não mostra se dois estão a
 // duzentos metros ou a três quilómetros um do outro. Num roteiro a pé é essa a
@@ -140,5 +140,52 @@ describe('as cores dos tipos de actividade', () => {
   test('não há duas cores iguais', () => {
     const cores = Object.values(activityTypeColor)
     expect(new Set(cores).size).toBe(cores.length)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O número tem de querer dizer o mesmo nos dois sítios
+//
+// O mapa numerava pelo índice na lista TODA, transportes incluídos. Via-se um
+// pino "5" e não havia nada no ecrã com um 5 — e os números saltavam
+// (1, 3, 5, 7) porque cada caminhada gastava um número sem ganhar um pino.
+describe('a numeração das paragens', () => {
+  const dia = (tipos: Activity['type'][]) =>
+    tipos.map((type, i) => ({
+      time: '10:00', name: `a${i}`, description: '', address: null,
+      cost: null, currency: 'EUR', type, tips: null,
+    })) as Activity[]
+
+  test('conta só as paragens, sem saltos', () => {
+    // Visita, caminhada, visita, caminhada, refeição → 1, —, 2, —, 3
+    expect(numerarParagens(dia(['visit', 'transport', 'visit', 'transport', 'food'])))
+      .toEqual([1, null, 2, null, 3])
+  })
+
+  test('o transporte não tem número porque não tem pino', () => {
+    // Uma caminhada é o caminho entre dois sítios, não um sítio.
+    const r = numerarParagens(dia(['transport', 'visit']))
+    expect(r[0]).toBe(null)
+    expect(r[1]).toBe(1)
+  })
+
+  test('um dia sem transportes numera-se de um a n', () => {
+    expect(numerarParagens(dia(['visit', 'food', 'leisure']))).toEqual([1, 2, 3])
+  })
+
+  test('um dia só de transportes não numera nada', () => {
+    expect(numerarParagens(dia(['transport', 'transport']))).toEqual([null, null])
+  })
+
+  test('uma actividade sem coordenadas conta na mesma', () => {
+    // O número identifica a actividade na lista, não no mapa. Saltá-lo por não
+    // ter pino desalinhava a numeração de tudo o que vem a seguir.
+    const acts = dia(['visit', 'visit', 'visit'])
+    acts[1].lat = null
+    expect(numerarParagens(acts)).toEqual([1, 2, 3])
+  })
+
+  test('lista vazia não rebenta', () => {
+    expect(numerarParagens([])).toEqual([])
   })
 })
