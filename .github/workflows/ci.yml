@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: memovoy-api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -58,7 +58,7 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -83,7 +83,7 @@ jobs:
       run:
         working-directory: memovoy-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -113,7 +113,7 @@ jobs:
       run:
         working-directory: memovoy-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -129,7 +129,7 @@ jobs:
     name: Segurança — dependências e segredos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Precisa do histórico todo para o varrimento de segredos poder olhar
           # para os commits, não só para a árvore actual.
